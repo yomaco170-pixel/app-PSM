@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900;
+}
+
+.page-shell {
+  @apply mx-auto flex min-h-screen w-full max-w-md flex-col bg-slate-50;
+}
+
+.card {
+  @apply rounded-2xl bg-white p-4 shadow-card;
+}
+
+.chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700;
+}
