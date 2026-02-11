@@ -308,35 +308,122 @@ app.post('/api/init-db', async (c) => {
   try {
     console.log('🔧 Initializing database tables...')
     
+    // Créer table users si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT,
+        role TEXT DEFAULT 'user',
+        company_name TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run()
+
+    // Créer table clients si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id INTEGER,
+        name TEXT,
+        email TEXT UNIQUE,
+        phone TEXT,
+        company TEXT,
+        status TEXT DEFAULT 'lead',
+        archived INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run()
+    
     // Créer table deals si elle n'existe pas
     await c.env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS deals (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         client_id INTEGER,
-        title TEXT NOT NULL,
+        title TEXT NOT NULL DEFAULT 'Nouveau dossier',
         amount REAL DEFAULT 0,
         stage TEXT DEFAULT 'lead',
-        probability INTEGER DEFAULT 0,
+        probability INTEGER DEFAULT 30,
         expected_close_date TEXT,
         notes TEXT,
-        status TEXT DEFAULT 'lead',
         archived INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES clients(id)
+      )
+    `).run()
+
+    // Créer table leads si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL DEFAULT 'email',
+        source_ref TEXT NOT NULL UNIQUE,
+        from_name TEXT,
+        from_email TEXT,
+        subject TEXT,
+        snippet TEXT,
+        body TEXT,
+        stage TEXT NOT NULL DEFAULT 'new',
+        priority TEXT DEFAULT 'normal',
+        confidence INTEGER DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME DEFAULT (datetime('now'))
+      )
+    `).run()
+
+    // Créer table quotes si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS quotes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER,
+        title TEXT,
+        amount REAL DEFAULT 0,
+        status TEXT DEFAULT 'draft',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES clients(id)
+      )
+    `).run()
+
+    // Créer table tasks si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        title TEXT NOT NULL,
+        description TEXT,
+        status TEXT DEFAULT 'pending',
+        priority TEXT DEFAULT 'medium',
+        due_date TEXT,
+        completed_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `).run()
-    
-    // Créer table clients si elle n'existe pas (avec name)
+
+    // Créer table calendar_events si elle n'existe pas
     await c.env.DB.prepare(`
-      CREATE TABLE IF NOT EXISTS clients (
+      CREATE TABLE IF NOT EXISTS calendar_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT,
-        phone TEXT,
-        company TEXT,
-        status TEXT DEFAULT 'lead',
-        archived INTEGER DEFAULT 0,
+        user_id INTEGER,
+        title TEXT NOT NULL,
+        description TEXT,
+        start_date TEXT NOT NULL,
+        end_date TEXT,
+        deal_id INTEGER,
+        type TEXT DEFAULT 'event',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run()
+
+    // Créer table email_categories si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS email_categories (
+        email_id TEXT PRIMARY KEY,
+        category TEXT NOT NULL,
+        updated_at DATETIME DEFAULT (datetime('now'))
       )
     `).run()
     
@@ -345,7 +432,7 @@ app.post('/api/init-db', async (c) => {
     return c.json({ 
       success: true, 
       message: 'Database initialized successfully',
-      tables: ['deals', 'clients']
+      tables: ['users', 'clients', 'deals', 'leads', 'quotes', 'tasks', 'calendar_events', 'email_categories']
     })
   } catch (error) {
     console.error('Database initialization error:', error)
@@ -863,36 +950,30 @@ app.post('/api/clients', async (c) => {
 
     const data = await c.req.json()
 
-    try {
-      // Essayer d'abord avec la colonne 'name'
-      const result = await c.env.DB.prepare(
-        'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
-      ).bind(
-        data.name,
-        data.email,
-        data.phone || null,
-        data.company || null,
-        data.status || 'lead'
-      ).run()
+    // Vérifier si un client existe déjà avec cet email
+    if (data.email) {
+      const existing = await c.env.DB.prepare(
+        'SELECT * FROM clients WHERE email = ? LIMIT 1'
+      ).bind(data.email).first()
 
-      return c.json({ id: result.meta.last_row_id, ...data }, 201)
-    } catch (error: any) {
-      // Si la colonne 'name' n'existe pas, essayer sans
-      if (error.message && error.message.includes('no column named name')) {
-        console.log('Column name does not exist, trying without it')
-        const result = await c.env.DB.prepare(
-          'INSERT INTO clients (email, phone, company, status) VALUES (?, ?, ?, ?)'
-        ).bind(
-          data.email,
-          data.phone || null,
-          data.company || null,
-          data.status || 'lead'
-        ).run()
-
-        return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      if (existing) {
+        console.log('Client existant trouvé pour', data.email)
+        return c.json({ id: existing.id, ...existing, _existing: true }, 200)
       }
-      throw error
     }
+
+    // Créer le nouveau client
+    const result = await c.env.DB.prepare(
+      'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
+    ).bind(
+      data.name || null,
+      data.email || null,
+      data.phone || null,
+      data.company || null,
+      data.status || 'lead'
+    ).run()
+
+    return c.json({ id: result.meta.last_row_id, ...data }, 201)
   } catch (error) {
     console.error('Error creating client:', error)
     return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
@@ -948,60 +1029,21 @@ app.post('/api/deals', async (c) => {
 
     const data = await c.req.json()
 
-    // Vérifier si on a les nouveaux champs (client_id, title, etc.) ou les anciens (first_name, last_name, etc.)
-    if (data.client_id && data.title) {
-      // Nouveau format (Pipeline/CRM)
-      const result = await c.env.DB.prepare(
-        'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(
-        decoded.id,
-        data.client_id,
-        data.title,
-        data.amount || 0,
-        data.stage || 'lead',
-        data.probability || 0,
-        data.expected_close_date || null,
-        data.notes || null,
-        data.stage || 'lead'
-      ).run()
+    // Format unifié : INSERT dans deals avec les colonnes du schéma actuel
+    const result = await c.env.DB.prepare(
+      'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      decoded.id,
+      data.client_id || null,
+      data.title || 'Nouveau dossier',
+      data.amount || 0,
+      data.stage || 'lead',
+      data.probability || 30,
+      data.expected_close_date || null,
+      data.notes || null
+    ).run()
 
-      return c.json({ id: result.meta.last_row_id, ...data }, 201)
-    } else if (data.title) {
-      // Nouveau format SANS client_id (gérer le cas où le client existe déjà)
-      // On va chercher le client par email dans les notes ou créer un deal orphelin
-      const result = await c.env.DB.prepare(
-        'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(
-        decoded.id,
-        null, // client_id = NULL
-        data.title,
-        data.amount || 0,
-        data.stage || 'lead',
-        data.probability || 0,
-        data.expected_close_date || null,
-        data.notes || null,
-        data.stage || 'lead'
-      ).run()
-
-      return c.json({ id: result.meta.last_row_id, ...data }, 201)
-    } else {
-      // Ancien format (formulaire simple)
-      const result = await c.env.DB.prepare(
-        'INSERT INTO deals (user_id, first_name, last_name, email, phone, company, type, status, estimated_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(
-        decoded.id,
-        data.first_name,
-        data.last_name,
-        data.email || null,
-        data.phone || null,
-        data.company || null,
-        data.type || 'Résidentiel',
-        data.status || 'lead',
-        data.estimated_amount || 0
-      ).run()
-
-      return c.json({ id: result.meta.last_row_id, ...data }, 201)
-    }
+    return c.json({ id: result.meta.last_row_id, ...data }, 201)
   } catch (error) {
     console.error('Error creating deal:', error)
     return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
