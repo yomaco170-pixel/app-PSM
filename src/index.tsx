@@ -734,17 +734,36 @@ app.post('/api/clients', async (c) => {
 
     const data = await c.req.json()
 
-    const result = await c.env.DB.prepare(
-      'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
-    ).bind(
-      data.name,
-      data.email,
-      data.phone || null,
-      data.company || null,
-      data.status || 'lead'
-    ).run()
+    try {
+      // Essayer d'abord avec la colonne 'name'
+      const result = await c.env.DB.prepare(
+        'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
+      ).bind(
+        data.name,
+        data.email,
+        data.phone || null,
+        data.company || null,
+        data.status || 'lead'
+      ).run()
 
-    return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      return c.json({ id: result.meta.last_row_id, ...data }, 201)
+    } catch (error: any) {
+      // Si la colonne 'name' n'existe pas, essayer sans
+      if (error.message && error.message.includes('no column named name')) {
+        console.log('Column name does not exist, trying without it')
+        const result = await c.env.DB.prepare(
+          'INSERT INTO clients (email, phone, company, status) VALUES (?, ?, ?, ?)'
+        ).bind(
+          data.email,
+          data.phone || null,
+          data.company || null,
+          data.status || 'lead'
+        ).run()
+
+        return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      }
+      throw error
+    }
   } catch (error) {
     console.error('Error creating client:', error)
     return c.json({ error: 'Erreur serveur', details: error.message }, 500)

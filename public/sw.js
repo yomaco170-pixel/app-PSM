@@ -4,11 +4,8 @@ const urlsToCache = [
   '/',
   '/static/karl-app.js',
   '/static/styles.css',
-  '/manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  '/manifest.json'
+  // NE PAS CACHER LES CDN EXTERNES (CORS)
 ];
 
 // Installation
@@ -38,8 +35,15 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch - Stratégie Network First, puis Cache
+// Fetch - Ignorer les requêtes externes (CDN, etc.)
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // Ignorer les requêtes externes (CDN, Google, etc.)
+  if (url.origin !== self.location.origin) {
+    return; // Laisser le navigateur gérer
+  }
+  
   event.respondWith(
     fetch(event.request)
       .then((response) => {
