@@ -2123,7 +2123,7 @@ async function renderPipeline() {
   ];
   
   const statusRows = statuses.map(status => {
-    const count = safeArray(state.deals).filter(d => d.status === status.key).length;
+    const count = safeArray(state.deals).filter(d => (d.status || d.stage) === status.key).length;
     return `
       <div class="card mb-3" style="cursor: pointer; border-left: 4px solid ${status.color};" onclick="openPipelineStatus('${status.key}')">
         <div class="flex items-center justify-between">
@@ -2177,26 +2177,31 @@ async function renderPipelineKanban(filterStatus = null) {
   const displayStatuses = filterStatus ? statuses.filter(s => s.key === filterStatus) : statuses;
 
   const columns = displayStatuses.map(status => {
-    const deals = safeArray(state.deals).filter(d => d.status === status.key);
-    const cardsHTML = safeArray(deals).map(deal => `
+    const deals = safeArray(state.deals).filter(d => (d.status || d.stage) === status.key);
+    const cardsHTML = safeArray(deals).map(deal => {
+      const dealName = deal.client_name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || deal.title || 'Sans nom';
+      const dealType = deal.type || deal.title || 'Dossier';
+      const dealAmount = deal.estimated_amount || deal.amount || 0;
+      return `
       <div 
         class="kanban-card" 
-        onclick="console.log('🖱️ Clic sur deal #${deal.id}'); viewDealModal(${deal.id})" 
+        onclick="console.log('\uD83D\uDDB1\uFE0F Clic sur deal #${deal.id}'); viewDealModal(${deal.id})" 
         style="cursor: pointer;"
         data-deal-id="${deal.id}"
       >
         <div class="flex items-center justify-between mb-2">
           <span class="badge badge-primary">#${deal.id}</span>
-          <span class="text-xs text-gray-400 uppercase">${deal.type}</span>
+          <span class="text-xs text-gray-400 uppercase">${dealType}</span>
         </div>
-        <h4 class="font-bold text-white mb-2">${deal.first_name} ${deal.last_name}</h4>
+        <h4 class="font-bold text-white mb-2">${dealName}</h4>
         ${deal.company ? `<p class="text-sm text-gray-300 mb-2"><i class="fas fa-building"></i> ${deal.company}</p>` : ''}
         ${deal.phone ? `<p class="text-sm text-gray-300 mb-1"><i class="fas fa-phone"></i> ${deal.phone}</p>` : ''}
         ${deal.email ? `<p class="text-sm text-gray-300 mb-2" style="word-break: break-word;"><i class="fas fa-envelope"></i> ${deal.email}</p>` : ''}
-        ${deal.estimated_amount ? `<p class="text-sm font-semibold text-blue-400 mt-2">${formatCurrency(deal.estimated_amount)}</p>` : ''}
+        ${dealAmount ? `<p class="text-sm font-semibold text-blue-400 mt-2">${formatCurrency(dealAmount)}</p>` : ''}
         ${deal.rdv_date ? `<p class="text-xs text-gray-400 mt-2"><i class="fas fa-calendar-alt"></i> ${formatDate(deal.rdv_date)}</p>` : ''}
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     return `
       <div class="kanban-column">
@@ -3801,11 +3806,20 @@ async function viewDealModal(dealId) {
     state.photos = await api.getPhotos(dealId);
     console.log('✅ Photos récupérées:', safeArray(state.photos).length);
   
+    // Compatibilité ancien/nouveau format
+    const dealName = deal.client_name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || deal.title || 'Sans nom';
+    const dealStatus = deal.status || deal.stage || 'lead';
+    const dealType = deal.type || deal.title || 'Dossier';
+    const dealAmount = deal.estimated_amount || deal.amount || 0;
+    const dealEmail = deal.email || deal.client_email || '';
+    const dealPhone = deal.phone || deal.client_phone || '';
+    const dealCompany = deal.company || '';
+    
     showModal(`
       <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
           <div class="modal-header">
-            <h3><i class="fas fa-folder-open"></i> Dossier #${deal.id} - ${deal.first_name} ${deal.last_name}</h3>
+            <h3><i class="fas fa-folder-open"></i> Dossier #${deal.id} - ${dealName}</h3>
             <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
           </div>
           <div class="modal-body">
@@ -3817,7 +3831,7 @@ async function viewDealModal(dealId) {
               <button class="btn btn-primary btn-sm" onclick="openScheduleRdvModal(${deal.id})" title="Planifier ou modifier le RDV">
                 <i class="fas fa-calendar-plus"></i> ${deal.rdv_date ? 'Modifier RDV' : 'Planifier RDV'}
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="openChangeStatusModal(${deal.id}, '${deal.status}')" title="Faire avancer dans le pipeline">
+              <button class="btn btn-secondary btn-sm" onclick="openChangeStatusModal(${deal.id}, '${dealStatus}')" title="Faire avancer dans le pipeline">
                 <i class="fas fa-arrow-right"></i> Changer statut
               </button>
               <button class="btn btn-primary btn-sm" onclick="openCreateQuoteModal(${deal.id})" title="Créer un devis">
@@ -3830,9 +3844,9 @@ async function viewDealModal(dealId) {
             
             <div class="mb-4">
               <h4 class="font-bold text-white mb-2">Informations</h4>
-              <p class="text-sm mb-1"><strong>Type :</strong> ${deal.type}</p>
-              <p class="text-sm mb-1"><strong>Statut :</strong> <span class="badge badge-primary">${deal.status}</span></p>
-              ${deal.estimated_amount ? `<p class="text-sm mb-1"><strong>Montant estimé :</strong> ${formatCurrency(deal.estimated_amount)}</p>` : ''}
+              <p class="text-sm mb-1"><strong>Type :</strong> ${dealType}</p>
+              <p class="text-sm mb-1"><strong>Statut :</strong> <span class="badge badge-primary">${dealStatus}</span></p>
+              ${dealAmount ? `<p class="text-sm mb-1"><strong>Montant estimé :</strong> ${formatCurrency(dealAmount)}</p>` : ''}
               ${deal.rdv_date ? `
                 <p class="text-sm mb-1">
                   <strong>RDV :</strong> 
@@ -3849,31 +3863,31 @@ async function viewDealModal(dealId) {
                   </button>
                 </p>
               ` : '<p class="text-sm mb-1" style="color: #ef4444;"><strong>RDV :</strong> <i class="fas fa-calendar-times"></i> Pas de RDV planifié</p>'}
-              ${deal.rdv_notes ? `<p class="text-sm mb-1" style="color: var(--psm-text-muted);"><em>${deal.rdv_notes}</em></p>` : ''}
+              ${deal.notes ? `<div class="text-sm mb-1 mt-2" style="background: #1f2937; padding: 0.75rem; border-radius: 8px; white-space: pre-wrap;">${deal.notes}</div>` : ''}
             </div>
 
             <div class="mb-4">
               <div class="flex items-center justify-between mb-2">
                 <h4 class="font-bold text-white">Client</h4>
-                <button class="btn btn-sm btn-secondary" onclick="openEditClientModal(${deal.client_id})" title="Modifier les informations du client">
+                ${deal.client_id ? `<button class="btn btn-sm btn-secondary" onclick="openEditClientModal(${deal.client_id})" title="Modifier les informations du client">
                   <i class="fas fa-edit"></i> Modifier
-                </button>
+                </button>` : ''}
               </div>
-              <p class="text-sm mb-1"><strong>${deal.civility || ''} ${deal.first_name} ${deal.last_name}</strong></p>
-              ${deal.company ? `<p class="text-sm mb-1"><i class="fas fa-building text-blue-500"></i> ${deal.company}</p>` : ''}
-              ${deal.client_phone ? `
+              <p class="text-sm mb-1"><strong>${dealName}</strong></p>
+              ${dealCompany ? `<p class="text-sm mb-1"><i class="fas fa-building text-blue-500"></i> ${dealCompany}</p>` : ''}
+              ${dealPhone ? `
                 <p class="text-sm mb-1">
                   <i class="fas fa-phone text-blue-500"></i> 
-                  <a href="tel:${deal.client_phone.replace(/\s/g, '')}" class="text-blue-400 hover:text-blue-300 underline" title="Appeler ${deal.client_phone}">
-                    ${deal.client_phone}
+                  <a href="tel:${dealPhone.replace(/\s/g, '')}" class="text-blue-400 hover:text-blue-300 underline" title="Appeler ${dealPhone}">
+                    ${dealPhone}
                   </a>
                 </p>
               ` : ''}
-              ${deal.client_email ? `
+              ${dealEmail ? `
                 <p class="text-sm mb-1">
                   <i class="fas fa-envelope text-blue-500"></i> 
-                  <a href="mailto:${deal.client_email}" class="text-blue-400 hover:text-blue-300 underline" title="Envoyer un email à ${deal.client_email}">
-                    ${deal.client_email}
+                  <a href="mailto:${dealEmail}" class="text-blue-400 hover:text-blue-300 underline" title="Envoyer un email à ${dealEmail}">
+                    ${dealEmail}
                   </a>
                 </p>
               ` : ''}
@@ -9013,7 +9027,7 @@ async function sendChatMessage() {
     deals: {
       count: state.deals?.length || 0,
       byStatus: state.deals?.reduce((acc, d) => {
-        acc[d.status] = (acc[d.status] || 0) + 1;
+        acc[d.status || d.stage] = (acc[d.status || d.stage] || 0) + 1;
         return acc;
       }, {}) || {}
     },

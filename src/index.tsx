@@ -1048,6 +1048,85 @@ app.post('/api/clients', async (c) => {
   }
 })
 
+// GET /api/clients/:id - Récupérer un client spécifique
+app.get('/api/clients/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const clientId = c.req.param('id')
+    const client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(clientId).first()
+    
+    if (!client) {
+      return c.json({ error: 'Client non trouvé' }, 404)
+    }
+
+    return c.json({ client })
+  } catch (error) {
+    console.error('Error fetching client:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
+// PUT /api/clients/:id - Mettre à jour un client
+app.put('/api/clients/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const clientId = c.req.param('id')
+    const data = await c.req.json()
+    
+    const updates: string[] = []
+    const values: any[] = []
+    
+    if (data.name !== undefined) { updates.push('name = ?'); values.push(data.name) }
+    if (data.email !== undefined) { updates.push('email = ?'); values.push(data.email) }
+    if (data.phone !== undefined) { updates.push('phone = ?'); values.push(data.phone) }
+    if (data.company !== undefined) { updates.push('company = ?'); values.push(data.company) }
+    if (data.status !== undefined) { updates.push('status = ?'); values.push(data.status) }
+    if (data.archived !== undefined) { 
+      try { updates.push('archived = ?'); values.push(data.archived ? 1 : 0) } catch(e) {} 
+    }
+    
+    updates.push('updated_at = CURRENT_TIMESTAMP')
+    values.push(clientId)
+    
+    if (updates.length > 1) {
+      await c.env.DB.prepare(
+        `UPDATE clients SET ${updates.join(', ')} WHERE id = ?`
+      ).bind(...values).run()
+    }
+
+    const client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(clientId).first()
+    return c.json({ client, success: true })
+  } catch (error) {
+    console.error('Error updating client:', error)
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// DELETE /api/clients/:id - Supprimer un client
+app.delete('/api/clients/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const clientId = c.req.param('id')
+    await c.env.DB.prepare('DELETE FROM clients WHERE id = ?').bind(clientId).run()
+    return c.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting client:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
 // ============================================
 // DEALS ROUTES
 // ============================================
@@ -1073,7 +1152,39 @@ app.get('/api/deals', async (c) => {
       deals = await c.env.DB.prepare('SELECT * FROM deals ORDER BY created_at DESC').all()
     }
 
-    return c.json({ deals: deals.results || [] })
+    // Enrichir les deals avec les infos client + compatibilité ancien format
+    const enrichedDeals = await Promise.all(
+      (deals.results || []).map(async (deal: any) => {
+        let client = null
+        if (deal.client_id) {
+          try {
+            client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(deal.client_id).first()
+          } catch (e) {
+            // ignore
+          }
+        }
+        
+        // Ajouter les propriétés de compatibilité avec l'ancien format du frontend
+        return {
+          ...deal,
+          // Compatibilité: le frontend utilise 'status' mais la DB utilise 'stage'
+          status: deal.stage || deal.status || 'lead',
+          // Compatibilité: ancien format avec first_name/last_name
+          first_name: client?.name?.split(' ')[0] || deal.title?.split(' ')[0] || '',
+          last_name: client?.name?.split(' ').slice(1).join(' ') || '',
+          // Compatibilité: infos client
+          email: client?.email || '',
+          phone: client?.phone || '',
+          company: client?.company || '',
+          client_name: client?.name || '',
+          // Compatibilité: montant
+          estimated_amount: deal.amount || 0,
+          type: deal.title || 'Dossier',
+        }
+      })
+    )
+
+    return c.json({ deals: enrichedDeals })
   } catch (error) {
     console.error('Error fetching deals:', error)
     return c.json({ deals: [] })
@@ -1146,6 +1257,136 @@ app.post('/api/deals', async (c) => {
   } catch (error) {
     console.error('❌ Error creating deal:', error)
     return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// GET /api/deals/priority - Deals prioritaires
+app.get('/api/deals/priority', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    let deals
+    try {
+      deals = await c.env.DB.prepare(
+        'SELECT * FROM deals WHERE (archived IS NULL OR archived = 0) ORDER BY created_at DESC LIMIT 20'
+      ).all()
+    } catch (e) {
+      deals = await c.env.DB.prepare('SELECT * FROM deals ORDER BY created_at DESC LIMIT 20').all()
+    }
+
+    return c.json({ deals: deals.results || [], priorities: [] })
+  } catch (error) {
+    console.error('Error fetching priority deals:', error)
+    return c.json({ deals: [], priorities: [] })
+  }
+})
+
+// GET /api/deals/:id - Récupérer un deal spécifique
+app.get('/api/deals/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const dealId = c.req.param('id')
+    const deal: any = await c.env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(dealId).first()
+    
+    if (!deal) {
+      return c.json({ error: 'Deal non trouvé' }, 404)
+    }
+
+    // Enrichir avec les infos client
+    let client = null
+    if (deal.client_id) {
+      try {
+        client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(deal.client_id).first() as any
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const enrichedDeal = {
+      ...deal,
+      status: deal.stage || deal.status || 'lead',
+      first_name: client?.name?.split(' ')[0] || deal.title?.split(' ')[0] || '',
+      last_name: client?.name?.split(' ').slice(1).join(' ') || '',
+      email: client?.email || '',
+      phone: client?.phone || '',
+      company: client?.company || '',
+      client_name: client?.name || '',
+      client_email: client?.email || '',
+      client_phone: client?.phone || '',
+      estimated_amount: deal.amount || 0,
+      type: deal.title || 'Dossier',
+    }
+
+    return c.json({ deal: enrichedDeal })
+  } catch (error) {
+    console.error('Error fetching deal:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
+// PUT /api/deals/:id - Mettre à jour un deal
+app.put('/api/deals/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const dealId = c.req.param('id')
+    const data = await c.req.json()
+    
+    // Construire dynamiquement la requête UPDATE
+    const updates: string[] = []
+    const values: any[] = []
+    
+    if (data.title !== undefined) { updates.push('title = ?'); values.push(data.title) }
+    if (data.amount !== undefined) { updates.push('amount = ?'); values.push(data.amount) }
+    if (data.stage !== undefined) { updates.push('stage = ?'); values.push(data.stage) }
+    if (data.status !== undefined) { updates.push('stage = ?'); values.push(data.status) } // map status -> stage
+    if (data.probability !== undefined) { updates.push('probability = ?'); values.push(data.probability) }
+    if (data.expected_close_date !== undefined) { updates.push('expected_close_date = ?'); values.push(data.expected_close_date) }
+    if (data.notes !== undefined) { updates.push('notes = ?'); values.push(data.notes) }
+    if (data.client_id !== undefined) { updates.push('client_id = ?'); values.push(data.client_id) }
+    if (data.archived !== undefined) { 
+      try { updates.push('archived = ?'); values.push(data.archived ? 1 : 0) } catch(e) {} 
+    }
+    
+    updates.push('updated_at = CURRENT_TIMESTAMP')
+    values.push(dealId)
+    
+    await c.env.DB.prepare(
+      `UPDATE deals SET ${updates.join(', ')} WHERE id = ?`
+    ).bind(...values).run()
+
+    const deal = await c.env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(dealId).first()
+    return c.json({ deal, success: true })
+  } catch (error) {
+    console.error('Error updating deal:', error)
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// DELETE /api/deals/:id - Supprimer un deal
+app.delete('/api/deals/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const dealId = c.req.param('id')
+    await c.env.DB.prepare('DELETE FROM deals WHERE id = ?').bind(dealId).run()
+    return c.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting deal:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
   }
 })
 
