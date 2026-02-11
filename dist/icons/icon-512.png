@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fond bleu -->
+  <rect width="512" height="512" fill="#2563eb" rx="80"/>
+  
+  <!-- Forme géométrique de renard/loup (inspiré de ton logo) -->
+  <g transform="translate(256, 256)">
+    <!-- Tête géométrique -->
+    <path d="M 0,-120 L 80,-60 L 80,40 L 40,100 L -40,100 L -80,40 L -80,-60 Z" 
+          fill="none" stroke="white" stroke-width="12" stroke-linejoin="miter"/>
+    
+    <!-- Oreilles -->
+    <path d="M -80,-60 L -60,-140 L -20,-80 Z" 
+          fill="none" stroke="white" stroke-width="12" stroke-linejoin="miter"/>
+    <path d="M 80,-60 L 60,-140 L 20,-80 Z" 
+          fill="none" stroke="white" stroke-width="12" stroke-linejoin="miter"/>
+    
+    <!-- Yeux géométriques -->
+    <path d="M -45,-20 L -35,-10 L -45,0 L -55,-10 Z" 
+          fill="white" stroke="white" stroke-width="4"/>
+    <path d="M 45,-20 L 55,-10 L 45,0 L 35,-10 Z" 
+          fill="white" stroke="white" stroke-width="4"/>
+    
+    <!-- Museau -->
+    <path d="M -20,30 L 0,60 L 20,30 L 0,40 Z" 
+          fill="none" stroke="white" stroke-width="10" stroke-linejoin="miter"/>
+    
+    <!-- Détails centraux -->
+    <line x1="0" y1="-60" x2="0" y2="30" stroke="white" stroke-width="8"/>
+    <line x1="-40" y1="-20" x2="0" y2="0" stroke="white" stroke-width="6"/>
+    <line x1="40" y1="-20" x2="0" y2="0" stroke="white" stroke-width="6"/>
+  </g>
+  
+  <!-- Texte KARL -->
+  <text x="256" y="440" font-family="Arial, sans-serif" font-size="60" font-weight="bold" 
+        fill="white" text-anchor="middle">KARL</text>
+</svg>
