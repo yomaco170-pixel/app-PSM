@@ -1343,36 +1343,71 @@ app.put('/api/deals/:id', async (c) => {
 
     const dealId = c.req.param('id')
     const data = await c.req.json()
+    console.log(`📝 PUT /api/deals/${dealId}:`, JSON.stringify(data))
     
     // Construire dynamiquement la requête UPDATE
     const updates: string[] = []
     const values: any[] = []
     
+    // Champs de base (colonnes toujours présentes)
+    const stageValue = data.stage || data.status // Accepter les deux noms
+    if (stageValue !== undefined) { updates.push('stage = ?'); values.push(stageValue) }
     if (data.title !== undefined) { updates.push('title = ?'); values.push(data.title) }
     if (data.amount !== undefined) { updates.push('amount = ?'); values.push(data.amount) }
-    if (data.stage !== undefined) { updates.push('stage = ?'); values.push(data.stage) }
-    if (data.status !== undefined) { updates.push('stage = ?'); values.push(data.status) } // map status -> stage
     if (data.probability !== undefined) { updates.push('probability = ?'); values.push(data.probability) }
     if (data.expected_close_date !== undefined) { updates.push('expected_close_date = ?'); values.push(data.expected_close_date) }
     if (data.notes !== undefined) { updates.push('notes = ?'); values.push(data.notes) }
     if (data.client_id !== undefined) { updates.push('client_id = ?'); values.push(data.client_id) }
-    if (data.rdv_date !== undefined) { updates.push('rdv_date = ?'); values.push(data.rdv_date) }
-    if (data.rdv_notes !== undefined) { updates.push('rdv_notes = ?'); values.push(data.rdv_notes) }
-    if (data.archived !== undefined) { 
-      try { updates.push('archived = ?'); values.push(data.archived ? 1 : 0) } catch(e) {} 
+    if (data.archived !== undefined) { updates.push('archived = ?'); values.push(data.archived ? 1 : 0) }
+    
+    // Champs RDV (colonnes qui peuvent ne pas exister)
+    const hasRdvFields = data.rdv_date !== undefined || data.rdv_notes !== undefined
+    if (hasRdvFields) {
+      // D'abord essayer d'ajouter les colonnes si elles n'existent pas
+      try { await c.env.DB.prepare('ALTER TABLE deals ADD COLUMN rdv_date TEXT').run() } catch(e) {}
+      try { await c.env.DB.prepare('ALTER TABLE deals ADD COLUMN rdv_notes TEXT').run() } catch(e) {}
+      
+      if (data.rdv_date !== undefined) { updates.push('rdv_date = ?'); values.push(data.rdv_date) }
+      if (data.rdv_notes !== undefined) { updates.push('rdv_notes = ?'); values.push(data.rdv_notes) }
     }
     
     updates.push('updated_at = CURRENT_TIMESTAMP')
     values.push(dealId)
     
+    console.log(`📝 SQL: UPDATE deals SET ${updates.join(', ')} WHERE id = ?`, values)
+    
     await c.env.DB.prepare(
       `UPDATE deals SET ${updates.join(', ')} WHERE id = ?`
     ).bind(...values).run()
 
-    const deal = await c.env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(dealId).first()
-    return c.json({ deal, success: true })
+    // Retourner le deal enrichi
+    const deal: any = await c.env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(dealId).first()
+    
+    // Enrichir avec infos client
+    let client = null
+    if (deal?.client_id) {
+      try { client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(deal.client_id).first() as any } catch(e) {}
+    }
+    
+    const enrichedDeal = {
+      ...deal,
+      status: deal?.stage || 'lead',
+      first_name: client?.name?.split(' ')[0] || deal?.title?.split(' ')[0] || '',
+      last_name: client?.name?.split(' ').slice(1).join(' ') || '',
+      client_name: client?.name || '',
+      client_email: client?.email || '',
+      client_phone: client?.phone || '',
+      email: client?.email || '',
+      phone: client?.phone || '',
+      company: client?.company || '',
+      estimated_amount: deal?.amount || 0,
+      type: deal?.title || 'Dossier',
+    }
+    
+    console.log(`✅ Deal ${dealId} mis à jour:`, JSON.stringify(enrichedDeal))
+    return c.json({ deal: enrichedDeal, success: true })
   } catch (error) {
-    console.error('Error updating deal:', error)
+    console.error('❌ Error updating deal:', error)
     return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })

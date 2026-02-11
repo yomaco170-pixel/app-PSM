@@ -7643,7 +7643,10 @@ async function exportRdvToAppleCalendar(dealId) {
     const deal = await api.getDeal(dealId);
     
     if (!deal.rdv_date) {
-      alert('❌ Pas de RDV planifié pour ce dossier !');
+      if (confirm('❌ Pas de RDV planifié pour ce dossier !\n\nVoulez-vous planifier un RDV maintenant ?')) {
+        closeModal();
+        openScheduleRdvModal(dealId);
+      }
       return;
     }
     
@@ -7675,7 +7678,10 @@ async function exportRdvToCalendar(dealId) {
     const deal = await api.getDeal(dealId);
     
     if (!deal.rdv_date) {
-      alert('❌ Pas de RDV planifié pour ce dossier !');
+      if (confirm('❌ Pas de RDV planifié pour ce dossier !\n\nVoulez-vous planifier un RDV maintenant ?')) {
+        closeModal();
+        openScheduleRdvModal(dealId);
+      }
       return;
     }
     
@@ -7764,7 +7770,10 @@ async function exportRdvToGoogleCalendar(dealId) {
     const deal = await api.getDeal(dealId);
     
     if (!deal.rdv_date) {
-      alert('❌ Pas de RDV planifié pour ce dossier !');
+      if (confirm('❌ Pas de RDV planifié pour ce dossier !\n\nVoulez-vous planifier un RDV maintenant ?')) {
+        closeModal();
+        openScheduleRdvModal(dealId);
+      }
       return;
     }
     
