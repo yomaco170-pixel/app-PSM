@@ -29,6 +29,75 @@ async function hashPassword(password: string): Promise<string> {
   return hashHex
 }
 
+// GET /api/init-db - Initialiser les tables leads et clients
+app.get('/api/init-db', async (c) => {
+  try {
+    const db = c.env.DB
+    
+    console.log('🔄 Initialisation des tables leads et clients...')
+    
+    // Créer la table leads
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        source_ref TEXT NOT NULL UNIQUE,
+        from_name TEXT,
+        from_email TEXT,
+        subject TEXT,
+        snippet TEXT,
+        body TEXT,
+        stage TEXT NOT NULL DEFAULT 'new',
+        priority TEXT DEFAULT 'normal',
+        confidence INTEGER DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME DEFAULT (datetime('now'))
+      )
+    `).run()
+    
+    // Créer les index pour leads
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS idx_leads_stage ON leads(stage)
+    `).run()
+    
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS idx_leads_from_email ON leads(from_email)
+    `).run()
+    
+    // Créer la table clients avec lead_id
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id INTEGER,
+        name TEXT,
+        email TEXT UNIQUE,
+        phone TEXT,
+        company TEXT,
+        created_at DATETIME DEFAULT (datetime('now')),
+        FOREIGN KEY (lead_id) REFERENCES leads(id)
+      )
+    `).run()
+    
+    // Créer l'index pour clients
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS idx_clients_lead_id ON clients(lead_id)
+    `).run()
+    
+    console.log('✅ Tables leads et clients initialisées')
+    
+    return c.json({ 
+      success: true, 
+      message: 'Tables leads et clients initialisées avec succès' 
+    })
+  } catch (error) {
+    console.error('❌ Erreur init-db:', error)
+    return c.json({ 
+      error: 'Erreur lors de l\'initialisation de la base de données',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ============================================
 // AUTH ROUTES
 // ============================================

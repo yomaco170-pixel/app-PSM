@@ -6416,11 +6416,11 @@ async function createLeadFromEmail(index) {
     return;
   }
   
-  // Extraire le nom depuis l'email (before @)
+  // Extraire le nom et l'email depuis l'email source
   const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
   const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
   
-  // Créer le lead
+  // Créer le lead via /api/leads (avec anti-doublon automatique)
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -6428,99 +6428,84 @@ async function createLeadFromEmail(index) {
       return;
     }
     
-    console.log('🔄 Création du client...', { fromName, fromEmail });
+    console.log('🔄 Création du lead depuis email...', { fromName, fromEmail, emailId: email.id });
     
-    // Créer un client d'abord
-    const clientResponse = await fetch('/api/clients', {
+    // Créer le lead directement (anti-doublon sur source_ref = email.id)
+    const leadResponse = await fetch('/api/leads', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        name: fromName,
-        email: fromEmail,
-        phone: '',
-        company: '',
-        status: 'lead'
+        source: 'email',
+        source_ref: email.id,  // ID Gmail unique = anti-doublon
+        from_name: fromName,
+        from_email: fromEmail,
+        subject: email.subject || '(Sans objet)',
+        snippet: email.snippet || '',
+        body: email.snippet || '',  // On pourrait récupérer le body complet plus tard
+        stage: 'new',
+        priority: email.category === 'urgent' ? 'high' : 'normal'
       })
     });
     
-    if (!clientResponse.ok) {
-      const errorData = await clientResponse.json().catch(() => ({}));
-      console.error('❌ Erreur création client:', errorData);
-      throw new Error(errorData.error || 'Erreur création client');
+    if (!leadResponse.ok) {
+      const errorData = await leadResponse.json().catch(() => ({}));
+      console.error('❌ Erreur création lead:', errorData);
+      throw new Error(errorData.error || 'Erreur création lead');
     }
     
-    const client = await clientResponse.json();
-    console.log('✅ Client créé:', client);
+    const result = await leadResponse.json();
+    const { lead, created } = result;
     
-    // Créer le deal (Lead)
-    console.log('🔄 Création du deal...');
-    const dealResponse = await fetch('/api/deals', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        client_id: client.id,
-        title: email.subject || 'Demande depuis email',
-        amount: 0,
-        stage: 'lead',
-        probability: 30,
-        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `Email reçu le ${new Date(email.date).toLocaleDateString('fr-FR')}\n\nDe: ${email.from}\n\nContenu:\n${email.snippet}\n\n🎯 ACTION: Appeler pour caler le RDV`
-      })
-    });
+    console.log('✅ Lead:', created ? 'créé' : 'existant', lead);
     
-    if (!dealResponse.ok) {
-      const errorData = await dealResponse.json().catch(() => ({}));
-      console.error('❌ Erreur création deal:', errorData);
-      throw new Error(errorData.error || 'Erreur création deal');
-    }
-    
-    const deal = await dealResponse.json();
-    console.log('✅ Deal créé:', deal);
-    
-    // Succès ! Afficher confirmation et rediriger
+    // Succès ! Afficher confirmation
     const confirmHTML = `
       <div class="modal-backdrop" id="lead-confirm-modal">
         <div class="modal-content" style="max-width: 500px;">
           <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <h3><i class="fas fa-check-circle"></i> Lead créé !</h3>
+            <h3><i class="fas fa-check-circle"></i> ${created ? 'Lead créé !' : 'Lead existant'}</h3>
           </div>
           
           <div class="modal-body">
             <div style="text-align: center; padding: 2rem;">
-              <i class="fas fa-check-circle text-green-500" style="font-size: 4rem;"></i>
-              <h4 class="text-white mt-4 mb-2">Lead créé avec succès !</h4>
+              <i class="fas fa-${created ? 'check-circle text-green-500' : 'info-circle text-blue-500'}" style="font-size: 4rem;"></i>
+              <h4 class="text-white mt-4 mb-2">${created ? 'Lead créé avec succès !' : 'Ce lead existe déjà'}</h4>
               <p class="text-gray-400 mb-4">
-                <strong>${fromName}</strong> a été ajouté au Pipeline
+                <strong>${lead.from_name}</strong> ${created ? 'a été ajouté au' : 'est déjà dans le'} Pipeline
               </p>
               <div class="card" style="text-align: left; margin-top: 1rem;">
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Client :</strong> ${client.name}
+                  <strong>Nom :</strong> ${lead.from_name}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Email :</strong> ${client.email}
+                  <strong>Email :</strong> ${lead.from_email}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Sujet :</strong> ${deal.title}
+                  <strong>Sujet :</strong> ${lead.subject}
                 </div>
                 <div class="text-sm text-gray-300">
-                  <strong>Stage :</strong> <span class="badge badge-primary">LEAD</span>
+                  <strong>Stage :</strong> <span class="badge badge-${lead.stage === 'new' ? 'primary' : lead.stage === 'qualified' ? 'success' : lead.stage === 'converted' ? 'info' : 'secondary'}">${lead.stage.toUpperCase()}</span>
                 </div>
               </div>
-              <p class="text-yellow-400 mt-4" style="font-weight: bold;">
-                🎯 Prochaine action : Appeler pour caler le RDV !
-              </p>
+              ${lead.stage !== 'converted' ? `
+                <p class="text-yellow-400 mt-4" style="font-weight: bold;">
+                  🎯 Prochaine action : ${lead.stage === 'new' ? 'Appeler pour qualifier le lead !' : 'Convertir en client !'}
+                </p>
+              ` : ''}
+              ${lead.stage !== 'converted' ? `
+                <button class="btn btn-warning mt-4" onclick="convertLeadToClient(${lead.id})">
+                  <i class="fas fa-user-check"></i> Convertir en Client
+                </button>
+              ` : ''}
             </div>
           </div>
           
           <div class="modal-footer">
-            <button class="btn btn-primary" onclick="goToPipeline()">
-              <i class="fas fa-arrow-right"></i> Voir dans Pipeline
+            <button class="btn btn-primary" onclick="goToLeads()">
+              <i class="fas fa-arrow-right"></i> Voir les Leads
             </button>
             <button class="btn btn-secondary" onclick="closeLeadConfirmModal()">
               <i class="fas fa-times"></i> Fermer
@@ -6541,6 +6526,102 @@ async function createLeadFromEmail(index) {
 // Fonction pour fermer la modale de confirmation
 function closeLeadConfirmModal() {
   const modal = document.getElementById('lead-confirm-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// Fonction pour aller aux Leads
+async function goToLeads() {
+  closeLeadConfirmModal();
+  // Pour l'instant, on va au Pipeline
+  // TODO: créer une page dédiée aux Leads
+  navigate('pipeline');
+}
+
+// Fonction pour convertir un Lead en Client
+async function convertLeadToClient(leadId) {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vous devez être connecté');
+      return;
+    }
+    
+    console.log('🔄 Conversion du lead en client...', leadId);
+    
+    const response = await fetch(`/api/leads/${leadId}/convert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Erreur conversion:', errorData);
+      throw new Error(errorData.error || 'Erreur conversion');
+    }
+    
+    const { lead, client } = await response.json();
+    console.log('✅ Lead converti en client:', { lead, client });
+    
+    // Fermer la modale actuelle
+    closeLeadConfirmModal();
+    
+    // Afficher une nouvelle modale de succès
+    const successHTML = `
+      <div class="modal-backdrop" id="convert-success-modal">
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            <h3><i class="fas fa-user-check"></i> Client créé !</h3>
+          </div>
+          
+          <div class="modal-body">
+            <div style="text-align: center; padding: 2rem;">
+              <i class="fas fa-user-check text-blue-500" style="font-size: 4rem;"></i>
+              <h4 class="text-white mt-4 mb-2">Lead converti en Client !</h4>
+              <p class="text-gray-400 mb-4">
+                <strong>${client.name}</strong> est maintenant un client
+              </p>
+              <div class="card" style="text-align: left; margin-top: 1rem;">
+                <div class="text-sm text-gray-300 mb-2">
+                  <strong>Nom :</strong> ${client.name}
+                </div>
+                <div class="text-sm text-gray-300 mb-2">
+                  <strong>Email :</strong> ${client.email}
+                </div>
+                <div class="text-sm text-gray-300">
+                  <strong>Statut :</strong> <span class="badge badge-success">CLIENT</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="btn btn-primary" onclick="closeConvertSuccessModal(); navigate('clients')">
+              <i class="fas fa-users"></i> Voir les Clients
+            </button>
+            <button class="btn btn-secondary" onclick="closeConvertSuccessModal()">
+              <i class="fas fa-times"></i> Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', successHTML);
+    
+  } catch (error) {
+    console.error('Erreur conversion lead:', error);
+    alert('Erreur lors de la conversion : ' + error.message);
+  }
+}
+
+// Fonction pour fermer la modale de succès de conversion
+function closeConvertSuccessModal() {
+  const modal = document.getElementById('convert-success-modal');
   if (modal) {
     modal.remove();
   }
