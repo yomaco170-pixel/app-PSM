@@ -5942,6 +5942,31 @@ async function renderMails() {
     
     const emails = data.emails || [];
     
+    // Classifier les emails automatiquement
+    const classifyEmail = (email) => {
+      const subject = (email.subject || '').toLowerCase();
+      const from = (email.from || '').toLowerCase();
+      const snippet = (email.snippet || '').toLowerCase();
+      const content = subject + ' ' + from + ' ' + snippet;
+      
+      if (content.match(/devis|quotation|quote|estimation|prix/)) return 'devis';
+      if (content.match(/facture|invoice|payment|paiement|règlement/)) return 'factures';
+      if (content.match(/commande|order|achat|livraison/)) return 'commandes';
+      if (content.match(/client|customer|psm|portail/)) return 'clients';
+      if (content.match(/fournisseur|supplier|vendor/)) return 'fournisseurs';
+      if (content.match(/urgent|important|asap/)) return 'urgent';
+      return 'autres';
+    };
+    
+    // Ajouter la catégorie à chaque email
+    emails.forEach(email => {
+      email.category = classifyEmail(email);
+    });
+    
+    // Stocker les emails dans l'état global
+    window.currentEmails = emails;
+    window.selectedCategory = window.selectedCategory || 'tous';
+    
     // Afficher les emails
     const emailsContainer = document.getElementById('emails-container');
     if (emailsContainer) {
@@ -5953,22 +5978,93 @@ async function renderMails() {
           </div>
         `;
       } else {
+        // Compter par catégorie
+        const categories = {
+          tous: emails.length,
+          devis: emails.filter(e => e.category === 'devis').length,
+          factures: emails.filter(e => e.category === 'factures').length,
+          commandes: emails.filter(e => e.category === 'commandes').length,
+          clients: emails.filter(e => e.category === 'clients').length,
+          fournisseurs: emails.filter(e => e.category === 'fournisseurs').length,
+          urgent: emails.filter(e => e.category === 'urgent').length,
+          autres: emails.filter(e => e.category === 'autres').length
+        };
+        
+        // Filtrer les emails par catégorie sélectionnée
+        const filteredEmails = window.selectedCategory === 'tous' 
+          ? emails 
+          : emails.filter(e => e.category === window.selectedCategory);
+        
         emailsContainer.innerHTML = `
+          <!-- Filtres par catégorie -->
+          <div class="card mb-4">
+            <div class="flex flex-wrap gap-2 p-4">
+              ${Object.entries(categories).map(([cat, count]) => `
+                <button 
+                  class="btn ${window.selectedCategory === cat ? 'btn-primary' : 'btn-secondary'} btn-sm"
+                  onclick="filterEmailsByCategory('${cat}')"
+                >
+                  <i class="fas fa-${cat === 'tous' ? 'inbox' : cat === 'devis' ? 'file-invoice' : cat === 'factures' ? 'receipt' : cat === 'commandes' ? 'shopping-cart' : cat === 'clients' ? 'users' : cat === 'fournisseurs' ? 'truck' : cat === 'urgent' ? 'exclamation-triangle' : 'folder'}"></i>
+                  ${cat.charAt(0).toUpperCase() + cat.slice(1)} (${count})
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          
+          <!-- Liste des emails -->
           <div class="card">
             <div class="emails-list">
-              ${emails.map(email => `
-                <div class="email-item" style="padding: 1rem; border-bottom: 1px solid #374151; cursor: pointer;" onclick="alert('Email: ${email.subject}')">
+              ${filteredEmails.map((email, index) => `
+                <div class="email-item" style="padding: 1rem; border-bottom: 1px solid #374151; cursor: pointer;" onclick="toggleEmailDetails(${index})">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-1">
                         <span class="font-semibold text-white">${email.from || 'Expéditeur inconnu'}</span>
                         ${email.unread ? '<span class="badge badge-primary">Non lu</span>' : ''}
+                        <span class="badge" style="background: ${
+                          email.category === 'urgent' ? '#ef4444' : 
+                          email.category === 'devis' ? '#3b82f6' : 
+                          email.category === 'factures' ? '#10b981' : 
+                          email.category === 'commandes' ? '#f59e0b' : 
+                          email.category === 'clients' ? '#8b5cf6' : 
+                          email.category === 'fournisseurs' ? '#ec4899' : '#6b7280'
+                        };">${email.category}</span>
                       </div>
                       <div class="text-sm text-white mb-1">${email.subject || 'Sans objet'}</div>
                       <div class="text-xs text-gray-400">${email.snippet || ''}</div>
+                      
+                      <!-- Détails de l'email (masqués par défaut) -->
+                      <div id="email-details-${index}" style="display: none; margin-top: 1rem; padding: 1rem; background: #1f2937; border-radius: 0.5rem;">
+                        <div class="text-sm text-gray-300 mb-2">
+                          <strong>De :</strong> ${email.from || 'Inconnu'}
+                        </div>
+                        <div class="text-sm text-gray-300 mb-2">
+                          <strong>Date :</strong> ${new Date(email.date).toLocaleString('fr-FR')}
+                        </div>
+                        <div class="text-sm text-gray-300 mb-2">
+                          <strong>Objet :</strong> ${email.subject || 'Sans objet'}
+                        </div>
+                        <div class="text-sm text-gray-300 mb-3">
+                          <strong>Contenu :</strong>
+                        </div>
+                        <div class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
+                          ${email.snippet || 'Aucun contenu disponible'}
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="flex gap-2 mt-4">
+                          <button class="btn btn-primary btn-sm" onclick="replyToEmail('${email.id}')">
+                            <i class="fas fa-reply"></i> Répondre
+                          </button>
+                          <button class="btn btn-secondary btn-sm" onclick="changeEmailCategory('${email.id}', ${index})">
+                            <i class="fas fa-tag"></i> Changer catégorie
+                          </button>
+                        </div>
+                      </div>
                     </div>
                     <div class="text-xs text-gray-500">
                       ${new Date(email.date).toLocaleDateString('fr-FR')}
+                      <i class="fas fa-chevron-down ml-2" id="email-arrow-${index}"></i>
                     </div>
                   </div>
                 </div>
@@ -6009,6 +6105,63 @@ function disconnectGmail() {
 // Fonction pour rafraîchir les emails
 function refreshEmails() {
   renderMails();
+}
+
+// Fonction pour développer/réduire un email
+function toggleEmailDetails(index) {
+  const detailsDiv = document.getElementById(`email-details-${index}`);
+  const arrowIcon = document.getElementById(`email-arrow-${index}`);
+  
+  if (detailsDiv) {
+    if (detailsDiv.style.display === 'none') {
+      detailsDiv.style.display = 'block';
+      if (arrowIcon) arrowIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+    } else {
+      detailsDiv.style.display = 'none';
+      if (arrowIcon) arrowIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+    }
+  }
+}
+
+// Fonction pour filtrer les emails par catégorie
+function filterEmailsByCategory(category) {
+  window.selectedCategory = category;
+  renderMails();
+}
+
+// Fonction pour changer la catégorie d'un email
+function changeEmailCategory(emailId, index) {
+  const categories = ['devis', 'factures', 'commandes', 'clients', 'fournisseurs', 'urgent', 'autres'];
+  const currentEmail = window.currentEmails.find((e, i) => i === index);
+  
+  const categoryLabels = {
+    devis: 'Devis',
+    factures: 'Factures',
+    commandes: 'Commandes',
+    clients: 'Clients',
+    fournisseurs: 'Fournisseurs',
+    urgent: 'Urgent',
+    autres: 'Autres'
+  };
+  
+  const newCategory = prompt(
+    `Catégorie actuelle : ${categoryLabels[currentEmail.category]}\n\nChoisissez une nouvelle catégorie :\n\n` +
+    categories.map((cat, i) => `${i+1}. ${categoryLabels[cat]}`).join('\n'),
+    '1'
+  );
+  
+  if (newCategory) {
+    const catIndex = parseInt(newCategory) - 1;
+    if (catIndex >= 0 && catIndex < categories.length) {
+      currentEmail.category = categories[catIndex];
+      renderMails();
+    }
+  }
+}
+
+// Fonction pour répondre à un email (placeholder)
+function replyToEmail(emailId) {
+  alert('Fonctionnalité de réponse en cours de développement.\n\nBientôt disponible : répondre directement depuis KARL CRM !');
 }
 
 async function viewEmailDetail(emailId) {
