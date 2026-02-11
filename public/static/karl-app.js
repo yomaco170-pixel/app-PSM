@@ -6023,6 +6023,35 @@ async function renderMails() {
       });
     }
     
+    // Charger les catégories manuellement modifiées depuis la base
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const savedCategoriesResponse = await fetch('/api/emails/get-categories', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (savedCategoriesResponse.ok) {
+          const savedData = await savedCategoriesResponse.json();
+          const savedCategories = savedData.categories || {};
+          
+          // Remplacer les catégories par celles sauvegardées
+          emails.forEach(email => {
+            if (savedCategories[email.id]) {
+              email.category = savedCategories[email.id];
+              email.manually_classified = true;
+            }
+          });
+          
+          console.log('✅ Catégories sauvegardées chargées:', Object.keys(savedCategories).length);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Impossible de charger les catégories sauvegardées:', error);
+    }
+    
     // Stocker les emails dans l'état global
     window.currentEmails = emails;
     window.selectedCategory = window.selectedCategory || 'tous';
@@ -6337,10 +6366,57 @@ function closeCategoryModal() {
 }
 
 // Fonction pour sélectionner une catégorie
-function selectCategory(category, index) {
-  window.currentEmails[index].category = category;
-  closeCategoryModal();
-  renderMails();
+async function selectCategory(category, index) {
+  const email = window.currentEmails[index];
+  
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vous devez être connecté');
+      return;
+    }
+    
+    console.log('🔄 Changement de catégorie...', { 
+      emailId: email.id, 
+      oldCategory: email.category, 
+      newCategory: category 
+    });
+    
+    // Sauvegarder le changement de catégorie via l'API
+    const response = await fetch('/api/emails/update-category', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        emailId: email.id,
+        category: category
+      })
+    });
+    
+    if (!response.ok) {
+      console.warn('⚠️ Impossible de sauvegarder en base, changement local uniquement');
+    } else {
+      console.log('✅ Catégorie sauvegardée en base');
+    }
+    
+    // Mettre à jour localement
+    window.currentEmails[index].category = category;
+    
+    // Fermer la modale et rafraîchir l'affichage
+    closeCategoryModal();
+    renderMails();
+    
+    console.log('✅ Catégorie changée avec succès');
+    
+  } catch (error) {
+    console.error('❌ Erreur changement catégorie:', error);
+    // Continuer quand même avec le changement local
+    window.currentEmails[index].category = category;
+    closeCategoryModal();
+    renderMails();
+  }
 }
 
 // Fonction pour voir le fil complet d'une conversation
