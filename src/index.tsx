@@ -485,7 +485,12 @@ Contenu : ${email.snippet}
 
 ${instruction}
 
-Rédige une réponse appropriée en français. Commence directement par le contenu de la réponse (pas de "Cher X," si l'email original n'est pas formel). Sois naturel et professionnel.`
+Rédige une réponse appropriée en français. Commence directement par le contenu de la réponse (pas de "Cher X," si l'email original n'est pas formel). Sois naturel et professionnel.
+
+IMPORTANT : Termine TOUJOURS la réponse par :
+
+Cordialement,
+Guillaume PINOIT PSM`
 
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: 'POST',
