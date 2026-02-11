@@ -746,7 +746,8 @@ app.post('/api/clients', async (c) => {
 
     return c.json({ id: result.meta.last_row_id, ...data }, 201)
   } catch (error) {
-    return c.json({ error: 'Erreur serveur' }, 500)
+    console.error('Error creating client:', error)
+    return c.json({ error: 'Erreur serveur', details: error.message }, 500)
   }
 })
 

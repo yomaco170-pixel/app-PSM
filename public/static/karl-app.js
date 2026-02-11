@@ -6442,8 +6442,7 @@ async function createLeadFromEmail(index) {
         email: fromEmail,
         phone: '',
         company: '',
-        address: '',
-        notes: `Lead créé depuis email:\n\nObjet: ${email.subject}\n\nContenu: ${email.snippet}`
+        status: 'lead'
       })
     });
     
