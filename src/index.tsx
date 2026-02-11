@@ -341,7 +341,7 @@ Ne rajoute AUCUN texte avant ou après le JSON.`
               'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-              model: 'gpt-5-mini',
+              model: 'gpt-4o-mini',
               messages: [
                 { role: 'system', content: 'Tu es un assistant de classification d\'emails. Réponds UNIQUEMENT en JSON valide.' },
                 { role: 'user', content: prompt }
