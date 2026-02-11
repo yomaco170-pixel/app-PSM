@@ -7713,12 +7713,27 @@ async function exportRdvToCalendar(dealId) {
                 .replace(/\n/g, '\\n');
     };
     
-    // Build .ics content
-    const title = `RDV ${deal.type} - ${deal.first_name} ${deal.last_name}`;
-    const description = deal.rdv_notes ? escapeICS(deal.rdv_notes) : 'RDV client';
-    const location = deal.client_address ? escapeICS(deal.client_address) : '';
-    const clientPhone = deal.client_phone ? `\nTél: ${deal.client_phone}` : '';
-    const clientEmail = deal.client_email ? `\nEmail: ${deal.client_email}` : '';
+    // Build .ics content - Coordonnées complètes
+    const clientName = deal.client_name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || 'Client';
+    const dealType = deal.type || deal.title || 'Dossier';
+    const title = `RDV ${dealType} - ${clientName}`;
+    const location = (deal.client_address || deal.address || '');
+    
+    // Description complète avec TOUTES les coordonnées
+    const descParts = [];
+    if (deal.rdv_notes) descParts.push(deal.rdv_notes);
+    descParts.push('');
+    descParts.push(`--- Client ---`);
+    descParts.push(clientName);
+    if (deal.client_phone || deal.phone) descParts.push(`Tel: ${deal.client_phone || deal.phone}`);
+    if (deal.client_email || deal.email) descParts.push(`Email: ${deal.client_email || deal.email}`);
+    if (location) descParts.push(`Adresse: ${location}`);
+    if (deal.company) descParts.push(`Societe: ${deal.company}`);
+    descParts.push('');
+    descParts.push(`Dossier #${dealId} - ${dealType}`);
+    if (deal.estimated_amount) descParts.push(`Montant estime: ${deal.estimated_amount} EUR`);
+    
+    const description = escapeICS(descParts.join('\n'));
     
     const icsContent = [
       'BEGIN:VCALENDAR',
@@ -7734,8 +7749,8 @@ async function exportRdvToCalendar(dealId) {
       `DTSTART:${startICS}`,
       `DTEND:${endICS}`,
       `SUMMARY:${escapeICS(title)}`,
-      `DESCRIPTION:${description}${clientPhone}${clientEmail}\n\nDossier #${dealId}`,
-      location ? `LOCATION:${location}` : '',
+      `DESCRIPTION:${description}`,
+      location ? `LOCATION:${escapeICS(location)}` : '',
       'STATUS:CONFIRMED',
       'SEQUENCE:0',
       'BEGIN:VALARM',
@@ -7752,7 +7767,7 @@ async function exportRdvToCalendar(dealId) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `RDV_${deal.first_name}_${deal.last_name}_${rdvDate.toISOString().slice(0, 10)}.ics`;
+    link.download = `RDV_${clientName.replace(/\s/g, '_')}_${rdvDate.toISOString().slice(0, 10)}.ics`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -7789,16 +7804,24 @@ async function exportRdvToGoogleCalendar(dealId) {
       return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
     };
     
-    const title = `RDV ${deal.type} - ${deal.first_name} ${deal.last_name}`;
-    const description = [
-      deal.rdv_notes || 'RDV client',
-      '',
-      `Dossier #${dealId}`,
-      deal.client_phone ? `Tél: ${deal.client_phone}` : '',
-      deal.client_email ? `Email: ${deal.client_email}` : ''
-    ].filter(line => line).join('\n');
+    const clientName = deal.client_name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || 'Client';
+    const dealType = deal.type || deal.title || 'Dossier';
+    const title = `RDV ${dealType} - ${clientName}`;
+    const location = deal.client_address || deal.address || '';
     
-    const location = deal.client_address || '';
+    // Description complète avec coordonnées
+    const descParts = [];
+    if (deal.rdv_notes) descParts.push(deal.rdv_notes);
+    descParts.push('');
+    descParts.push(`--- Client ---`);
+    descParts.push(clientName);
+    if (deal.client_phone || deal.phone) descParts.push(`Tél: ${deal.client_phone || deal.phone}`);
+    if (deal.client_email || deal.email) descParts.push(`Email: ${deal.client_email || deal.email}`);
+    if (location) descParts.push(`Adresse: ${location}`);
+    if (deal.company) descParts.push(`Société: ${deal.company}`);
+    descParts.push('');
+    descParts.push(`Dossier #${dealId} - ${dealType}`);
+    const description = descParts.filter(line => line !== undefined).join('\n');
     
     // Build Google Calendar URL
     const googleUrl = new URL('https://calendar.google.com/calendar/render');
