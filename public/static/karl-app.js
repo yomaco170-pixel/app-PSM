@@ -7889,17 +7889,24 @@ function openChangeStatusModal(dealId, currentStatus) {
   ];
   
   const statusOptions = statuses.map(s => `
-    <label class="card mb-2" style="cursor: pointer; padding: 0.75rem; border-left: 4px solid ${s.color}; ${s.key === currentStatus ? 'background: rgba(59, 130, 246, 0.2); border: 2px solid #3b82f6;' : ''}">
+    <label style="
+      display: flex; align-items: center; gap: 0.75rem;
+      cursor: pointer; padding: 0.85rem 1rem; margin-bottom: 0.5rem;
+      border-radius: 8px; border-left: 4px solid ${s.color};
+      background: ${s.key === currentStatus ? 'rgba(59, 130, 246, 0.15)' : '#1e293b'};
+      border: ${s.key === currentStatus ? '2px solid #3b82f6' : '1px solid #374151'};
+      transition: background 0.2s;
+    " onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background='${s.key === currentStatus ? 'rgba(59,130,246,0.15)' : '#1e293b'}'">
       <input 
         type="radio" 
         name="status" 
         value="${s.key}" 
         ${s.key === currentStatus ? 'checked' : ''}
-        style="margin-right: 0.5rem;"
+        style="width: 18px; height: 18px; flex-shrink: 0;"
       />
-      <i class="fas ${s.icon}" style="color: ${s.color}; margin-right: 0.5rem;"></i>
-      <strong>${s.label}</strong>
-      ${s.key === currentStatus ? '<span style="color: #10b981; margin-left: 0.5rem;">(actuel)</span>' : ''}
+      <i class="fas ${s.icon}" style="color: ${s.color}; font-size: 1.1rem; width: 20px; text-align: center; flex-shrink: 0;"></i>
+      <strong style="color: white; flex: 1;">${s.label}</strong>
+      ${s.key === currentStatus ? '<span style="color: #10b981; font-size: 0.8rem; flex-shrink: 0;">(actuel)</span>' : ''}
     </label>
   `).join('');
   
