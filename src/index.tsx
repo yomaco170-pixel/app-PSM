@@ -426,8 +426,33 @@ app.post('/api/init-db', async (c) => {
         updated_at DATETIME DEFAULT (datetime('now'))
       )
     `).run()
+
+    // ============================================
+    // MIGRATION: Ajouter colonnes manquantes si tables existaient déjà
+    // ============================================
+    const safeAddColumn = async (table: string, column: string, definition: string) => {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run()
+        console.log(`✅ Colonne ${column} ajoutée à ${table}`)
+      } catch (e) {
+        // Colonne existe déjà - c'est OK
+      }
+    }
+
+    // Clients: ajouter colonnes potentiellement manquantes
+    await safeAddColumn('clients', 'status', "TEXT DEFAULT 'lead'")
+    await safeAddColumn('clients', 'archived', 'INTEGER DEFAULT 0')
+    await safeAddColumn('clients', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
+    await safeAddColumn('clients', 'lead_id', 'INTEGER')
+    await safeAddColumn('clients', 'name', 'TEXT')
+
+    // Deals: ajouter colonnes potentiellement manquantes  
+    await safeAddColumn('deals', 'archived', 'INTEGER DEFAULT 0')
+    await safeAddColumn('deals', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
+    await safeAddColumn('deals', 'probability', 'INTEGER DEFAULT 30')
+    await safeAddColumn('deals', 'notes', 'TEXT')
     
-    console.log('✅ Database tables initialized')
+    console.log('✅ Database tables initialized + migrations applied')
     
     return c.json({ 
       success: true, 
@@ -929,14 +954,21 @@ app.get('/api/clients', async (c) => {
 
     const archived = c.req.query('archived') === 'true'
 
-    const query = archived 
-      ? 'SELECT * FROM clients WHERE archived = 1 ORDER BY created_at DESC'
-      : 'SELECT * FROM clients WHERE (archived IS NULL OR archived = 0) ORDER BY created_at DESC'
-
-    const clients = await c.env.DB.prepare(query).all()
+    let clients
+    try {
+      const query = archived 
+        ? 'SELECT * FROM clients WHERE archived = 1 ORDER BY created_at DESC'
+        : 'SELECT * FROM clients WHERE (archived IS NULL OR archived = 0) ORDER BY created_at DESC'
+      clients = await c.env.DB.prepare(query).all()
+    } catch (queryError) {
+      // Fallback si la colonne archived n'existe pas
+      console.log('⚠️ Colonne archived manquante, fallback sans filtre')
+      clients = await c.env.DB.prepare('SELECT * FROM clients ORDER BY created_at DESC').all()
+    }
 
     return c.json({ clients: clients.results || [] })
   } catch (error) {
+    console.error('Error fetching clients:', error)
     return c.json({ clients: [] })
   }
 })
@@ -963,19 +995,55 @@ app.post('/api/clients', async (c) => {
     }
 
     // Créer le nouveau client
-    const result = await c.env.DB.prepare(
-      'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
-    ).bind(
-      data.name || null,
-      data.email || null,
-      data.phone || null,
-      data.company || null,
-      data.status || 'lead'
-    ).run()
+    console.log('📝 Création client:', { name: data.name, email: data.email })
+    
+    try {
+      const result = await c.env.DB.prepare(
+        'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
+      ).bind(
+        data.name || null,
+        data.email || null,
+        data.phone || null,
+        data.company || null,
+        data.status || 'lead'
+      ).run()
 
-    return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      console.log('✅ Client créé, id:', result.meta.last_row_id)
+      return c.json({ id: result.meta.last_row_id, ...data }, 201)
+    } catch (insertError) {
+      const errMsg = insertError instanceof Error ? insertError.message : String(insertError)
+      console.error('❌ Erreur INSERT client:', errMsg)
+      
+      // Si UNIQUE constraint failed, retourner le client existant
+      if (errMsg.includes('UNIQUE constraint failed')) {
+        console.log('🔄 UNIQUE constraint - recherche client existant pour', data.email)
+        const existing = await c.env.DB.prepare(
+          'SELECT * FROM clients WHERE email = ? LIMIT 1'
+        ).bind(data.email).first()
+        
+        if (existing) {
+          return c.json({ id: existing.id, ...existing, _existing: true }, 200)
+        }
+      }
+      
+      // Si colonne manquante, essayer sans 'status'
+      if (errMsg.includes('no column named')) {
+        console.log('🔄 Colonne manquante, retry sans status...')
+        const result = await c.env.DB.prepare(
+          'INSERT INTO clients (name, email, phone, company) VALUES (?, ?, ?, ?)'
+        ).bind(
+          data.name || null,
+          data.email || null,
+          data.phone || null,
+          data.company || null
+        ).run()
+        return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      }
+      
+      throw insertError
+    }
   } catch (error) {
-    console.error('Error creating client:', error)
+    console.error('❌ Error creating client:', error)
     return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
@@ -993,11 +1061,17 @@ app.get('/api/deals', async (c) => {
 
     const archived = c.req.query('archived') === 'true'
 
-    const query = archived 
-      ? 'SELECT * FROM deals WHERE archived = 1 ORDER BY created_at DESC'
-      : 'SELECT * FROM deals WHERE (archived IS NULL OR archived = 0) ORDER BY created_at DESC'
-
-    const deals = await c.env.DB.prepare(query).all()
+    let deals
+    try {
+      const query = archived 
+        ? 'SELECT * FROM deals WHERE archived = 1 ORDER BY created_at DESC'
+        : 'SELECT * FROM deals WHERE (archived IS NULL OR archived = 0) ORDER BY created_at DESC'
+      deals = await c.env.DB.prepare(query).all()
+    } catch (queryError) {
+      // Fallback si la colonne archived n'existe pas
+      console.log('⚠️ Colonne archived manquante pour deals, fallback sans filtre')
+      deals = await c.env.DB.prepare('SELECT * FROM deals ORDER BY created_at DESC').all()
+    }
 
     return c.json({ deals: deals.results || [] })
   } catch (error) {
@@ -1028,24 +1102,49 @@ app.post('/api/deals', async (c) => {
     }
 
     const data = await c.req.json()
+    console.log('📝 Création deal:', { title: data.title, client_id: data.client_id, user_id: decoded.id })
 
     // Format unifié : INSERT dans deals avec les colonnes du schéma actuel
-    const result = await c.env.DB.prepare(
-      'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(
-      decoded.id,
-      data.client_id || null,
-      data.title || 'Nouveau dossier',
-      data.amount || 0,
-      data.stage || 'lead',
-      data.probability || 30,
-      data.expected_close_date || null,
-      data.notes || null
-    ).run()
+    try {
+      const result = await c.env.DB.prepare(
+        'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        decoded.id,
+        data.client_id || null,
+        data.title || 'Nouveau dossier',
+        data.amount || 0,
+        data.stage || 'lead',
+        data.probability || 30,
+        data.expected_close_date || null,
+        data.notes || null
+      ).run()
 
-    return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      console.log('✅ Deal créé, id:', result.meta.last_row_id)
+      return c.json({ id: result.meta.last_row_id, ...data }, 201)
+    } catch (insertError) {
+      const errMsg = insertError instanceof Error ? insertError.message : String(insertError)
+      console.error('❌ Erreur INSERT deal:', errMsg)
+      
+      // Si colonne manquante, essayer avec les colonnes de base uniquement
+      if (errMsg.includes('no column named')) {
+        console.log('🔄 Colonne manquante, retry avec colonnes de base...')
+        const result = await c.env.DB.prepare(
+          'INSERT INTO deals (user_id, client_id, title, amount, stage) VALUES (?, ?, ?, ?, ?)'
+        ).bind(
+          decoded.id,
+          data.client_id || null,
+          data.title || 'Nouveau dossier',
+          data.amount || 0,
+          data.stage || 'lead'
+        ).run()
+        console.log('✅ Deal créé (colonnes de base), id:', result.meta.last_row_id)
+        return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      }
+      
+      throw insertError
+    }
   } catch (error) {
-    console.error('Error creating deal:', error)
+    console.error('❌ Error creating deal:', error)
     return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
