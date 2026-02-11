@@ -490,7 +490,9 @@ Rédige une réponse appropriée en français. Commence directement par le conte
 IMPORTANT : Termine TOUJOURS la réponse par :
 
 Cordialement,
-Guillaume PINOIT PSM`
+Guillaume PINOIT
+PSM Portails Sur Mesure
+06 60 60 45 11`
 
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: 'POST',
