@@ -6428,6 +6428,8 @@ async function createLeadFromEmail(index) {
       return;
     }
     
+    console.log('🔄 Création du client...', { fromName, fromEmail });
+    
     // Créer un client d'abord
     const clientResponse = await fetch('/api/clients', {
       method: 'POST',
@@ -6446,12 +6448,16 @@ async function createLeadFromEmail(index) {
     });
     
     if (!clientResponse.ok) {
-      throw new Error('Erreur création client');
+      const errorData = await clientResponse.json().catch(() => ({}));
+      console.error('❌ Erreur création client:', errorData);
+      throw new Error(errorData.error || 'Erreur création client');
     }
     
     const client = await clientResponse.json();
+    console.log('✅ Client créé:', client);
     
     // Créer le deal (Lead)
+    console.log('🔄 Création du deal...');
     const dealResponse = await fetch('/api/deals', {
       method: 'POST',
       headers: {
@@ -6470,10 +6476,13 @@ async function createLeadFromEmail(index) {
     });
     
     if (!dealResponse.ok) {
-      throw new Error('Erreur création deal');
+      const errorData = await dealResponse.json().catch(() => ({}));
+      console.error('❌ Erreur création deal:', errorData);
+      throw new Error(errorData.error || 'Erreur création deal');
     }
     
     const deal = await dealResponse.json();
+    console.log('✅ Deal créé:', deal);
     
     // Succès ! Afficher confirmation et rediriger
     const confirmHTML = `
@@ -6539,10 +6548,23 @@ function closeLeadConfirmModal() {
 }
 
 // Fonction pour aller au Pipeline
-function goToPipeline() {
+async function goToPipeline() {
   closeLeadConfirmModal();
+  
+  // Changer la vue active dans le menu
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // Activer l'onglet Pipeline
+  const pipelineTab = document.querySelector('[onclick*="renderPipeline"]');
+  if (pipelineTab) {
+    pipelineTab.classList.add('active');
+  }
+  
+  // Rendre le pipeline
   window.currentView = 'pipeline';
-  renderPipeline();
+  await renderPipeline();
 }
 
 // Fonction pour répondre à un email (placeholder)
