@@ -3891,15 +3891,18 @@ async function viewDealModal(dealId) {
                   </a>
                 </p>
               ` : ''}
-              ${deal.client_address || deal.client_zipcode || deal.client_city ? `
+              ${deal.client_address || deal.address || deal.client_zipcode || deal.client_city ? `
                 <div class="text-sm mb-2 p-2 bg-gray-700/30 rounded" style="border-left: 3px solid #3b82f6;">
                   <div class="font-semibold text-blue-400 mb-1">
                     <i class="fas fa-map-marker-alt"></i> Adresse
                   </div>
-                  ${deal.client_address ? `<div class="text-gray-300">${deal.client_address}</div>` : ''}
+                  <div class="text-gray-300">${deal.client_address || deal.address || ''}</div>
                   ${deal.client_zipcode || deal.client_city ? `
                     <div class="text-gray-300">${deal.client_zipcode || ''} ${deal.client_city || ''}</div>
                   ` : ''}
+                  <a href="https://maps.google.com/?q=${encodeURIComponent(deal.client_address || deal.address || '')}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs mt-1 inline-block">
+                    <i class="fas fa-external-link-alt"></i> Voir sur Google Maps
+                  </a>
                 </div>
               ` : ''}
               ${deal.client_notes ? `
@@ -8311,14 +8314,47 @@ function openMobileMenu() {
 function openScheduleRdvModal(dealId) {
   const deal = state.currentDeal;
   
+  // Coordonnées client
+  const clientName = deal?.client_name || `${deal?.first_name || ''} ${deal?.last_name || ''}`.trim() || deal?.title || '';
+  const clientPhone = deal?.client_phone || deal?.phone || '';
+  const clientEmail = deal?.client_email || deal?.email || '';
+  const clientAddress = deal?.client_address || deal?.address || '';
+  const clientCompany = deal?.company || '';
+  
   showModal(`
     <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 550px;">
         <div class="modal-header">
           <h3><i class="fas fa-calendar-plus"></i> Planifier un RDV</h3>
           <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
         </div>
         <form id="scheduleRdvForm" class="modal-body">
+          
+          <!-- Fiche client -->
+          <div class="mb-4" style="background: #1e293b; border-radius: 10px; padding: 1rem; border-left: 4px solid #3b82f6;">
+            <h4 class="font-bold text-white mb-2" style="font-size: 0.95rem;"><i class="fas fa-user"></i> Client</h4>
+            <p class="text-white font-semibold mb-1" style="font-size: 1.05rem;">${clientName}</p>
+            ${clientCompany ? `<p class="text-sm text-gray-300 mb-1"><i class="fas fa-building text-blue-400" style="width:16px;"></i> ${clientCompany}</p>` : ''}
+            ${clientPhone ? `
+              <p class="text-sm mb-1">
+                <i class="fas fa-phone text-green-400" style="width:16px;"></i> 
+                <a href="tel:${clientPhone.replace(/\\s/g, '')}" class="text-green-400 hover:text-green-300 underline" style="font-size: 1rem; font-weight: 600;">${clientPhone}</a>
+              </p>
+            ` : '<p class="text-sm text-gray-500 mb-1"><i class="fas fa-phone" style="width:16px;"></i> Pas de téléphone renseigné</p>'}
+            ${clientEmail ? `
+              <p class="text-sm mb-1">
+                <i class="fas fa-envelope text-blue-400" style="width:16px;"></i> 
+                <a href="mailto:${clientEmail}" class="text-blue-400 hover:text-blue-300 underline">${clientEmail}</a>
+              </p>
+            ` : ''}
+            ${clientAddress ? `
+              <p class="text-sm mb-1">
+                <i class="fas fa-map-marker-alt text-red-400" style="width:16px;"></i> 
+                <a href="https://maps.google.com/?q=${encodeURIComponent(clientAddress)}" target="_blank" class="text-red-400 hover:text-red-300 underline">${clientAddress}</a>
+              </p>
+            ` : '<p class="text-sm text-gray-500 mb-1"><i class="fas fa-map-marker-alt" style="width:16px;"></i> Pas d\'adresse renseignée</p>'}
+          </div>
+
           <div class="mb-4">
             <label class="block mb-2 font-semibold">
               <i class="fas fa-calendar"></i> Date et heure du RDV *
@@ -8339,7 +8375,7 @@ function openScheduleRdvModal(dealId) {
             <textarea 
               id="rdv_notes" 
               class="w-full p-2 rounded border bg-gray-700 border-gray-600 text-white"
-              rows="4"
+              rows="3"
               placeholder="Ex: Prise de mesures pour portail coulissant, accès par le côté gauche..."
             >${deal?.rdv_notes || ''}</textarea>
           </div>
@@ -8412,17 +8448,51 @@ async function saveAIConfig() {
 async function showCalendarExportModal(dealId) {
   const deal = await api.getDeal(dealId);
   
+  // Coordonnées client
+  const clientName = deal?.client_name || `${deal?.first_name || ''} ${deal?.last_name || ''}`.trim() || deal?.title || '';
+  const clientPhone = deal?.client_phone || deal?.phone || '';
+  const clientEmail = deal?.client_email || deal?.email || '';
+  const clientAddress = deal?.client_address || deal?.address || '';
+  const rdvDateStr = deal?.rdv_date ? new Date(deal.rdv_date).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  
   showModal(`
     <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 550px;">
         <div class="modal-header">
           <h3><i class="fas fa-calendar-check"></i> RDV planifié !</h3>
           <button class="modal-close" onclick="closeCalendarModalAndRefresh(${dealId})"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body">
-          <p class="text-center mb-4" style="color: #10b981; font-size: 1.1rem;">
+          <p class="text-center mb-3" style="color: #10b981; font-size: 1.1rem;">
             ✅ Le dossier a été déplacé en "RDV planifié"
           </p>
+          
+          <!-- Récapitulatif RDV avec coordonnées -->
+          <div class="mb-4" style="background: #1e293b; border-radius: 10px; padding: 1rem; border-left: 4px solid #10b981;">
+            <p class="text-white font-bold mb-2" style="font-size: 1.05rem;">
+              <i class="fas fa-calendar" style="color: #10b981;"></i> ${rdvDateStr}
+            </p>
+            <p class="text-white font-semibold mb-1"><i class="fas fa-user text-blue-400" style="width:16px;"></i> ${clientName}</p>
+            ${clientPhone ? `
+              <p class="text-sm mb-1">
+                <i class="fas fa-phone text-green-400" style="width:16px;"></i> 
+                <a href="tel:${clientPhone.replace(/\\s/g, '')}" class="text-green-400 hover:text-green-300 underline" style="font-weight: 600;">${clientPhone}</a>
+              </p>
+            ` : ''}
+            ${clientEmail ? `
+              <p class="text-sm mb-1">
+                <i class="fas fa-envelope text-blue-400" style="width:16px;"></i> 
+                <a href="mailto:${clientEmail}" class="text-blue-400 hover:text-blue-300 underline">${clientEmail}</a>
+              </p>
+            ` : ''}
+            ${clientAddress ? `
+              <p class="text-sm mb-1">
+                <i class="fas fa-map-marker-alt text-red-400" style="width:16px;"></i> 
+                <a href="https://maps.google.com/?q=${encodeURIComponent(clientAddress)}" target="_blank" class="text-red-400 hover:text-red-300 underline">${clientAddress}</a>
+              </p>
+            ` : ''}
+            ${deal?.rdv_notes ? `<p class="text-sm mt-2" style="color: #94a3b8;"><i class="fas fa-sticky-note" style="width:16px;"></i> ${deal.rdv_notes}</p>` : ''}
+          </div>
           
           <h4 class="text-white mb-3">📅 Ajouter à votre calendrier :</h4>
           
@@ -8481,6 +8551,11 @@ async function submitEditClient(clientId) {
   const city = data.address_city || '';
   
   data.address = [street, postal, city].filter(Boolean).join(', ');
+  
+  // Construire le name complet à partir de prénom/nom
+  if (data.first_name || data.last_name) {
+    data.name = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+  }
   
   // Supprimer les champs temporaires
   delete data.address_street;

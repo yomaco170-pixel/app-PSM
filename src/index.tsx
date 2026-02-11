@@ -445,6 +445,7 @@ app.post('/api/init-db', async (c) => {
     await safeAddColumn('clients', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
     await safeAddColumn('clients', 'lead_id', 'INTEGER')
     await safeAddColumn('clients', 'name', 'TEXT')
+    await safeAddColumn('clients', 'address', 'TEXT')
 
     // Deals: ajouter colonnes potentiellement manquantes  
     await safeAddColumn('deals', 'archived', 'INTEGER DEFAULT 0')
@@ -1091,6 +1092,10 @@ app.put('/api/clients/:id', async (c) => {
     if (data.phone !== undefined) { updates.push('phone = ?'); values.push(data.phone) }
     if (data.company !== undefined) { updates.push('company = ?'); values.push(data.company) }
     if (data.status !== undefined) { updates.push('status = ?'); values.push(data.status) }
+    if (data.address !== undefined) {
+      try { await c.env.DB.prepare('ALTER TABLE clients ADD COLUMN address TEXT').run() } catch(e) {}
+      updates.push('address = ?'); values.push(data.address)
+    }
     if (data.archived !== undefined) { 
       try { updates.push('archived = ?'); values.push(data.archived ? 1 : 0) } catch(e) {} 
     }
@@ -1178,7 +1183,11 @@ app.get('/api/deals', async (c) => {
           email: client?.email || '',
           phone: client?.phone || '',
           company: client?.company || '',
+          address: client?.address || '',
           client_name: client?.name || '',
+          client_email: client?.email || '',
+          client_phone: client?.phone || '',
+          client_address: client?.address || '',
           // Compatibilité: montant
           estimated_amount: deal.amount || 0,
           type: deal.title || 'Dossier',
@@ -1319,9 +1328,11 @@ app.get('/api/deals/:id', async (c) => {
       email: client?.email || '',
       phone: client?.phone || '',
       company: client?.company || '',
+      address: client?.address || '',
       client_name: client?.name || '',
       client_email: client?.email || '',
       client_phone: client?.phone || '',
+      client_address: client?.address || '',
       estimated_amount: deal.amount || 0,
       type: deal.title || 'Dossier',
     }
@@ -1397,9 +1408,11 @@ app.put('/api/deals/:id', async (c) => {
       client_name: client?.name || '',
       client_email: client?.email || '',
       client_phone: client?.phone || '',
+      client_address: client?.address || '',
       email: client?.email || '',
       phone: client?.phone || '',
       company: client?.company || '',
+      address: client?.address || '',
       estimated_amount: deal?.amount || 0,
       type: deal?.title || 'Dossier',
     }
