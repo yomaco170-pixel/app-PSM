@@ -6455,7 +6455,6 @@ function replyToThreadFromModal(threadId, emailId) {
 
 // Fonction pour créer un Lead à partir d'un email
 async function createLeadFromEmail(emailId, index = -1) {
-  // Trouver l'email par ID ou par index (fallback)
   const email = window.currentEmails.find((item) => item.id === emailId) || window.currentEmails[index];
   
   if (!email) {
@@ -6463,11 +6462,11 @@ async function createLeadFromEmail(emailId, index = -1) {
     return;
   }
   
-  // Extraire le nom et l'email depuis l'email source
+  // Extraire le nom depuis l'email (before @)
   const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
   const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
   
-  // Créer le lead via /api/deals (backend existant)
+  // Créer le lead
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -6475,66 +6474,82 @@ async function createLeadFromEmail(emailId, index = -1) {
       return;
     }
     
-    console.log('🔄 Création du lead depuis email...', { fromName, fromEmail, emailId: email.id });
-    
-    // ÉTAPE 1 : Créer ou récupérer le client d'abord
-    console.log('🔄 Création du client...');
-    
-    const clientResponse = await fetch('/api/clients', {
-      method: 'POST',
+    console.log('🔄 Recherche client existant...', { fromName, fromEmail });
+
+    // Éviter les doublons : réutiliser le client existant si l'email est déjà connu
+    let client = null;
+    const clientsResponse = await fetch('/api/clients', {
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        name: fromName,
-        email: fromEmail,
-        phone: '',
-        company: '',
-        status: 'lead'
-      })
+      }
     });
-    
-    if (!clientResponse.ok) {
-      const errorData = await clientResponse.json().catch(() => ({}));
-      console.error('❌ Erreur création client:', errorData);
-      throw new Error(errorData.error || 'Erreur création client');
+
+    if (clientsResponse.ok) {
+      const clientsData = await clientsResponse.json().catch(() => ({}));
+      const clients = Array.isArray(clientsData.clients) ? clientsData.clients : [];
+      client = clients.find((item) => (item.email || '').toLowerCase() === fromEmail.toLowerCase()) || null;
     }
+
+    if (!client) {
+      console.log('🔄 Création du client...', { fromName, fromEmail });
+
+      const clientResponse = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: fromName,
+          email: fromEmail,
+          phone: '',
+          company: '',
+          status: 'lead'
+        })
+      });
+
+      if (!clientResponse.ok) {
+        const errorData = await clientResponse.json().catch(() => ({}));
+        console.error('❌ Erreur création client:', errorData);
+        throw new Error(errorData.error || 'Erreur création client');
+      }
+
+      client = await clientResponse.json();
+    } else {
+      console.log('✅ Client existant réutilisé:', client);
+    }
+
+    console.log('✅ Client créé:', client);
     
-    const client = await clientResponse.json();
-    console.log('✅ Client créé/récupéré:', client);
-    
-    // ÉTAPE 2 : Créer le deal/lead avec le client_id
-    console.log('🔄 Création du deal/lead...');
-    
-    const leadResponse = await fetch('/api/deals', {
+    // Créer le deal (Lead)
+    console.log('🔄 Création du deal...');
+    const dealResponse = await fetch('/api/deals', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        client_id: client.id,  // ✅ ID du client créé
+        client_id: client.id,
         title: email.subject || 'Demande depuis email',
         amount: 0,
         stage: 'lead',
         probability: 30,
         expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `Email reçu le ${new Date(email.date || Date.now()).toLocaleDateString('fr-FR')}\n\nDe: ${email.from}\n\nContenu:\n${email.snippet || email.body || ''}\n\n🎯 ACTION: Appeler pour caler le RDV`
+        notes: `Email reçu le ${new Date(email.date).toLocaleDateString('fr-FR')}\n\nDe: ${email.from}\n\nContenu:\n${email.snippet}\n\n🎯 ACTION: Appeler pour caler le RDV`
       })
     });
     
-    if (!leadResponse.ok) {
-      const errorData = await leadResponse.json().catch(() => ({}));
+    if (!dealResponse.ok) {
+      const errorData = await dealResponse.json().catch(() => ({}));
       console.error('❌ Erreur création deal:', errorData);
       throw new Error(errorData.error || 'Erreur création deal');
     }
     
-    const lead = await leadResponse.json();
+    const deal = await dealResponse.json();
+    console.log('✅ Deal créé:', deal);
     
-    console.log('✅ Deal/Lead créé:', lead);
-    
-    // Succès ! Afficher confirmation
+    // Succès ! Afficher confirmation et rediriger
     const confirmHTML = `
       <div class="modal-backdrop" id="lead-confirm-modal">
         <div class="modal-content" style="max-width: 500px;">
@@ -6551,20 +6566,20 @@ async function createLeadFromEmail(emailId, index = -1) {
               </p>
               <div class="card" style="text-align: left; margin-top: 1rem;">
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Nom :</strong> ${fromName}
+                  <strong>Client :</strong> ${client.name}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Email :</strong> ${fromEmail}
+                  <strong>Email :</strong> ${client.email}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Sujet :</strong> ${lead.title || email.subject}
+                  <strong>Sujet :</strong> ${deal.title}
                 </div>
                 <div class="text-sm text-gray-300">
                   <strong>Stage :</strong> <span class="badge badge-primary">LEAD</span>
                 </div>
               </div>
               <p class="text-yellow-400 mt-4" style="font-weight: bold;">
-                🎯 Prochaine action : Appeler pour qualifier le lead !
+                🎯 Prochaine action : Appeler pour caler le RDV !
               </p>
             </div>
           </div>
