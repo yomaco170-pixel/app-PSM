@@ -8935,4 +8935,27 @@ function addChatMessage(role, content) {
     console.log('❌ Pas de token, affichage du login');
     renderLogin();
   }
+  
+  // ==================== EXPOSITION GLOBALE DES FONCTIONS ====================
+  // Exposer les fonctions nécessaires pour les onclick HTML
+  window.navigate = navigate;
+  window.createLeadFromEmail = createLeadFromEmail;
+  window.convertLeadToClient = convertLeadToClient;
+  window.closeLeadConfirmModal = closeLeadConfirmModal;
+  window.closeConvertSuccessModal = closeConvertSuccessModal;
+  window.goToLeads = goToLeads;
+  window.goToPipeline = goToPipeline;
+  window.filterEmailsByCategory = filterEmailsByCategory;
+  window.toggleEmailDetails = toggleEmailDetails;
+  window.replyToEmail = replyToEmail;
+  window.closeReplyModal = closeReplyModal;
+  window.generateAIResponse = generateAIResponse;
+  window.showThreadModal = showThreadModal;
+  window.closeThreadModal = closeThreadModal;
+  window.replyToThreadFromModal = replyToThreadFromModal;
+  window.changeEmailCategory = changeEmailCategory;
+  window.closeCategoryModal = closeCategoryModal;
+  window.selectCategory = selectCategory;
+  
+  console.log('✅ Fonctions globales exposées');
 })();
