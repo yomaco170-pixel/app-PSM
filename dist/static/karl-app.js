@@ -1723,7 +1723,8 @@ function renderLogin() {
           </div>
           <button type="submit" class="btn btn-primary w-full">
             <i class="fas fa-user-plus"></i>
-          </p>
+            Créer mon compte
+          </button>
         </form>
 
       </div>
@@ -9157,7 +9158,7 @@ function addChatMessage(role, content) {
   window.replyToEmail = replyToEmail;
   window.closeReplyModal = closeReplyModal;
   window.generateAIResponse = generateAIResponse;
-  window.showThreadModal = showThreadModal;
+  window.showThreadModal = viewThreadConversation;
   window.closeThreadModal = closeThreadModal;
   window.replyToThreadFromModal = replyToThreadFromModal;
   window.changeEmailCategory = changeEmailCategory;

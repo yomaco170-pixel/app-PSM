@@ -351,7 +351,7 @@ app.post('/api/init-db', async (c) => {
     console.error('Database initialization error:', error)
     return c.json({ 
       error: 'Erreur initialisation base de données', 
-      details: error.message 
+      details: error instanceof Error ? error.message : String(error) 
     }, 500)
   }
 })
@@ -895,7 +895,7 @@ app.post('/api/clients', async (c) => {
     }
   } catch (error) {
     console.error('Error creating client:', error)
-    return c.json({ error: 'Erreur serveur', details: error.message }, 500)
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 
@@ -1004,7 +1004,7 @@ app.post('/api/deals', async (c) => {
     }
   } catch (error) {
     console.error('Error creating deal:', error)
-    return c.json({ error: 'Erreur serveur', details: error.message }, 500)
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 
