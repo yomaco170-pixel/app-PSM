@@ -6601,11 +6601,38 @@ async function createLeadFromEmail(emailId, index = -1) {
       if (!clientResponse.ok) {
         const errorData = await clientResponse.json().catch(() => ({}));
         console.error('❌ Erreur création client:', errorData);
-        throw new Error(errorData.error || 'Erreur création client');
-      }
 
-      client = await clientResponse.json();
-      console.log('✅ Client créé:', client);
+        // Vérifier spécifiquement l'erreur UNIQUE constraint
+        if (errorData.details && errorData.details.includes('UNIQUE constraint failed: clients.email')) {
+          console.warn('⚠️ Client existe déjà, tentative de récupération...');
+          
+          // Réessayer de récupérer le client
+          const retryResponse = await fetch('/api/clients', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json().catch(() => ({}));
+            const retryClients = Array.isArray(retryData.clients) ? retryData.clients : [];
+            client = retryClients.find((item) => (item.email || '').toLowerCase() === fromEmail.toLowerCase()) || null;
+            
+            if (client) {
+              console.log('✅ Client récupéré après erreur:', client);
+            } else {
+              throw new Error('Client existe mais introuvable');
+            }
+          } else {
+            throw new Error('Impossible de récupérer le client existant');
+          }
+        } else {
+          throw new Error(errorData.error || 'Erreur création client');
+        }
+      } else {
+        client = await clientResponse.json();
+        console.log('✅ Client créé:', client);
+      }
     }
     
     // ÉTAPE 4 : Créer le deal
