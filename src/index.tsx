@@ -1239,13 +1239,19 @@ app.get('/', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="/static/karl-app.js"></script>
         
-        <!-- Service Worker Registration -->
+        <!-- Service Worker Registration - DÉSACTIVÉ pour debug -->
         <script>
+          // Service Worker temporairement désactivé
+          console.log('⚠️ Service Worker désactivé pour éviter les erreurs de cache');
+          
+          // Désenregistrer tous les SW existants
           if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ Service Worker enregistré'))
-                .catch(err => console.log('❌ Erreur Service Worker:', err));
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+              for (let registration of registrations) {
+                registration.unregister().then(() => {
+                  console.log('🗑️ Service Worker désenregistré');
+                });
+              }
             });
           }
         </script>
@@ -1285,13 +1291,19 @@ app.get('/*', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="/static/karl-app.js"></script>
         
-        <!-- Service Worker Registration -->
+        <!-- Service Worker Registration - DÉSACTIVÉ pour debug -->
         <script>
+          // Service Worker temporairement désactivé
+          console.log('⚠️ Service Worker désactivé pour éviter les erreurs de cache');
+          
+          // Désenregistrer tous les SW existants
           if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ Service Worker enregistré'))
-                .catch(err => console.log('❌ Erreur Service Worker:', err));
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+              for (let registration of registrations) {
+                registration.unregister().then(() => {
+                  console.log('🗑️ Service Worker désenregistré');
+                });
+              }
             });
           }
         </script>
