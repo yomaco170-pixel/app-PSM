@@ -464,6 +464,110 @@ app.post('/api/emails/send', async (c) => {
   }
 })
 
+// POST /api/emails/generate-reply - Générer une réponse avec IA
+app.post('/api/emails/generate-reply', async (c) => {
+  try {
+    const { email, tone, instruction } = await c.req.json()
+    
+    const apiKey = c.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY
+    const baseURL = c.env.OPENAI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+    
+    if (!apiKey) {
+      return c.json({ error: 'OpenAI non configuré' }, 500)
+    }
+    
+    const prompt = `Tu es un assistant qui aide à rédiger des emails professionnels.
+
+Email reçu :
+De : ${email.from}
+Objet : ${email.subject}
+Contenu : ${email.snippet}
+
+${instruction}
+
+Rédige une réponse appropriée en français. Commence directement par le contenu de la réponse (pas de "Cher X," si l'email original n'est pas formel). Sois naturel et professionnel.`
+
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'Tu es un assistant qui aide à rédiger des emails professionnels. Réponds directement avec le contenu de l\'email, sans formule de politesse initiale excessive.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error('OpenAI API error')
+    }
+    
+    const data: any = await response.json()
+    const reply = data.choices[0]?.message?.content || ''
+    
+    return c.json({ reply: reply.trim() })
+  } catch (error) {
+    console.error('Generate reply error:', error)
+    return c.json({ error: 'Erreur génération IA' }, 500)
+  }
+})
+
+// POST /api/emails/improve-text - Améliorer un texte avec IA
+app.post('/api/emails/improve-text', async (c) => {
+  try {
+    const { text } = await c.req.json()
+    
+    const apiKey = c.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY
+    const baseURL = c.env.OPENAI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+    
+    if (!apiKey) {
+      return c.json({ error: 'OpenAI non configuré' }, 500)
+    }
+    
+    const prompt = `Améliore ce texte d'email en le rendant plus professionnel, clair et courtois. Corrige les fautes si besoin. Garde le même ton général.
+
+Texte original :
+${text}
+
+Texte amélioré :`
+
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'Tu es un assistant qui améliore des emails. Réponds uniquement avec le texte amélioré.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.5,
+        max_tokens: 500
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error('OpenAI API error')
+    }
+    
+    const data: any = await response.json()
+    const improved = data.choices[0]?.message?.content || ''
+    
+    return c.json({ improved: improved.trim() })
+  } catch (error) {
+    console.error('Improve text error:', error)
+    return c.json({ error: 'Erreur amélioration IA' }, 500)
+  }
+})
+
 // ============================================
 // PROFILE ROUTES
 // ============================================

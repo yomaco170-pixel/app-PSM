@@ -6315,9 +6315,31 @@ function replyToEmail(emailId) {
             <div class="text-sm text-gray-400 mb-1">
               <strong>À :</strong> ${email.from || 'Inconnu'}
             </div>
-            <div class="text-sm text-gray-400">
+            <div class="text-sm text-gray-400 mb-1">
               <strong>Objet :</strong> Re: ${email.subject || 'Sans objet'}
             </div>
+            <div class="text-sm text-gray-400">
+              <strong>Message original :</strong> ${email.snippet || ''}
+            </div>
+          </div>
+          
+          <!-- Boutons d'assistance IA -->
+          <div style="margin-bottom: 1rem;">
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;" onclick="generateAIResponse('${emailId}', 'professional')">
+                <i class="fas fa-brain"></i> Réponse pro
+              </button>
+              <button class="btn btn-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;" onclick="generateAIResponse('${emailId}', 'friendly')">
+                <i class="fas fa-smile"></i> Réponse amicale
+              </button>
+              <button class="btn btn-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;" onclick="generateAIResponse('${emailId}', 'brief')">
+                <i class="fas fa-compress"></i> Réponse courte
+              </button>
+              <button class="btn btn-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;" onclick="improveAIText('${emailId}')">
+                <i class="fas fa-magic"></i> Améliorer
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">💡 L'IA peut t'aider à rédiger une réponse adaptée</p>
           </div>
           
           <div class="input-group">
@@ -6326,7 +6348,7 @@ function replyToEmail(emailId) {
               id="reply-message" 
               class="input" 
               rows="8" 
-              placeholder="Écrivez votre réponse ici..."
+              placeholder="Écrivez votre réponse ici ou utilisez l'IA pour générer..."
               style="font-family: inherit; resize: vertical;"
             ></textarea>
           </div>
@@ -6352,6 +6374,135 @@ function replyToEmail(emailId) {
   setTimeout(() => {
     document.getElementById('reply-message')?.focus();
   }, 100);
+}
+
+// Fonction pour générer une réponse avec l'IA
+async function generateAIResponse(emailId, tone) {
+  const email = window.currentEmails.find(e => e.id === emailId);
+  if (!email) return;
+  
+  const messageTextarea = document.getElementById('reply-message');
+  const statusDiv = document.getElementById('reply-status');
+  
+  if (!messageTextarea || !statusDiv) return;
+  
+  // Afficher le statut de génération
+  statusDiv.style.display = 'block';
+  statusDiv.innerHTML = `
+    <div style="text-align: center;">
+      <i class="fas fa-brain fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+      <p class="text-gray-400 mt-2">🤖 L'IA rédige votre réponse...</p>
+    </div>
+  `;
+  
+  const toneInstructions = {
+    professional: 'Rédige une réponse professionnelle, courtoise et formelle.',
+    friendly: 'Rédige une réponse amicale, chaleureuse mais professionnelle.',
+    brief: 'Rédige une réponse courte et concise, allant droit au but.'
+  };
+  
+  try {
+    const response = await fetch('/api/emails/generate-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: {
+          from: email.from,
+          subject: email.subject,
+          snippet: email.snippet
+        },
+        tone: tone,
+        instruction: toneInstructions[tone] || toneInstructions.professional
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.reply) {
+      messageTextarea.value = result.reply;
+      statusDiv.innerHTML = `
+        <div style="text-align: center; color: #10b981;">
+          <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+          <p class="text-sm mt-1">✅ Réponse générée ! Modifie-la si besoin.</p>
+        </div>
+      `;
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 3000);
+    } else {
+      throw new Error(result.error || 'Erreur génération IA');
+    }
+  } catch (error) {
+    console.error('Erreur génération IA:', error);
+    statusDiv.innerHTML = `
+      <div style="text-align: center; color: #ef4444;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p class="text-sm mt-1">❌ ${error.message}</p>
+      </div>
+    `;
+    setTimeout(() => {
+      statusDiv.style.display = 'none';
+    }, 3000);
+  }
+}
+
+// Fonction pour améliorer le texte existant avec l'IA
+async function improveAIText(emailId) {
+  const messageTextarea = document.getElementById('reply-message');
+  const statusDiv = document.getElementById('reply-status');
+  
+  if (!messageTextarea || !statusDiv) return;
+  
+  const currentText = messageTextarea.value.trim();
+  if (!currentText) {
+    alert('Écris d\'abord un brouillon, l\'IA va l\'améliorer !');
+    return;
+  }
+  
+  // Afficher le statut d'amélioration
+  statusDiv.style.display = 'block';
+  statusDiv.innerHTML = `
+    <div style="text-align: center;">
+      <i class="fas fa-magic fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+      <p class="text-gray-400 mt-2">✨ L'IA améliore votre texte...</p>
+    </div>
+  `;
+  
+  try {
+    const response = await fetch('/api/emails/improve-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: currentText })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.improved) {
+      messageTextarea.value = result.improved;
+      statusDiv.innerHTML = `
+        <div style="text-align: center; color: #10b981;">
+          <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+          <p class="text-sm mt-1">✅ Texte amélioré !</p>
+        </div>
+      `;
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 3000);
+    } else {
+      throw new Error(result.error || 'Erreur amélioration');
+    }
+  } catch (error) {
+    console.error('Erreur amélioration IA:', error);
+    statusDiv.innerHTML = `
+      <div style="text-align: center; color: #ef4444;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p class="text-sm mt-1">❌ ${error.message}</p>
+      </div>
+    `;
+    setTimeout(() => {
+      statusDiv.style.display = 'none';
+    }, 3000);
+  }
 }
 
 // Fonction pour fermer la modale de réponse
