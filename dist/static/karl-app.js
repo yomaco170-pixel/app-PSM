@@ -6126,7 +6126,7 @@ async function renderMails() {
                         
                         <!-- Actions -->
                         <div class="flex gap-2 mt-4">
-                          <button class="btn btn-success btn-sm email-action-btn" data-action="create-lead" data-index="${index}" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                          <button class="btn btn-success btn-sm email-action-btn" data-action="create-lead" data-email-id="${email.id}" data-index="${index}" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                             <i class="fas fa-plus-circle"></i> Créer Lead
                           </button>
                           <button class="btn btn-primary btn-sm email-action-btn" data-action="reply" data-email-id="${email.id}">
@@ -6202,8 +6202,10 @@ document.addEventListener('click', function(event) {
   
   switch(action) {
     case 'create-lead':
-      if (index !== undefined) {
-        createLeadFromEmail(parseInt(index));
+      if (emailId) {
+        createLeadFromEmail(emailId, index !== undefined ? parseInt(index) : -1);
+      } else if (index !== undefined) {
+        createLeadFromEmail(null, parseInt(index));
       }
       break;
       
@@ -6452,8 +6454,9 @@ function replyToThreadFromModal(threadId, emailId) {
 }
 
 // Fonction pour créer un Lead à partir d'un email
-async function createLeadFromEmail(index) {
-  const email = window.currentEmails[index];
+async function createLeadFromEmail(emailId, index = -1) {
+  // Trouver l'email par ID ou par index (fallback)
+  const email = window.currentEmails.find((item) => item.id === emailId) || window.currentEmails[index];
   
   if (!email) {
     alert('Email introuvable');
@@ -6464,7 +6467,7 @@ async function createLeadFromEmail(index) {
   const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
   const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
   
-  // Créer le lead via /api/leads (avec anti-doublon automatique)
+  // Créer le lead via /api/deals (backend existant)
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -6474,23 +6477,21 @@ async function createLeadFromEmail(index) {
     
     console.log('🔄 Création du lead depuis email...', { fromName, fromEmail, emailId: email.id });
     
-    // Créer le lead directement (anti-doublon sur source_ref = email.id)
-    const leadResponse = await fetch('/api/leads', {
+    // Créer le deal/lead directement (format compatible backend)
+    const leadResponse = await fetch('/api/deals', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        source: 'email',
-        source_ref: email.id,  // ID Gmail unique = anti-doublon
-        from_name: fromName,
-        from_email: fromEmail,
-        subject: email.subject || '(Sans objet)',
-        snippet: email.snippet || '',
-        body: email.snippet || '',  // On pourrait récupérer le body complet plus tard
-        stage: 'new',
-        priority: email.category === 'urgent' ? 'high' : 'normal'
+        client_id: null,  // Pas encore de client, sera créé après
+        title: email.subject || 'Demande depuis email',
+        amount: 0,
+        stage: 'lead',
+        probability: 30,
+        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        notes: `Email reçu le ${new Date(email.date || Date.now()).toLocaleDateString('fr-FR')}\n\nDe: ${email.from}\n\nContenu:\n${email.snippet || email.body || ''}\n\n🎯 ACTION: Appeler pour caler le RDV`
       })
     });
     
@@ -6500,56 +6501,48 @@ async function createLeadFromEmail(index) {
       throw new Error(errorData.error || 'Erreur création lead');
     }
     
-    const result = await leadResponse.json();
-    const { lead, created } = result;
+    const lead = await leadResponse.json();
     
-    console.log('✅ Lead:', created ? 'créé' : 'existant', lead);
+    console.log('✅ Lead créé:', lead);
     
     // Succès ! Afficher confirmation
     const confirmHTML = `
       <div class="modal-backdrop" id="lead-confirm-modal">
         <div class="modal-content" style="max-width: 500px;">
           <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <h3><i class="fas fa-check-circle"></i> ${created ? 'Lead créé !' : 'Lead existant'}</h3>
+            <h3><i class="fas fa-check-circle"></i> Lead créé !</h3>
           </div>
           
           <div class="modal-body">
             <div style="text-align: center; padding: 2rem;">
-              <i class="fas fa-${created ? 'check-circle text-green-500' : 'info-circle text-blue-500'}" style="font-size: 4rem;"></i>
-              <h4 class="text-white mt-4 mb-2">${created ? 'Lead créé avec succès !' : 'Ce lead existe déjà'}</h4>
+              <i class="fas fa-check-circle text-green-500" style="font-size: 4rem;"></i>
+              <h4 class="text-white mt-4 mb-2">Lead créé avec succès !</h4>
               <p class="text-gray-400 mb-4">
-                <strong>${lead.from_name}</strong> ${created ? 'a été ajouté au' : 'est déjà dans le'} Pipeline
+                <strong>${fromName}</strong> a été ajouté au Pipeline
               </p>
               <div class="card" style="text-align: left; margin-top: 1rem;">
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Nom :</strong> ${lead.from_name}
+                  <strong>Nom :</strong> ${fromName}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Email :</strong> ${lead.from_email}
+                  <strong>Email :</strong> ${fromEmail}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Sujet :</strong> ${lead.subject}
+                  <strong>Sujet :</strong> ${lead.title || email.subject}
                 </div>
                 <div class="text-sm text-gray-300">
-                  <strong>Stage :</strong> <span class="badge badge-${lead.stage === 'new' ? 'primary' : lead.stage === 'qualified' ? 'success' : lead.stage === 'converted' ? 'info' : 'secondary'}">${lead.stage.toUpperCase()}</span>
+                  <strong>Stage :</strong> <span class="badge badge-primary">LEAD</span>
                 </div>
               </div>
-              ${lead.stage !== 'converted' ? `
-                <p class="text-yellow-400 mt-4" style="font-weight: bold;">
-                  🎯 Prochaine action : ${lead.stage === 'new' ? 'Appeler pour qualifier le lead !' : 'Convertir en client !'}
-                </p>
-              ` : ''}
-              ${lead.stage !== 'converted' ? `
-                <button class="btn btn-warning mt-4" onclick="convertLeadToClient(${lead.id})">
-                  <i class="fas fa-user-check"></i> Convertir en Client
-                </button>
-              ` : ''}
+              <p class="text-yellow-400 mt-4" style="font-weight: bold;">
+                🎯 Prochaine action : Appeler pour qualifier le lead !
+              </p>
             </div>
           </div>
           
           <div class="modal-footer">
-            <button class="btn btn-primary" onclick="goToLeads()">
-              <i class="fas fa-arrow-right"></i> Voir les Leads
+            <button class="btn btn-primary" onclick="closeLeadConfirmModal(); navigate('pipeline')">
+              <i class="fas fa-arrow-right"></i> Voir dans Pipeline
             </button>
             <button class="btn btn-secondary" onclick="closeLeadConfirmModal()">
               <i class="fas fa-times"></i> Fermer
