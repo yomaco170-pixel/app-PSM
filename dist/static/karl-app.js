@@ -6469,56 +6469,34 @@ async function createLeadFromEmail(emailId, index = -1) {
       return;
     }
     
-    console.log('🔄 Création du lead depuis email...', { 
-      fromName: email.from, 
-      fromEmail: email.from,
-      emailId: email.id 
+    console.log('🤖 Analyse IA de l\'email...', { emailId: email.id });
+    
+    // ÉTAPE 1 : Analyser l'email avec l'IA pour extraire les infos
+    const analysisResponse = await fetch('/api/emails/analyze-lead', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        from: email.from,
+        subject: email.subject,
+        body: email.snippet || email.body || '',
+        date: email.date
+      })
     });
     
-    // ÉTAPE 1 : Tentative d'analyse IA (NON BLOQUANTE)
-    let analysis = null;
-    try {
-      console.log('🤖 Tentative analyse IA...');
-      const analysisResponse = await fetch('/api/emails/analyze-lead', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          from: email.from,
-          subject: email.subject,
-          body: email.snippet || email.body || '',
-          date: email.date
-        })
-      });
-      
-      if (analysisResponse.ok) {
-        analysis = await analysisResponse.json();
-        console.log('✅ Analyse IA réussie:', analysis);
-      } else {
-        console.log('⚠️ IA indisponible, utilisation des données brutes');
-      }
-    } catch (e) {
-      console.log('⚠️ Erreur IA (ignorée):', e.message);
-      analysis = null;
+    if (!analysisResponse.ok) {
+      console.error('❌ Erreur analyse IA, utilisation des données brutes');
+      // Fallback : utiliser les données brutes
+      return createLeadFallback(email, token);
     }
     
-    // Extraction des infos (avec ou sans IA)
-    const fromName = analysis?.name || email.from?.split('@')[0] || 'Prospect';
-    const fromEmail = analysis?.email || email.from || '';
-    const company = analysis?.company || '';
-    const phone = analysis?.phone || '';
-    const title = analysis?.title || email.subject || 'Demande depuis email';
-    const need = analysis?.need || email.snippet || '';
-    const urgency = analysis?.urgency || 'normal';
-    const estimatedAmount = analysis?.estimatedAmount || 0;
-    const expectedCloseDate = analysis?.expectedCloseDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const suggestedAction = analysis?.suggestedAction || 'Appeler pour qualifier le besoin';
-    const suggestedAction = analysis?.suggestedAction || 'Appeler pour qualifier le besoin';
+    const analysis = await analysisResponse.json();
+    console.log('✅ Analyse IA terminée:', analysis);
     
-    // ÉTAPE 2 : Recherche client existant
-    console.log('🔄 Recherche client existant...', { email: fromEmail });
+    // ÉTAPE 2 : Recherche client existant avec l'email extrait
+    console.log('🔄 Recherche client existant...', { email: analysis.email });
     
     let client = null;
     const clientsResponse = await fetch('/api/clients', {
@@ -6530,16 +6508,17 @@ async function createLeadFromEmail(emailId, index = -1) {
     if (clientsResponse.ok) {
       const clientsData = await clientsResponse.json().catch(() => ({}));
       const clients = Array.isArray(clientsData.clients) ? clientsData.clients : [];
-      client = clients.find((item) => (item.email || '').toLowerCase() === fromEmail.toLowerCase()) || null;
-      
-      if (client) {
-        console.log('✅ Client existant réutilisé:', client);
-      }
+      client = clients.find((item) => (item.email || '').toLowerCase() === (analysis.email || '').toLowerCase()) || null;
     }
 
-    // ÉTAPE 3 : Créer le client si nécessaire
+    // ÉTAPE 3 : Créer le client avec les infos enrichies par l'IA
     if (!client) {
-      console.log('🔄 Création du client...', { name: fromName, email: fromEmail });
+      console.log('🔄 Création du client avec infos IA...', {
+        name: analysis.name,
+        email: analysis.email,
+        company: analysis.company,
+        phone: analysis.phone
+      });
 
       const clientResponse = await fetch('/api/clients', {
         method: 'POST',
@@ -6548,31 +6527,32 @@ async function createLeadFromEmail(emailId, index = -1) {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          name: fromName,
-          email: fromEmail,
-          phone: phone,
-          company: company,
+          name: analysis.name || 'Prospect',
+          email: analysis.email,
+          phone: analysis.phone || '',
+          company: analysis.company || '',
           status: 'lead'
         })
       });
 
       if (!clientResponse.ok) {
-        const errorText = await clientResponse.text();
-        console.error('❌ Erreur création client:', errorText);
-        throw new Error('Impossible de créer le client');
+        const errorData = await clientResponse.json().catch(() => ({}));
+        console.error('❌ Erreur création client:', errorData);
+        throw new Error(errorData.error || 'Erreur création client');
       }
 
       client = await clientResponse.json();
       console.log('✅ Client créé:', client);
+    } else {
+      console.log('✅ Client existant réutilisé:', client);
     }
-
-    // ÉTAPE 4 : Créer le deal/lead
-    console.log('🔄 Création du deal/lead...', { client_id: client.id, title });
     
-    // Adapter la probabilité selon l'urgence
-    let probability = 30;
-    if (urgency === 'high') probability = 70;
-    else if (urgency === 'medium') probability = 50;
+    // ÉTAPE 4 : Créer le deal avec contexte enrichi par l'IA
+    console.log('🔄 Création du deal avec contexte IA...', {
+      title: analysis.title,
+      urgency: analysis.urgency,
+      estimatedAmount: analysis.estimatedAmount
+    });
     
     const dealResponse = await fetch('/api/deals', {
       method: 'POST',
@@ -6582,38 +6562,40 @@ async function createLeadFromEmail(emailId, index = -1) {
       },
       body: JSON.stringify({
         client_id: client.id,
-        title: title,
-        amount: estimatedAmount,
+        title: analysis.title || email.subject || 'Demande depuis email',
+        amount: analysis.estimatedAmount || 0,
         stage: 'lead',
-        probability: probability,
-        expected_close_date: expectedCloseDate,
-        notes: `📧 Email reçu le ${new Date(email.date).toLocaleDateString('fr-FR')}
-
-De: ${email.from}
-
-${analysis ? '🤖 Analyse IA:' : '📝 Contenu:'}
-${need}
-
-🎯 ACTION: ${suggestedAction}`
+        probability: analysis.urgency === 'high' ? 70 : analysis.urgency === 'medium' ? 50 : 30,
+        expected_close_date: analysis.expectedCloseDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        notes: `📧 Lead créé depuis email\n\n` +
+               `📋 Analyse IA:\n` +
+               `- Besoin: ${analysis.need || 'Non spécifié'}\n` +
+               `- Urgence: ${analysis.urgency || 'normale'}\n` +
+               `- Budget estimé: ${analysis.estimatedAmount || 0}€\n\n` +
+               `📨 Email original:\n` +
+               `De: ${email.from}\n` +
+               `Date: ${new Date(email.date || Date.now()).toLocaleDateString('fr-FR')}\n` +
+               `Sujet: ${email.subject}\n\n` +
+               `Contenu:\n${email.snippet || email.body || ''}\n\n` +
+               `🎯 ACTION: ${analysis.suggestedAction || 'Appeler pour caler le RDV'}`
       })
     });
-
-    if (!dealResponse.ok) {
-      const errorText = await dealResponse.text();
-      console.error('❌ Erreur création deal:', errorText);
-      throw new Error('Impossible de créer le deal');
-    }
-
-    const deal = await dealResponse.json();
-    console.log('✅ Deal/Lead créé:', deal);
     
-    // ÉTAPE 5 : Afficher confirmation (avec ou sans IA)
-    const urgencyBadge = urgency === 'high' ? '🔴 Haute' : urgency === 'medium' ? '🟠 Moyenne' : '🟢 Normale';
+    if (!dealResponse.ok) {
+      const errorData = await dealResponse.json().catch(() => ({}));
+      console.error('❌ Erreur création deal:', errorData);
+      throw new Error(errorData.error || 'Erreur création deal');
+    }
+    
+    const deal = await dealResponse.json();
+    console.log('✅ Deal créé avec contexte IA:', deal);
+    
+    // ÉTAPE 5 : Afficher confirmation enrichie
     const confirmHTML = `
       <div class="modal-backdrop" id="lead-confirm-modal">
         <div class="modal-content" style="max-width: 600px;">
           <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <h3><i class="fas ${analysis ? 'fa-robot' : 'fa-check-circle'}"></i> Lead créé${analysis ? ' par IA' : ''} !</h3>
+            <h3><i class="fas fa-robot"></i> Lead créé par IA !</h3>
           </div>
           
           <div class="modal-body">
@@ -6634,57 +6616,41 @@ ${need}
                 <div class="text-sm text-gray-300 mb-2">
                   <strong>Email :</strong> ${client.email}
                 </div>
-                ${company ? `<div class="text-sm text-gray-300 mb-2"><strong>Entreprise :</strong> ${company}</div>` : ''}
-                ${phone ? `<div class="text-sm text-gray-300"><strong>Téléphone :</strong> ${phone}</div>` : ''}
+                ${client.company ? `<div class="text-sm text-gray-300 mb-2"><strong>Entreprise :</strong> ${client.company}</div>` : ''}
+                ${client.phone ? `<div class="text-sm text-gray-300"><strong>Téléphone :</strong> ${client.phone}</div>` : ''}
               </div>
               
-              ${analysis ? `
               <div class="card mb-4" style="background: #1f2937; padding: 1rem;">
-                <h5 class="text-white mb-3"><i class="fas fa-robot"></i> Analyse IA</h5>
+                <h5 class="text-white mb-3"><i class="fas fa-lightbulb"></i> Analyse IA</h5>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Besoin :</strong> ${need}
+                  <strong>Besoin :</strong> ${analysis.need || 'Non spécifié'}
                 </div>
                 <div class="text-sm text-gray-300 mb-2">
-                  <strong>Urgence :</strong> ${urgencyBadge}
+                  <strong>Urgence :</strong> <span class="badge" style="background: ${analysis.urgency === 'high' ? '#ef4444' : analysis.urgency === 'medium' ? '#f59e0b' : '#10b981'}">${analysis.urgency === 'high' ? '🔴 HAUTE' : analysis.urgency === 'medium' ? '🟠 MOYENNE' : '🟢 NORMALE'}</span>
                 </div>
-                ${estimatedAmount > 0 ? `<div class="text-sm text-gray-300 mb-2"><strong>Budget estimé :</strong> ${estimatedAmount}€</div>` : ''}
+                <div class="text-sm text-gray-300 mb-2">
+                  <strong>Budget estimé :</strong> ${analysis.estimatedAmount || 0}€
+                </div>
                 <div class="text-sm text-gray-300">
-                  <strong>Date de clôture :</strong> ${new Date(expectedCloseDate).toLocaleDateString('fr-FR')}
+                  <strong>Probabilité :</strong> ${deal.probability}%
                 </div>
               </div>
-              ` : ''}
               
               <div class="card" style="background: #1f2937; padding: 1rem;">
-                <h5 class="text-white mb-3"><i class="fas fa-tasks"></i> Deal</h5>
-                <div class="text-sm text-gray-300 mb-2">
-                  <strong>Titre :</strong> ${title}
-                </div>
-                <div class="text-sm text-gray-300 mb-2">
-                  <strong>Stage :</strong> <span class="badge badge-info">LEAD</span>
-                </div>
-                ${estimatedAmount > 0 ? `<div class="text-sm text-gray-300 mb-2"><strong>Montant :</strong> ${estimatedAmount}€</div>` : ''}
-                <div class="text-sm text-gray-300">
-                  <strong>Probabilité :</strong> ${probability}%
-                </div>
-              </div>
-              
-              <div class="mt-4 p-3" style="background: #374151; border-radius: 8px; border-left: 4px solid #10b981;">
-                <div class="text-sm text-gray-300">
-                  <strong><i class="fas fa-bolt"></i> Prochaine action :</strong>
-                </div>
-                <div class="text-sm text-white mt-2">
-                  ${suggestedAction}
-                </div>
+                <h5 class="text-white mb-3"><i class="fas fa-tasks"></i> Prochaine action</h5>
+                <p class="text-yellow-400 mb-0" style="font-weight: bold;">
+                  🎯 ${analysis.suggestedAction || 'Appeler pour caler le RDV'}
+                </p>
               </div>
             </div>
           </div>
           
           <div class="modal-footer">
-            <button onclick="window.goToPipeline()" class="btn btn-primary">
-              <i class="fas fa-chart-line"></i> Voir dans Pipeline
+            <button class="btn btn-primary" onclick="closeLeadConfirmModal(); navigate('pipeline')">
+              <i class="fas fa-arrow-right"></i> Voir dans Pipeline
             </button>
-            <button onclick="window.closeLeadConfirmModal()" class="btn btn-secondary">
-              Fermer
+            <button class="btn btn-secondary" onclick="closeLeadConfirmModal()">
+              <i class="fas fa-times"></i> Fermer
             </button>
           </div>
         </div>
@@ -6695,8 +6661,86 @@ ${need}
     
   } catch (error) {
     console.error('❌ Erreur création lead:', error);
-    alert('Erreur lors de la création du lead. Vérifiez la console pour plus de détails.');
+    alert('Erreur lors de la création du lead : ' + error.message);
   }
+}
+
+// Fonction fallback si l'IA ne marche pas
+async function createLeadFallback(email, token) {
+  const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
+  const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
+  
+  // Créer avec les données brutes
+  const clientResponse = await fetch('/api/clients', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      name: fromName,
+      email: fromEmail,
+      phone: '',
+      company: '',
+      status: 'lead'
+    })
+  });
+  
+  const client = await clientResponse.json();
+  
+  const dealResponse = await fetch('/api/deals', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      client_id: client.id,
+      title: email.subject || 'Demande depuis email',
+      amount: 0,
+      stage: 'lead',
+      probability: 30,
+      expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      notes: `Email reçu le ${new Date(email.date).toLocaleDateString('fr-FR')}\n\nDe: ${email.from}\n\nContenu:\n${email.snippet}\n\n🎯 ACTION: Appeler pour caler le RDV`
+    })
+  });
+  
+  const deal = await dealResponse.json();
+  
+  // Afficher modale simple
+  const confirmHTML = `
+    <div class="modal-backdrop" id="lead-confirm-modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          <h3><i class="fas fa-check-circle"></i> Lead créé !</h3>
+        </div>
+        
+        <div class="modal-body">
+          <div style="text-align: center; padding: 2rem;">
+            <i class="fas fa-check-circle text-green-500" style="font-size: 4rem;"></i>
+            <h4 class="text-white mt-4 mb-2">Lead créé avec succès !</h4>
+            <p class="text-gray-400 mb-4">
+              <strong>${fromName}</strong> a été ajouté au Pipeline
+            </p>
+            <p class="text-yellow-400" style="font-weight: bold;">
+              🎯 Prochaine action : Appeler pour caler le RDV !
+            </p>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="closeLeadConfirmModal(); navigate('pipeline')">
+            <i class="fas fa-arrow-right"></i> Voir dans Pipeline
+          </button>
+          <button class="btn btn-secondary" onclick="closeLeadConfirmModal()">
+            <i class="fas fa-times"></i> Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', confirmHTML);
 }
 
 // Fonction pour fermer la modale de confirmation
