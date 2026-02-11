@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Création Lead - KARL CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🧪 Test Création Lead</h1>
+        
+        <!-- Test 1 : Vérifier le token -->
+        <div class="card mb-4 p-4 bg-gray-800 rounded">
+            <h2 class="text-xl mb-2">1️⃣ Vérifier le token</h2>
+            <button onclick="testToken()" class="btn btn-primary">Tester Token</button>
+            <pre id="token-result" class="mt-2 text-xs bg-gray-900 p-2 rounded"></pre>
+        </div>
+        
+        <!-- Test 2 : Créer un client -->
+        <div class="card mb-4 p-4 bg-gray-800 rounded">
+            <h2 class="text-xl mb-2">2️⃣ Créer un client</h2>
+            <input type="text" id="client-name" placeholder="Nom" class="input mb-2">
+            <input type="email" id="client-email" placeholder="Email" class="input mb-2">
+            <button onclick="testCreateClient()" class="btn btn-success">Créer Client</button>
+            <pre id="client-result" class="mt-2 text-xs bg-gray-900 p-2 rounded"></pre>
+        </div>
+        
+        <!-- Test 3 : Créer un deal -->
+        <div class="card mb-4 p-4 bg-gray-800 rounded">
+            <h2 class="text-xl mb-2">3️⃣ Créer un deal</h2>
+            <input type="number" id="deal-client-id" placeholder="Client ID" class="input mb-2">
+            <input type="text" id="deal-title" placeholder="Titre" class="input mb-2">
+            <button onclick="testCreateDeal()" class="btn btn-warning">Créer Deal</button>
+            <pre id="deal-result" class="mt-2 text-xs bg-gray-900 p-2 rounded"></pre>
+        </div>
+        
+        <!-- Test 4 : Workflow complet -->
+        <div class="card mb-4 p-4 bg-gray-800 rounded">
+            <h2 class="text-xl mb-2">4️⃣ Workflow complet (Client + Deal)</h2>
+            <button onclick="testFullWorkflow()" class="btn btn-primary">Test Complet</button>
+            <pre id="workflow-result" class="mt-2 text-xs bg-gray-900 p-2 rounded"></pre>
+        </div>
+    </div>
+    
+    <style>
+        .input {
+            width: 100%;
+            padding: 0.5rem;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.375rem;
+            color: white;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary { background: #3b82f6; }
+        .btn-success { background: #10b981; }
+        .btn-warning { background: #f59e0b; }
+    </style>
+    
+    <script>
+        // Récupérer le token depuis localStorage
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+        
+        // Test 1 : Vérifier le token
+        function testToken() {
+            const token = getToken();
+            const result = document.getElementById('token-result');
+            
+            if (token) {
+                result.textContent = `✅ Token trouvé:\n${token.substring(0, 50)}...`;
+                result.style.color = '#10b981';
+            } else {
+                result.textContent = '❌ Pas de token. Connecte-toi d\'abord sur /';
+                result.style.color = '#ef4444';
+            }
+        }
+        
+        // Test 2 : Créer un client
+        async function testCreateClient() {
+            const token = getToken();
+            const result = document.getElementById('client-result');
+            
+            if (!token) {
+                result.textContent = '❌ Pas de token. Connecte-toi d\'abord.';
+                result.style.color = '#ef4444';
+                return;
+            }
+            
+            const name = document.getElementById('client-name').value || 'Test Client ' + Date.now();
+            const email = document.getElementById('client-email').value || `test${Date.now()}@example.com`;
+            
+            result.textContent = '🔄 Création du client...';
+            result.style.color = '#f59e0b';
+            
+            try {
+                const response = await fetch('/api/clients', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        phone: '',
+                        company: '',
+                        status: 'lead'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.textContent = `✅ Client créé:\n${JSON.stringify(data, null, 2)}`;
+                    result.style.color = '#10b981';
+                    document.getElementById('deal-client-id').value = data.id;
+                } else {
+                    result.textContent = `❌ Erreur:\n${JSON.stringify(data, null, 2)}`;
+                    result.style.color = '#ef4444';
+                }
+            } catch (error) {
+                result.textContent = `❌ Erreur réseau:\n${error.message}`;
+                result.style.color = '#ef4444';
+            }
+        }
+        
+        // Test 3 : Créer un deal
+        async function testCreateDeal() {
+            const token = getToken();
+            const result = document.getElementById('deal-result');
+            
+            if (!token) {
+                result.textContent = '❌ Pas de token. Connecte-toi d\'abord.';
+                result.style.color = '#ef4444';
+                return;
+            }
+            
+            const clientId = parseInt(document.getElementById('deal-client-id').value);
+            const title = document.getElementById('deal-title').value || 'Test Deal ' + Date.now();
+            
+            if (!clientId) {
+                result.textContent = '❌ Client ID requis. Crée un client d\'abord.';
+                result.style.color = '#ef4444';
+                return;
+            }
+            
+            result.textContent = '🔄 Création du deal...';
+            result.style.color = '#f59e0b';
+            
+            try {
+                const response = await fetch('/api/deals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        client_id: clientId,
+                        title: title,
+                        amount: 0,
+                        stage: 'lead',
+                        probability: 30,
+                        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        notes: '🎯 ACTION: Appeler pour caler le RDV'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.textContent = `✅ Deal créé:\n${JSON.stringify(data, null, 2)}`;
+                    result.style.color = '#10b981';
+                } else {
+                    result.textContent = `❌ Erreur:\n${JSON.stringify(data, null, 2)}`;
+                    result.style.color = '#ef4444';
+                }
+            } catch (error) {
+                result.textContent = `❌ Erreur réseau:\n${error.message}`;
+                result.style.color = '#ef4444';
+            }
+        }
+        
+        // Test 4 : Workflow complet
+        async function testFullWorkflow() {
+            const token = getToken();
+            const result = document.getElementById('workflow-result');
+            
+            if (!token) {
+                result.textContent = '❌ Pas de token. Connecte-toi d\'abord.';
+                result.style.color = '#ef4444';
+                return;
+            }
+            
+            result.textContent = '🔄 Test du workflow complet...\n\n';
+            result.style.color = '#f59e0b';
+            
+            try {
+                // Étape 1 : Créer le client
+                result.textContent += '1️⃣ Création du client...\n';
+                const clientResponse = await fetch('/api/clients', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Workflow ' + Date.now(),
+                        email: `workflow${Date.now()}@example.com`,
+                        phone: '',
+                        company: '',
+                        status: 'lead'
+                    })
+                });
+                
+                const client = await clientResponse.json();
+                
+                if (!clientResponse.ok) {
+                    throw new Error(`Client: ${JSON.stringify(client)}`);
+                }
+                
+                result.textContent += `✅ Client créé: ${client.name} (ID: ${client.id})\n\n`;
+                
+                // Étape 2 : Créer le deal
+                result.textContent += '2️⃣ Création du deal...\n';
+                const dealResponse = await fetch('/api/deals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        client_id: client.id,
+                        title: 'Demande depuis email',
+                        amount: 0,
+                        stage: 'lead',
+                        probability: 30,
+                        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        notes: '🎯 ACTION: Appeler pour caler le RDV'
+                    })
+                });
+                
+                const deal = await dealResponse.json();
+                
+                if (!dealResponse.ok) {
+                    throw new Error(`Deal: ${JSON.stringify(deal)}`);
+                }
+                
+                result.textContent += `✅ Deal créé: ${deal.title} (ID: ${deal.id})\n\n`;
+                result.textContent += '🎉 WORKFLOW COMPLET RÉUSSI !';
+                result.style.color = '#10b981';
+                
+            } catch (error) {
+                result.textContent += `\n❌ ERREUR: ${error.message}`;
+                result.style.color = '#ef4444';
+            }
+        }
+    </script>
+</body>
+</html>
