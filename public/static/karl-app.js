@@ -6126,9 +6126,11 @@ async function renderMails() {
                         
                         <!-- Actions -->
                         <div class="flex gap-2 mt-4">
+                          ${email.category === 'prospect' ? `
                           <button class="btn btn-success btn-sm" onclick="window.createLeadFromEmail('${email.id}', ${index})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                             <i class="fas fa-plus-circle"></i> Créer Lead
                           </button>
+                          ` : ''}
                           <button class="btn btn-primary btn-sm" onclick="alert('Réponse à implémenter')">
                             <i class="fas fa-reply"></i> Répondre
                           </button>
