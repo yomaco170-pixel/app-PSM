@@ -7,6 +7,8 @@ type Bindings = {
   DB: D1Database
   GOOGLE_CLIENT_ID?: string
   GOOGLE_CLIENT_SECRET?: string
+  OPENAI_API_KEY?: string
+  OPENAI_BASE_URL?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -280,6 +282,116 @@ app.get('/api/emails', async (c) => {
     return c.json({ emails: formattedEmails })
   } catch (error) {
     console.error('Emails fetch error:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
+// POST /api/emails/classify - Classifier les emails avec IA
+app.post('/api/emails/classify', async (c) => {
+  try {
+    const { emails } = await c.req.json()
+    
+    if (!emails || !Array.isArray(emails)) {
+      return c.json({ error: 'Emails requis' }, 400)
+    }
+    
+    // Vérifier si OpenAI est configuré
+    const apiKey = c.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY
+    const baseURL = c.env.OPENAI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://www.genspark.ai/api/llm_proxy/v1'
+    
+    if (!apiKey) {
+      return c.json({ error: 'OpenAI API key non configurée' }, 500)
+    }
+    
+    // Classifier chaque email avec GPT
+    const classifiedEmails = await Promise.all(
+      emails.map(async (email: any) => {
+        try {
+          const prompt = `Tu es un assistant intelligent qui classe les emails professionnels.
+
+Email à classifier :
+- Sujet : ${email.subject}
+- Expéditeur : ${email.from}
+- Aperçu : ${email.snippet}
+
+Catégories disponibles :
+1. devis - Emails liés aux devis, estimations, propositions commerciales
+2. factures - Factures, paiements, règlements
+3. commandes - Commandes, achats, livraisons
+4. clients - Communications avec les clients
+5. fournisseurs - Communications avec les fournisseurs
+6. urgent - Messages urgents ou importants
+7. autres - Tout le reste
+
+Réponds UNIQUEMENT avec un JSON au format :
+{
+  "category": "nom_categorie",
+  "confidence": 0.95,
+  "reason": "Raison courte",
+  "priority": "high|medium|low",
+  "suggested_action": "Action suggérée"
+}
+
+Ne rajoute AUCUN texte avant ou après le JSON.`
+
+          const response = await fetch(`${baseURL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-5-mini',
+              messages: [
+                { role: 'system', content: 'Tu es un assistant de classification d\'emails. Réponds UNIQUEMENT en JSON valide.' },
+                { role: 'user', content: prompt }
+              ],
+              temperature: 0.3,
+              max_tokens: 200
+            })
+          })
+          
+          if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`)
+          }
+          
+          const data: any = await response.json()
+          const content = data.choices[0]?.message?.content || '{}'
+          
+          // Parser la réponse JSON
+          let classification
+          try {
+            // Extraire le JSON s'il y a du texte avant/après
+            const jsonMatch = content.match(/\{[\s\S]*\}/)
+            classification = jsonMatch ? JSON.parse(jsonMatch[0]) : {}
+          } catch (e) {
+            classification = { category: 'autres', confidence: 0.5, reason: 'Erreur parsing', priority: 'low' }
+          }
+          
+          return {
+            ...email,
+            ai_category: classification.category || 'autres',
+            ai_confidence: classification.confidence || 0.5,
+            ai_reason: classification.reason || '',
+            ai_priority: classification.priority || 'medium',
+            ai_suggested_action: classification.suggested_action || ''
+          }
+        } catch (error) {
+          console.error('Classification error:', error)
+          return {
+            ...email,
+            ai_category: 'autres',
+            ai_confidence: 0,
+            ai_reason: 'Erreur classification',
+            ai_priority: 'medium'
+          }
+        }
+      })
+    )
+    
+    return c.json({ emails: classifiedEmails })
+  } catch (error) {
+    console.error('Classify error:', error)
     return c.json({ error: 'Erreur serveur' }, 500)
   }
 })

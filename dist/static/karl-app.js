@@ -5940,35 +5940,84 @@ async function renderMails() {
       throw new Error(data.error || 'Erreur lors du chargement');
     }
     
-    const emails = data.emails || [];
+    let emails = data.emails || [];
     
-    // Classifier les emails automatiquement
-    const classifyEmail = (email) => {
-      const subject = (email.subject || '').toLowerCase();
-      const from = (email.from || '').toLowerCase();
-      const snippet = (email.snippet || '').toLowerCase();
-      const content = subject + ' ' + from + ' ' + snippet;
+    // Classifier les emails avec l'IA
+    console.log('🤖 Classification IA des emails...');
+    const emailsContainer = document.getElementById('emails-container');
+    if (emailsContainer) {
+      emailsContainer.innerHTML = `
+        <div class="card" style="text-align: center; padding: 2rem;">
+          <i class="fas fa-brain fa-spin text-blue-500" style="font-size: 2rem;"></i>
+          <p class="text-gray-400 mt-3">🤖 Classification intelligente avec IA...</p>
+          <p class="text-sm text-gray-500 mt-1">Analyse de ${emails.length} emails</p>
+        </div>
+      `;
+    }
+    
+    try {
+      const classifyResponse = await fetch('/api/emails/classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails })
+      });
       
-      if (content.match(/devis|quotation|quote|estimation|prix/)) return 'devis';
-      if (content.match(/facture|invoice|payment|paiement|règlement/)) return 'factures';
-      if (content.match(/commande|order|achat|livraison/)) return 'commandes';
-      if (content.match(/client|customer|psm|portail/)) return 'clients';
-      if (content.match(/fournisseur|supplier|vendor/)) return 'fournisseurs';
-      if (content.match(/urgent|important|asap/)) return 'urgent';
-      return 'autres';
-    };
-    
-    // Ajouter la catégorie à chaque email
-    emails.forEach(email => {
-      email.category = classifyEmail(email);
-    });
+      if (classifyResponse.ok) {
+        const classifyData = await classifyResponse.json();
+        emails = classifyData.emails || emails;
+        console.log('✅ Classification IA réussie !');
+        
+        // Utiliser la catégorie IA si disponible
+        emails.forEach(email => {
+          email.category = email.ai_category || 'autres';
+          email.ai_classified = !!email.ai_category;
+        });
+      } else {
+        console.warn('⚠️ Classification IA échouée, utilisation des règles simples');
+        // Fallback: classification basique
+        emails.forEach(email => {
+          const subject = (email.subject || '').toLowerCase();
+          const from = (email.from || '').toLowerCase();
+          const snippet = (email.snippet || '').toLowerCase();
+          const content = subject + ' ' + from + ' ' + snippet;
+          
+          if (content.match(/devis|quotation|quote|estimation|prix/)) email.category = 'devis';
+          else if (content.match(/facture|invoice|payment|paiement|règlement/)) email.category = 'factures';
+          else if (content.match(/commande|order|achat|livraison/)) email.category = 'commandes';
+          else if (content.match(/client|customer|psm|portail/)) email.category = 'clients';
+          else if (content.match(/fournisseur|supplier|vendor/)) email.category = 'fournisseurs';
+          else if (content.match(/urgent|important|asap/)) email.category = 'urgent';
+          else email.category = 'autres';
+          
+          email.ai_classified = false;
+        });
+      }
+    } catch (classifyError) {
+      console.error('Erreur classification IA:', classifyError);
+      // Fallback: classification basique
+      emails.forEach(email => {
+        const subject = (email.subject || '').toLowerCase();
+        const from = (email.from || '').toLowerCase();
+        const snippet = (email.snippet || '').toLowerCase();
+        const content = subject + ' ' + from + ' ' + snippet;
+        
+        if (content.match(/devis|quotation|quote|estimation|prix/)) email.category = 'devis';
+        else if (content.match(/facture|invoice|payment|paiement|règlement/)) email.category = 'factures';
+        else if (content.match(/commande|order|achat|livraison/)) email.category = 'commandes';
+        else if (content.match(/client|customer|psm|portail/)) email.category = 'clients';
+        else if (content.match(/fournisseur|supplier|vendor/)) email.category = 'fournisseurs';
+        else if (content.match(/urgent|important|asap/)) email.category = 'urgent';
+        else email.category = 'autres';
+        
+        email.ai_classified = false;
+      });
+    }
     
     // Stocker les emails dans l'état global
     window.currentEmails = emails;
     window.selectedCategory = window.selectedCategory || 'tous';
     
     // Afficher les emails
-    const emailsContainer = document.getElementById('emails-container');
     if (emailsContainer) {
       if (emails.length === 0) {
         emailsContainer.innerHTML = `
@@ -6029,6 +6078,7 @@ async function renderMails() {
                           email.category === 'clients' ? '#8b5cf6' : 
                           email.category === 'fournisseurs' ? '#ec4899' : '#6b7280'
                         };">${email.category}</span>
+                        ${email.ai_classified ? '<span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.65rem;"><i class="fas fa-brain"></i> IA</span>' : ''}
                       </div>
                       <div class="text-sm text-white mb-1">${email.subject || 'Sans objet'}</div>
                       <div class="text-xs text-gray-400">${email.snippet || ''}</div>
@@ -6044,6 +6094,19 @@ async function renderMails() {
                         <div class="text-sm text-gray-300 mb-2">
                           <strong>Objet :</strong> ${email.subject || 'Sans objet'}
                         </div>
+                        ${email.ai_classified ? `
+                          <div class="text-sm mb-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 0.75rem; border-radius: 0.5rem;">
+                            <div class="text-white font-semibold mb-1">
+                              <i class="fas fa-brain"></i> Analyse IA
+                            </div>
+                            <div class="text-gray-100 text-xs">
+                              ${email.ai_reason ? `<div><strong>Raison :</strong> ${email.ai_reason}</div>` : ''}
+                              ${email.ai_priority ? `<div><strong>Priorité :</strong> ${email.ai_priority === 'high' ? '🔴 Haute' : email.ai_priority === 'low' ? '🟢 Basse' : '🟡 Moyenne'}</div>` : ''}
+                              ${email.ai_suggested_action ? `<div><strong>Action suggérée :</strong> ${email.ai_suggested_action}</div>` : ''}
+                              ${email.ai_confidence ? `<div><strong>Confiance :</strong> ${Math.round(email.ai_confidence * 100)}%</div>` : ''}
+                            </div>
+                          </div>
+                        ` : ''}
                         <div class="text-sm text-gray-300 mb-3">
                           <strong>Contenu :</strong>
                         </div>
