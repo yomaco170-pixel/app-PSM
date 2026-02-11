@@ -998,17 +998,21 @@ app.post('/api/clients', async (c) => {
     }
 
     // Créer le nouveau client
-    console.log('📝 Création client:', { name: data.name, email: data.email })
+    console.log('📝 Création client:', { name: data.name, email: data.email, phone: data.phone, address: data.address })
+    
+    // S'assurer que la colonne address existe
+    try { await c.env.DB.prepare('ALTER TABLE clients ADD COLUMN address TEXT').run() } catch(e) {}
     
     try {
       const result = await c.env.DB.prepare(
-        'INSERT INTO clients (name, email, phone, company, status) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO clients (name, email, phone, company, status, address) VALUES (?, ?, ?, ?, ?, ?)'
       ).bind(
         data.name || null,
         data.email || null,
         data.phone || null,
         data.company || null,
-        data.status || 'lead'
+        data.status || 'lead',
+        data.address || null
       ).run()
 
       console.log('✅ Client créé, id:', result.meta.last_row_id)

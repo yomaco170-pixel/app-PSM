@@ -7996,6 +7996,17 @@ function openCreateLeadModal() {
               <label class="input-label">Société</label>
               <input type="text" name="company" id="company" class="input" placeholder="Entreprise Dupont SARL" />
             </div>
+            
+            <div class="input-group">
+              <label class="input-label"><i class="fas fa-map-marker-alt" style="color: #ef4444;"></i> Adresse</label>
+              <input type="text" name="address_street" id="address_street" class="input" placeholder="15 rue des Lilas" style="margin-bottom: 0.5rem;" />
+              <div class="grid-2" style="gap: 0.5rem;">
+                <input type="text" name="address_postal" id="address_postal" class="input" placeholder="Code postal" onchange="lookupCity(this.value)" />
+                <select name="address_city" id="address_city" class="input">
+                  <option value="">Ville</option>
+                </select>
+              </div>
+            </div>
           </div>
           
           <!-- Section Client existant (cachée par défaut) -->
@@ -8616,14 +8627,22 @@ async function submitLeadForm() {
     
     // Si client_id est vide, c'est un nouveau client
     if (!clientId || clientId === '') {
+      // Combiner l'adresse
+      const street = data.address_street || '';
+      const postal = data.address_postal || '';
+      const city = data.address_city || '';
+      const fullAddress = [street, postal, city].filter(Boolean).join(', ');
+      
       // Créer le client d'abord
       const clientData = {
         civility: data.civility,
         first_name: data.first_name,
         last_name: data.last_name,
+        name: [data.first_name, data.last_name].filter(Boolean).join(' ').trim(),
         phone: data.phone,
         email: data.email,
-        company: data.company
+        company: data.company,
+        address: fullAddress
       };
       
       const clientResult = await api.createClient(clientData);
