@@ -6477,7 +6477,36 @@ async function createLeadFromEmail(emailId, index = -1) {
     
     console.log('🔄 Création du lead depuis email...', { fromName, fromEmail, emailId: email.id });
     
-    // Créer le deal/lead directement (format compatible backend)
+    // ÉTAPE 1 : Créer ou récupérer le client d'abord
+    console.log('🔄 Création du client...');
+    
+    const clientResponse = await fetch('/api/clients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        name: fromName,
+        email: fromEmail,
+        phone: '',
+        company: '',
+        status: 'lead'
+      })
+    });
+    
+    if (!clientResponse.ok) {
+      const errorData = await clientResponse.json().catch(() => ({}));
+      console.error('❌ Erreur création client:', errorData);
+      throw new Error(errorData.error || 'Erreur création client');
+    }
+    
+    const client = await clientResponse.json();
+    console.log('✅ Client créé/récupéré:', client);
+    
+    // ÉTAPE 2 : Créer le deal/lead avec le client_id
+    console.log('🔄 Création du deal/lead...');
+    
     const leadResponse = await fetch('/api/deals', {
       method: 'POST',
       headers: {
@@ -6485,7 +6514,7 @@ async function createLeadFromEmail(emailId, index = -1) {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        client_id: null,  // Pas encore de client, sera créé après
+        client_id: client.id,  // ✅ ID du client créé
         title: email.subject || 'Demande depuis email',
         amount: 0,
         stage: 'lead',
@@ -6497,13 +6526,13 @@ async function createLeadFromEmail(emailId, index = -1) {
     
     if (!leadResponse.ok) {
       const errorData = await leadResponse.json().catch(() => ({}));
-      console.error('❌ Erreur création lead:', errorData);
-      throw new Error(errorData.error || 'Erreur création lead');
+      console.error('❌ Erreur création deal:', errorData);
+      throw new Error(errorData.error || 'Erreur création deal');
     }
     
     const lead = await leadResponse.json();
     
-    console.log('✅ Lead créé:', lead);
+    console.log('✅ Deal/Lead créé:', lead);
     
     // Succès ! Afficher confirmation
     const confirmHTML = `
