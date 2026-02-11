@@ -144,9 +144,10 @@ app.get('/api/auth/gmail', async (c) => {
   // Nouveau Client OAuth KARL CRM PRODUCTION
   const clientId = c.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID'
   
-  // Scopes Gmail pour lire les emails
+  // Scopes Gmail pour lire ET envoyer des emails
   const scopes = [
     'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/userinfo.email',
     'openid',
     'profile'
@@ -392,6 +393,73 @@ Ne rajoute AUCUN texte avant ou après le JSON.`
     return c.json({ emails: classifiedEmails })
   } catch (error) {
     console.error('Classify error:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
+// POST /api/emails/send - Envoyer un email via Gmail
+app.post('/api/emails/send', async (c) => {
+  try {
+    const { to, subject, message, accessToken, inReplyTo, threadId } = await c.req.json()
+    
+    if (!to || !subject || !message || !accessToken) {
+      return c.json({ error: 'Paramètres manquants' }, 400)
+    }
+    
+    // Construire l'email au format RFC 2822
+    const emailLines = [
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'Content-Type: text/plain; charset=utf-8',
+      'MIME-Version: 1.0',
+    ]
+    
+    // Ajouter les en-têtes pour les réponses
+    if (inReplyTo) {
+      emailLines.push(`In-Reply-To: ${inReplyTo}`)
+      emailLines.push(`References: ${inReplyTo}`)
+    }
+    
+    emailLines.push('') // Ligne vide entre en-têtes et corps
+    emailLines.push(message)
+    
+    const emailContent = emailLines.join('\r\n')
+    
+    // Encoder en base64url
+    const base64Email = btoa(unescape(encodeURIComponent(emailContent)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+    
+    // Envoyer via Gmail API
+    const url = threadId 
+      ? `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`
+      : `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`
+    
+    const body: any = { raw: base64Email }
+    if (threadId) {
+      body.threadId = threadId
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    })
+    
+    if (!response.ok) {
+      const error = await response.text()
+      console.error('Gmail send error:', error)
+      return c.json({ error: 'Erreur envoi email' }, response.status)
+    }
+    
+    const result = await response.json()
+    return c.json({ success: true, messageId: result.id })
+  } catch (error) {
+    console.error('Send email error:', error)
     return c.json({ error: 'Erreur serveur' }, 500)
   }
 })

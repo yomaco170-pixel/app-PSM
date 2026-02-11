@@ -6290,8 +6290,175 @@ function selectCategory(category, index) {
 }
 
 // Fonction pour répondre à un email (placeholder)
+// Fonction pour répondre à un email
 function replyToEmail(emailId) {
-  alert('Fonctionnalité de réponse en cours de développement.\n\nBientôt disponible : répondre directement depuis KARL CRM !');
+  // Trouver l'email dans la liste
+  const email = window.currentEmails.find(e => e.id === emailId);
+  if (!email) {
+    alert('Email introuvable');
+    return;
+  }
+  
+  // Créer la modale de réponse
+  const modalHTML = `
+    <div class="modal-backdrop" id="reply-modal" onclick="if(event.target.id === 'reply-modal') closeReplyModal()">
+      <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3><i class="fas fa-reply"></i> Répondre</h3>
+          <button class="modal-close" onclick="closeReplyModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div style="margin-bottom: 1rem; padding: 1rem; background: #1f2937; border-radius: 0.5rem;">
+            <div class="text-sm text-gray-400 mb-1">
+              <strong>À :</strong> ${email.from || 'Inconnu'}
+            </div>
+            <div class="text-sm text-gray-400">
+              <strong>Objet :</strong> Re: ${email.subject || 'Sans objet'}
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Votre message</label>
+            <textarea 
+              id="reply-message" 
+              class="input" 
+              rows="8" 
+              placeholder="Écrivez votre réponse ici..."
+              style="font-family: inherit; resize: vertical;"
+            ></textarea>
+          </div>
+          
+          <div id="reply-status" style="display: none; margin-top: 1rem;"></div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeReplyModal()">
+            <i class="fas fa-times"></i> Annuler
+          </button>
+          <button class="btn btn-primary" onclick="sendReply('${emailId}')">
+            <i class="fas fa-paper-plane"></i> Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Focus sur le textarea
+  setTimeout(() => {
+    document.getElementById('reply-message')?.focus();
+  }, 100);
+}
+
+// Fonction pour fermer la modale de réponse
+function closeReplyModal() {
+  const modal = document.getElementById('reply-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// Fonction pour envoyer la réponse
+async function sendReply(emailId) {
+  const messageTextarea = document.getElementById('reply-message');
+  const statusDiv = document.getElementById('reply-status');
+  const message = messageTextarea?.value?.trim();
+  
+  if (!message) {
+    alert('Veuillez saisir un message');
+    return;
+  }
+  
+  // Trouver l'email
+  const email = window.currentEmails.find(e => e.id === emailId);
+  if (!email) {
+    alert('Email introuvable');
+    return;
+  }
+  
+  // Extraire l'adresse email de l'expéditeur
+  const fromMatch = email.from.match(/<(.+?)>/) || email.from.match(/([^\s]+@[^\s]+)/);
+  const toEmail = fromMatch ? fromMatch[1] : email.from;
+  
+  // Récupérer le token Gmail
+  const gmailToken = localStorage.getItem('gmail_access_token');
+  if (!gmailToken) {
+    alert('Session Gmail expirée, veuillez vous reconnecter');
+    return;
+  }
+  
+  // Afficher le statut d'envoi
+  if (statusDiv) {
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = `
+      <div style="text-align: center;">
+        <i class="fas fa-spinner fa-spin text-blue-500" style="font-size: 2rem;"></i>
+        <p class="text-gray-400 mt-2">Envoi en cours...</p>
+      </div>
+    `;
+  }
+  
+  // Désactiver le bouton d'envoi
+  const sendButton = document.querySelector('[onclick*="sendReply"]');
+  if (sendButton) {
+    sendButton.disabled = true;
+    sendButton.style.opacity = '0.5';
+  }
+  
+  try {
+    const response = await fetch('/api/emails/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: toEmail,
+        subject: 'Re: ' + (email.subject || 'Sans objet'),
+        message: message,
+        accessToken: gmailToken,
+        inReplyTo: email.id,
+        threadId: email.threadId
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      if (statusDiv) {
+        statusDiv.innerHTML = `
+          <div style="text-align: center; color: #10b981;">
+            <i class="fas fa-check-circle" style="font-size: 2rem;"></i>
+            <p class="mt-2">✅ Email envoyé avec succès !</p>
+          </div>
+        `;
+      }
+      
+      // Fermer la modale après 1.5 secondes
+      setTimeout(() => {
+        closeReplyModal();
+      }, 1500);
+    } else {
+      throw new Error(result.error || 'Erreur d\'envoi');
+    }
+  } catch (error) {
+    console.error('Erreur envoi email:', error);
+    if (statusDiv) {
+      statusDiv.innerHTML = `
+        <div style="text-align: center; color: #ef4444;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+          <p class="mt-2">❌ Erreur : ${error.message}</p>
+        </div>
+      `;
+    }
+    
+    // Réactiver le bouton
+    if (sendButton) {
+      sendButton.disabled = false;
+      sendButton.style.opacity = '1';
+    }
+  }
 }
 
 async function viewEmailDetail(emailId) {
