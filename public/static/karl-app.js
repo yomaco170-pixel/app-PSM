@@ -5991,10 +5991,10 @@ async function renderMails() {
           const snippet = (email.snippet || '').toLowerCase();
           const content = subject + ' ' + from + ' ' + snippet;
           
-          if (content.match(/devis|quotation|quote|estimation|prix/)) email.category = 'devis';
+          if (content.match(/devis|quotation|quote|estimation|prix|demande|intéressé|projet|portail/)) email.category = 'prospect';
           else if (content.match(/facture|invoice|payment|paiement|règlement/)) email.category = 'factures';
           else if (content.match(/commande|order|achat|livraison/)) email.category = 'commandes';
-          else if (content.match(/client|customer|psm|portail/)) email.category = 'clients';
+          else if (content.match(/client|customer|psm/)) email.category = 'clients';
           else if (content.match(/fournisseur|supplier|vendor/)) email.category = 'fournisseurs';
           else if (content.match(/urgent|important|asap/)) email.category = 'urgent';
           else email.category = 'autres';
@@ -6082,12 +6082,12 @@ async function renderMails() {
                         ${email.unread ? '<span class="badge badge-primary">Non lu</span>' : ''}
                         <span class="badge" style="background: ${
                           email.category === 'urgent' ? '#ef4444' : 
-                          email.category === 'devis' ? '#3b82f6' : 
+                          email.category === 'prospect' ? '#f59e0b' : 
                           email.category === 'factures' ? '#10b981' : 
-                          email.category === 'commandes' ? '#f59e0b' : 
+                          email.category === 'commandes' ? '#3b82f6' : 
                           email.category === 'clients' ? '#8b5cf6' : 
                           email.category === 'fournisseurs' ? '#ec4899' : '#6b7280'
-                        };">${email.category}</span>
+                        };">${email.category.toUpperCase()}</span>
                         ${email.ai_classified ? '<span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.65rem;"><i class="fas fa-brain"></i> IA</span>' : ''}
                       </div>
                       <div class="text-sm text-white mb-1">${email.subject || 'Sans objet'}</div>
@@ -6126,6 +6126,9 @@ async function renderMails() {
                         
                         <!-- Actions -->
                         <div class="flex gap-2 mt-4">
+                          <button class="btn btn-success btn-sm" onclick="createLeadFromEmail(${index})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <i class="fas fa-plus-circle"></i> Créer Lead
+                          </button>
                           <button class="btn btn-primary btn-sm" onclick="replyToEmail('${email.id}')">
                             <i class="fas fa-reply"></i> Répondre
                           </button>
@@ -6210,9 +6213,9 @@ function changeEmailCategory(emailId, index) {
   const currentEmail = window.currentEmails[index];
   
   const categoryConfig = {
-    devis: { icon: 'fa-file-invoice', label: 'Devis', color: '#3b82f6' },
+    prospect: { icon: 'fa-star', label: 'Prospect', color: '#f59e0b' },
     factures: { icon: 'fa-receipt', label: 'Factures', color: '#10b981' },
-    commandes: { icon: 'fa-shopping-cart', label: 'Commandes', color: '#f59e0b' },
+    commandes: { icon: 'fa-shopping-cart', label: 'Commandes', color: '#3b82f6' },
     clients: { icon: 'fa-users', label: 'Clients', color: '#8b5cf6' },
     fournisseurs: { icon: 'fa-truck', label: 'Fournisseurs', color: '#ec4899' },
     urgent: { icon: 'fa-exclamation-triangle', label: 'Urgent', color: '#ef4444' },
@@ -6402,6 +6405,144 @@ function closeThreadModal() {
 function replyToThreadFromModal(threadId, emailId) {
   closeThreadModal();
   replyToEmail(emailId);
+}
+
+// Fonction pour créer un Lead à partir d'un email
+async function createLeadFromEmail(index) {
+  const email = window.currentEmails[index];
+  
+  if (!email) {
+    alert('Email introuvable');
+    return;
+  }
+  
+  // Extraire le nom depuis l'email (before @)
+  const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
+  const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
+  
+  // Créer le lead
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vous devez être connecté');
+      return;
+    }
+    
+    // Créer un client d'abord
+    const clientResponse = await fetch('/api/clients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        name: fromName,
+        email: fromEmail,
+        phone: '',
+        company: '',
+        address: '',
+        notes: `Lead créé depuis email:\n\nObjet: ${email.subject}\n\nContenu: ${email.snippet}`
+      })
+    });
+    
+    if (!clientResponse.ok) {
+      throw new Error('Erreur création client');
+    }
+    
+    const client = await clientResponse.json();
+    
+    // Créer le deal (Lead)
+    const dealResponse = await fetch('/api/deals', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        client_id: client.id,
+        title: email.subject || 'Demande depuis email',
+        amount: 0,
+        stage: 'lead',
+        probability: 30,
+        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        notes: `Email reçu le ${new Date(email.date).toLocaleDateString('fr-FR')}\n\nDe: ${email.from}\n\nContenu:\n${email.snippet}\n\n🎯 ACTION: Appeler pour caler le RDV`
+      })
+    });
+    
+    if (!dealResponse.ok) {
+      throw new Error('Erreur création deal');
+    }
+    
+    const deal = await dealResponse.json();
+    
+    // Succès ! Afficher confirmation et rediriger
+    const confirmHTML = `
+      <div class="modal-backdrop" id="lead-confirm-modal">
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <h3><i class="fas fa-check-circle"></i> Lead créé !</h3>
+          </div>
+          
+          <div class="modal-body">
+            <div style="text-align: center; padding: 2rem;">
+              <i class="fas fa-check-circle text-green-500" style="font-size: 4rem;"></i>
+              <h4 class="text-white mt-4 mb-2">Lead créé avec succès !</h4>
+              <p class="text-gray-400 mb-4">
+                <strong>${fromName}</strong> a été ajouté au Pipeline
+              </p>
+              <div class="card" style="text-align: left; margin-top: 1rem;">
+                <div class="text-sm text-gray-300 mb-2">
+                  <strong>Client :</strong> ${client.name}
+                </div>
+                <div class="text-sm text-gray-300 mb-2">
+                  <strong>Email :</strong> ${client.email}
+                </div>
+                <div class="text-sm text-gray-300 mb-2">
+                  <strong>Sujet :</strong> ${deal.title}
+                </div>
+                <div class="text-sm text-gray-300">
+                  <strong>Stage :</strong> <span class="badge badge-primary">LEAD</span>
+                </div>
+              </div>
+              <p class="text-yellow-400 mt-4" style="font-weight: bold;">
+                🎯 Prochaine action : Appeler pour caler le RDV !
+              </p>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="btn btn-primary" onclick="goToPipeline()">
+              <i class="fas fa-arrow-right"></i> Voir dans Pipeline
+            </button>
+            <button class="btn btn-secondary" onclick="closeLeadConfirmModal()">
+              <i class="fas fa-times"></i> Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', confirmHTML);
+    
+  } catch (error) {
+    console.error('Erreur création lead:', error);
+    alert('Erreur lors de la création du lead : ' + error.message);
+  }
+}
+
+// Fonction pour fermer la modale de confirmation
+function closeLeadConfirmModal() {
+  const modal = document.getElementById('lead-confirm-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// Fonction pour aller au Pipeline
+function goToPipeline() {
+  closeLeadConfirmModal();
+  window.currentView = 'pipeline';
+  renderPipeline();
 }
 
 // Fonction pour répondre à un email (placeholder)

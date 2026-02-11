@@ -385,10 +385,10 @@ Email à classifier :
 - Aperçu : ${email.snippet}
 
 Catégories disponibles :
-1. devis - Emails liés aux devis, estimations, propositions commerciales
+1. prospect - Demandes de devis, projets, nouveaux clients potentiels
 2. factures - Factures, paiements, règlements
 3. commandes - Commandes, achats, livraisons
-4. clients - Communications avec les clients
+4. clients - Communications avec les clients existants
 5. fournisseurs - Communications avec les fournisseurs
 6. urgent - Messages urgents ou importants
 7. autres - Tout le reste
