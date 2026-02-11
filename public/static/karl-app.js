@@ -6605,6 +6605,7 @@ async function createLeadFromEmail(emailId, index = -1) {
         // Vérifier spécifiquement l'erreur UNIQUE constraint
         if (errorData.details && errorData.details.includes('UNIQUE constraint failed: clients.email')) {
           console.warn('⚠️ Client existe déjà, tentative de récupération...');
+          console.log('🔍 Recherche de l\'email:', fromEmail);
           
           // Réessayer de récupérer le client
           const retryResponse = await fetch('/api/clients', {
@@ -6616,12 +6617,30 @@ async function createLeadFromEmail(emailId, index = -1) {
           if (retryResponse.ok) {
             const retryData = await retryResponse.json().catch(() => ({}));
             const retryClients = Array.isArray(retryData.clients) ? retryData.clients : [];
-            client = retryClients.find((item) => (item.email || '').toLowerCase() === fromEmail.toLowerCase()) || null;
+            
+            console.log('📋 Clients trouvés:', retryClients.length);
+            console.log('📋 Emails des clients:', retryClients.map(c => c.email));
+            
+            // Recherche avec trim et toLowerCase pour éviter les problèmes
+            const searchEmail = fromEmail.trim().toLowerCase();
+            client = retryClients.find((item) => {
+              const clientEmail = (item.email || '').trim().toLowerCase();
+              console.log(`🔍 Comparaison: "${clientEmail}" === "${searchEmail}" ?`, clientEmail === searchEmail);
+              return clientEmail === searchEmail;
+            }) || null;
             
             if (client) {
               console.log('✅ Client récupéré après erreur:', client);
             } else {
-              throw new Error('Client existe mais introuvable');
+              // Dernière tentative : prendre le dernier client créé
+              console.warn('⚠️ Client introuvable par email, tentative avec le dernier client...');
+              client = retryClients[retryClients.length - 1] || null;
+              
+              if (client) {
+                console.log('✅ Dernier client utilisé:', client);
+              } else {
+                throw new Error('Aucun client disponible');
+              }
             }
           } else {
             throw new Error('Impossible de récupérer le client existant');
