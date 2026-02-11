@@ -231,6 +231,66 @@ app.get('/api/auth/gmail/callback', async (c) => {
   }
 })
 
+// ============================================
+// DATABASE INITIALIZATION ENDPOINT
+// ============================================
+
+app.post('/api/init-db', async (c) => {
+  try {
+    console.log('🔧 Initializing database tables...')
+    
+    // Créer table deals si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS deals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        client_id INTEGER,
+        title TEXT NOT NULL,
+        amount REAL DEFAULT 0,
+        stage TEXT DEFAULT 'lead',
+        probability INTEGER DEFAULT 0,
+        expected_close_date TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'lead',
+        archived INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run()
+    
+    // Créer table clients si elle n'existe pas (avec name)
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        phone TEXT,
+        company TEXT,
+        status TEXT DEFAULT 'lead',
+        archived INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run()
+    
+    console.log('✅ Database tables initialized')
+    
+    return c.json({ 
+      success: true, 
+      message: 'Database initialized successfully',
+      tables: ['deals', 'clients']
+    })
+  } catch (error) {
+    console.error('Database initialization error:', error)
+    return c.json({ 
+      error: 'Erreur initialisation base de données', 
+      details: error.message 
+    }, 500)
+  }
+})
+
+// ============================================
+// EMAIL ROUTES
+// ============================================
+
 // GET /api/emails - Fetch Gmail emails (INBOX only - emails reçus uniquement)
 app.get('/api/emails', async (c) => {
   try {

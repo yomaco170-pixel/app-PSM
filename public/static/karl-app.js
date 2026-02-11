@@ -8826,6 +8826,21 @@ function addChatMessage(role, content) {
     state.user = savedUser;
     api.setToken(savedToken);
     
+    // Initialiser la base de données (créer les tables si nécessaire)
+    fetch('/api/init-db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${savedToken}`
+      }
+    }).then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          console.log('✅ Base de données initialisée:', data.tables);
+        }
+      })
+      .catch(err => console.warn('⚠️ Erreur init DB (peut-être déjà créée):', err));
+    
     // Initialiser le chatbot
     initChatbot();
     
