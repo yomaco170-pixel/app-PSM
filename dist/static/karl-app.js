@@ -6131,32 +6131,89 @@ function filterEmailsByCategory(category) {
 
 // Fonction pour changer la catégorie d'un email
 function changeEmailCategory(emailId, index) {
-  const categories = ['devis', 'factures', 'commandes', 'clients', 'fournisseurs', 'urgent', 'autres'];
-  const currentEmail = window.currentEmails.find((e, i) => i === index);
+  const currentEmail = window.currentEmails[index];
   
-  const categoryLabels = {
-    devis: 'Devis',
-    factures: 'Factures',
-    commandes: 'Commandes',
-    clients: 'Clients',
-    fournisseurs: 'Fournisseurs',
-    urgent: 'Urgent',
-    autres: 'Autres'
+  const categoryConfig = {
+    devis: { icon: 'fa-file-invoice', label: 'Devis', color: '#3b82f6' },
+    factures: { icon: 'fa-receipt', label: 'Factures', color: '#10b981' },
+    commandes: { icon: 'fa-shopping-cart', label: 'Commandes', color: '#f59e0b' },
+    clients: { icon: 'fa-users', label: 'Clients', color: '#8b5cf6' },
+    fournisseurs: { icon: 'fa-truck', label: 'Fournisseurs', color: '#ec4899' },
+    urgent: { icon: 'fa-exclamation-triangle', label: 'Urgent', color: '#ef4444' },
+    autres: { icon: 'fa-folder', label: 'Autres', color: '#6b7280' }
   };
   
-  const newCategory = prompt(
-    `Catégorie actuelle : ${categoryLabels[currentEmail.category]}\n\nChoisissez une nouvelle catégorie :\n\n` +
-    categories.map((cat, i) => `${i+1}. ${categoryLabels[cat]}`).join('\n'),
-    '1'
-  );
+  // Créer la modale
+  const modalHTML = `
+    <div class="modal-backdrop" id="category-modal" onclick="if(event.target.id === 'category-modal') closeCategoryModal()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-tag"></i> Changer la catégorie</h3>
+          <button class="modal-close" onclick="closeCategoryModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div style="margin-bottom: 1.5rem;">
+            <p class="text-sm text-gray-400 mb-2">Email : <strong class="text-white">${currentEmail.subject || 'Sans objet'}</strong></p>
+            <p class="text-sm text-gray-400">Catégorie actuelle : 
+              <span class="badge" style="background: ${categoryConfig[currentEmail.category].color};">
+                <i class="fas ${categoryConfig[currentEmail.category].icon}"></i>
+                ${categoryConfig[currentEmail.category].label}
+              </span>
+            </p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+            ${Object.entries(categoryConfig).map(([key, config]) => `
+              <button 
+                class="category-option ${currentEmail.category === key ? 'active' : ''}"
+                style="
+                  padding: 1rem;
+                  border-radius: 10px;
+                  border: 2px solid ${currentEmail.category === key ? config.color : '#374151'};
+                  background: ${currentEmail.category === key ? config.color + '20' : 'transparent'};
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  text-align: center;
+                "
+                onmouseover="this.style.borderColor='${config.color}'; this.style.background='${config.color}20';"
+                onmouseout="if(!this.classList.contains('active')) { this.style.borderColor='#374151'; this.style.background='transparent'; }"
+                onclick="selectCategory('${key}', ${index})"
+              >
+                <i class="fas ${config.icon}" style="font-size: 1.5rem; color: ${config.color}; margin-bottom: 0.5rem; display: block;"></i>
+                <div class="text-white font-semibold">${config.label}</div>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeCategoryModal()">
+            <i class="fas fa-times"></i> Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
   
-  if (newCategory) {
-    const catIndex = parseInt(newCategory) - 1;
-    if (catIndex >= 0 && catIndex < categories.length) {
-      currentEmail.category = categories[catIndex];
-      renderMails();
-    }
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// Fonction pour fermer la modale de catégorie
+function closeCategoryModal() {
+  const modal = document.getElementById('category-modal');
+  if (modal) {
+    modal.remove();
   }
+}
+
+// Fonction pour sélectionner une catégorie
+function selectCategory(category, index) {
+  window.currentEmails[index].category = category;
+  closeCategoryModal();
+  renderMails();
 }
 
 // Fonction pour répondre à un email (placeholder)
