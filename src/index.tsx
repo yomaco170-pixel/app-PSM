@@ -956,6 +956,24 @@ app.post('/api/deals', async (c) => {
       ).run()
 
       return c.json({ id: result.meta.last_row_id, ...data }, 201)
+    } else if (data.title) {
+      // Nouveau format SANS client_id (gérer le cas où le client existe déjà)
+      // On va chercher le client par email dans les notes ou créer un deal orphelin
+      const result = await c.env.DB.prepare(
+        'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        decoded.id,
+        null, // client_id = NULL
+        data.title,
+        data.amount || 0,
+        data.stage || 'lead',
+        data.probability || 0,
+        data.expected_close_date || null,
+        data.notes || null,
+        data.stage || 'lead'
+      ).run()
+
+      return c.json({ id: result.meta.last_row_id, ...data }, 201)
     } else {
       // Ancien format (formulaire simple)
       const result = await c.env.DB.prepare(
