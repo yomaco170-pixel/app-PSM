@@ -451,6 +451,8 @@ app.post('/api/init-db', async (c) => {
     await safeAddColumn('deals', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
     await safeAddColumn('deals', 'probability', 'INTEGER DEFAULT 30')
     await safeAddColumn('deals', 'notes', 'TEXT')
+    await safeAddColumn('deals', 'rdv_date', 'TEXT')
+    await safeAddColumn('deals', 'rdv_notes', 'TEXT')
     
     console.log('✅ Database tables initialized + migrations applied')
     
@@ -1354,6 +1356,8 @@ app.put('/api/deals/:id', async (c) => {
     if (data.expected_close_date !== undefined) { updates.push('expected_close_date = ?'); values.push(data.expected_close_date) }
     if (data.notes !== undefined) { updates.push('notes = ?'); values.push(data.notes) }
     if (data.client_id !== undefined) { updates.push('client_id = ?'); values.push(data.client_id) }
+    if (data.rdv_date !== undefined) { updates.push('rdv_date = ?'); values.push(data.rdv_date) }
+    if (data.rdv_notes !== undefined) { updates.push('rdv_notes = ?'); values.push(data.rdv_notes) }
     if (data.archived !== undefined) { 
       try { updates.push('archived = ?'); values.push(data.archived ? 1 : 0) } catch(e) {} 
     }
