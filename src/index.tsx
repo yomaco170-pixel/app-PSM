@@ -784,24 +784,51 @@ app.post('/api/deals', async (c) => {
       return c.json({ error: 'Non autorisé' }, 401)
     }
 
+    // Décoder le token pour récupérer user_id
+    const token = authHeader.replace('Bearer ', '')
+    const decoded = JSON.parse(atob(token))
+
     const data = await c.req.json()
 
-    const result = await c.env.DB.prepare(
-      'INSERT INTO deals (first_name, last_name, email, phone, company, type, status, estimated_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(
-      data.first_name,
-      data.last_name,
-      data.email || null,
-      data.phone || null,
-      data.company || null,
-      data.type || 'Résidentiel',
-      data.status || 'lead',
-      data.estimated_amount || 0
-    ).run()
+    // Vérifier si on a les nouveaux champs (client_id, title, etc.) ou les anciens (first_name, last_name, etc.)
+    if (data.client_id && data.title) {
+      // Nouveau format (Pipeline/CRM)
+      const result = await c.env.DB.prepare(
+        'INSERT INTO deals (user_id, client_id, title, amount, stage, probability, expected_close_date, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        decoded.id,
+        data.client_id,
+        data.title,
+        data.amount || 0,
+        data.stage || 'lead',
+        data.probability || 0,
+        data.expected_close_date || null,
+        data.notes || null,
+        data.stage || 'lead'
+      ).run()
 
-    return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      return c.json({ id: result.meta.last_row_id, ...data }, 201)
+    } else {
+      // Ancien format (formulaire simple)
+      const result = await c.env.DB.prepare(
+        'INSERT INTO deals (user_id, first_name, last_name, email, phone, company, type, status, estimated_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        decoded.id,
+        data.first_name,
+        data.last_name,
+        data.email || null,
+        data.phone || null,
+        data.company || null,
+        data.type || 'Résidentiel',
+        data.status || 'lead',
+        data.estimated_amount || 0
+      ).run()
+
+      return c.json({ id: result.meta.last_row_id, ...data }, 201)
+    }
   } catch (error) {
-    return c.json({ error: 'Erreur serveur' }, 500)
+    console.error('Error creating deal:', error)
+    return c.json({ error: 'Erreur serveur', details: error.message }, 500)
   }
 })
 
