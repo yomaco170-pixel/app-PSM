@@ -5880,13 +5880,18 @@ async function renderMails() {
     // Afficher le bouton de connexion Gmail
     appDiv.innerHTML = `
       <div class="card-header">
-        <h2 class="text-2xl font-bold text-white">
-          <i class="fas fa-envelope"></i> Mails
-        </h2>
+        <div class="flex items-center gap-3">
+          <button class="btn btn-secondary btn-sm" onclick="state.currentView = 'dashboard'; render();">
+            <i class="fas fa-arrow-left"></i> Retour
+          </button>
+          <h2 class="text-2xl font-bold text-white">
+            <i class="fas fa-envelope"></i> Mails
+          </h2>
+        </div>
       </div>
       
       <div class="card" style="text-align: center; padding: 3rem;">
-        <i class="fab fa-google text-blue-500" style="font-size: 4rem; margin-bottom: 1.5rem;"></i>
+        <i class="fas fa-envelope" style="font-size: 4rem; color: #3b82f6; margin-bottom: 1.5rem;"></i>
         <h3 class="text-xl font-bold text-white mb-3">Connectez votre compte Gmail</h3>
         <p class="text-gray-400 mb-6">Pour accéder à vos emails, connectez votre compte Gmail professionnel</p>
         
@@ -5906,12 +5911,17 @@ async function renderMails() {
   appDiv.innerHTML = `
     <div class="card-header">
       <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-white">
-          <i class="fas fa-envelope"></i> Mails
-        </h2>
+        <div class="flex items-center gap-3">
+          <button class="btn btn-secondary btn-sm" onclick="state.currentView = 'dashboard'; render();">
+            <i class="fas fa-arrow-left"></i> Retour
+          </button>
+          <h2 class="text-2xl font-bold text-white">
+            <i class="fas fa-envelope"></i> Mails
+          </h2>
+        </div>
         <div class="flex items-center gap-3">
           <span class="text-sm text-gray-400">
-            <i class="fab fa-google"></i> ${gmailEmail}
+            ${gmailEmail}
           </span>
           <button class="btn btn-secondary btn-sm" onclick="disconnectGmail()">
             <i class="fas fa-sign-out-alt"></i> Déconnecter
