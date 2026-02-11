@@ -6026,7 +6026,7 @@ async function renderMails() {
     
     // Charger les catégories manuellement modifiées depuis la base
     try {
-      const token = localStorage.getItem('token');
+      const token = storage.get('token');
       if (token) {
         const savedCategoriesResponse = await fetch('/api/emails/get-categories', {
           headers: {
@@ -6371,7 +6371,7 @@ async function selectCategory(category, index) {
   const email = window.currentEmails[index];
   
   try {
-    const token = localStorage.getItem('token');
+    const token = storage.get('token');
     if (!token) {
       alert('Vous devez être connecté');
       return;
@@ -6542,7 +6542,7 @@ async function createLeadFromEmail(emailId, index = -1) {
   }
   
   try {
-    const token = localStorage.getItem('token');
+    const token = storage.get('token');
     if (!token) {
       alert('Vous devez être connecté');
       return;
@@ -6750,7 +6750,7 @@ async function goToLeads() {
 // Fonction pour convertir un Lead en Client
 async function convertLeadToClient(leadId) {
   try {
-    const token = localStorage.getItem('token');
+    const token = storage.get('token');
     if (!token) {
       alert('Vous devez être connecté');
       return;
