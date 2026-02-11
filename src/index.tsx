@@ -231,7 +231,7 @@ app.get('/api/auth/gmail/callback', async (c) => {
   }
 })
 
-// GET /api/emails - Fetch Gmail emails
+// GET /api/emails - Fetch Gmail emails (INBOX only - emails reçus uniquement)
 app.get('/api/emails', async (c) => {
   try {
     const accessToken = c.req.query('access_token')
@@ -240,8 +240,8 @@ app.get('/api/emails', async (c) => {
       return c.json({ error: 'Access token manquant' }, 401)
     }
     
-    // Appel Gmail API pour récupérer les emails
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20', {
+    // Appel Gmail API pour récupérer UNIQUEMENT les emails REÇUS (in:inbox)
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&q=in:inbox', {
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
@@ -270,19 +270,88 @@ app.get('/api/emails', async (c) => {
       const subject = headers.find((h: any) => h.name === 'Subject')?.value || '(Sans objet)'
       const from = headers.find((h: any) => h.name === 'From')?.value || 'Inconnu'
       const date = headers.find((h: any) => h.name === 'Date')?.value || ''
+      const to = headers.find((h: any) => h.name === 'To')?.value || ''
       
       return {
         id: email.id,
+        threadId: email.threadId,
         subject,
         from,
+        to,
         date,
-        snippet: email.snippet || ''
+        snippet: email.snippet || '',
+        labelIds: email.labelIds || []
       }
     })
     
     return c.json({ emails: formattedEmails })
   } catch (error) {
     console.error('Emails fetch error:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
+// GET /api/emails/thread/:threadId - Récupérer le fil complet d'une conversation
+app.get('/api/emails/thread/:threadId', async (c) => {
+  try {
+    const accessToken = c.req.query('access_token')
+    const threadId = c.req.param('threadId')
+    
+    if (!accessToken) {
+      return c.json({ error: 'Access token manquant' }, 401)
+    }
+    
+    // Récupérer tous les messages du thread
+    const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/threads/${threadId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+    
+    if (!response.ok) {
+      return c.json({ error: 'Erreur Gmail API' }, response.status)
+    }
+    
+    const thread: any = await response.json()
+    const messages = thread.messages || []
+    
+    // Formatter tous les messages du fil
+    const formattedMessages = messages.map((message: any) => {
+      const headers = message.payload?.headers || []
+      const subject = headers.find((h: any) => h.name === 'Subject')?.value || '(Sans objet)'
+      const from = headers.find((h: any) => h.name === 'From')?.value || 'Inconnu'
+      const to = headers.find((h: any) => h.name === 'To')?.value || ''
+      const date = headers.find((h: any) => h.name === 'Date')?.value || ''
+      
+      // Récupérer le contenu du message
+      let body = ''
+      if (message.payload.parts) {
+        const textPart = message.payload.parts.find((p: any) => p.mimeType === 'text/plain')
+        if (textPart && textPart.body?.data) {
+          body = atob(textPart.body.data.replace(/-/g, '+').replace(/_/g, '/'))
+        }
+      } else if (message.payload.body?.data) {
+        body = atob(message.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'))
+      }
+      
+      return {
+        id: message.id,
+        subject,
+        from,
+        to,
+        date,
+        snippet: message.snippet || '',
+        body: body || message.snippet || '',
+        labelIds: message.labelIds || []
+      }
+    })
+    
+    return c.json({ 
+      threadId: thread.id,
+      messages: formattedMessages
+    })
+  } catch (error) {
+    console.error('Thread fetch error:', error)
     return c.json({ error: 'Erreur serveur' }, 500)
   }
 })

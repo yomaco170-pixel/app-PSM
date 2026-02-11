@@ -6129,6 +6129,9 @@ async function renderMails() {
                           <button class="btn btn-primary btn-sm" onclick="replyToEmail('${email.id}')">
                             <i class="fas fa-reply"></i> Répondre
                           </button>
+                          <button class="btn btn-primary btn-sm" onclick="viewThreadConversation('${email.threadId}', '${email.id}')">
+                            <i class="fas fa-comments"></i> Voir le fil
+                          </button>
                           <button class="btn btn-secondary btn-sm" onclick="changeEmailCategory('${email.id}', ${index})">
                             <i class="fas fa-tag"></i> Changer catégorie
                           </button>
@@ -6287,6 +6290,118 @@ function selectCategory(category, index) {
   window.currentEmails[index].category = category;
   closeCategoryModal();
   renderMails();
+}
+
+// Fonction pour voir le fil complet d'une conversation
+async function viewThreadConversation(threadId, currentEmailId) {
+  const accessToken = localStorage.getItem('gmail_access_token');
+  
+  if (!accessToken) {
+    alert('Token Gmail manquant');
+    return;
+  }
+  
+  try {
+    // Créer une modale avec un spinner
+    const modalHTML = `
+      <div class="modal-backdrop" id="thread-modal" onclick="if(event.target.id === 'thread-modal') closeThreadModal()">
+        <div class="modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+          <div class="modal-header">
+            <h3><i class="fas fa-comments"></i> Fil de conversation</h3>
+            <button class="modal-close" onclick="closeThreadModal()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body" id="thread-content">
+            <div style="text-align: center; padding: 2rem;">
+              <div class="loading-spinner"></div>
+              <p class="text-gray-400 mt-3">Chargement du fil de conversation...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Appel API pour récupérer le thread
+    const response = await fetch(`/api/emails/thread/${threadId}?access_token=${accessToken}`);
+    const data = await response.json();
+    
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Erreur chargement thread');
+    }
+    
+    const messages = data.messages || [];
+    
+    // Afficher tous les messages du fil
+    const threadContent = document.getElementById('thread-content');
+    threadContent.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        ${messages.map((msg, index) => {
+          const isCurrentEmail = msg.id === currentEmailId;
+          const isSentByMe = msg.from.includes(localStorage.getItem('gmail_email') || 'commercial.pinoit');
+          
+          return `
+            <div class="card" style="
+              ${isCurrentEmail ? 'border: 2px solid #3b82f6;' : ''}
+              ${isSentByMe ? 'background: #1e293b; border-left: 4px solid #10b981;' : 'background: #2d3748; border-left: 4px solid #3b82f6;'}
+            ">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                <div>
+                  <div class="text-sm font-semibold" style="color: ${isSentByMe ? '#10b981' : '#3b82f6'};">
+                    <i class="fas ${isSentByMe ? 'fa-paper-plane' : 'fa-inbox'}"></i>
+                    ${isSentByMe ? 'Vous' : msg.from}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    ${new Date(msg.date).toLocaleString('fr-FR')}
+                  </div>
+                </div>
+                ${isCurrentEmail ? '<span class="badge" style="background: #3b82f6;">Email actuel</span>' : ''}
+              </div>
+              
+              <div class="text-sm text-gray-300 mb-2">
+                <strong>Objet :</strong> ${msg.subject || 'Sans objet'}
+              </div>
+              
+              <div class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto; padding: 0.75rem; background: #111827; border-radius: 0.5rem;">
+                ${msg.body || msg.snippet || 'Aucun contenu'}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      <div class="flex gap-2 mt-4">
+        <button class="btn btn-primary" onclick="replyToThreadFromModal('${threadId}', '${currentEmailId}')">
+          <i class="fas fa-reply"></i> Répondre
+        </button>
+        <button class="btn btn-secondary" onclick="closeThreadModal()">
+          <i class="fas fa-times"></i> Fermer
+        </button>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('Erreur thread:', error);
+    alert('Erreur lors du chargement du fil : ' + error.message);
+    closeThreadModal();
+  }
+}
+
+// Fonction pour fermer la modale de fil
+function closeThreadModal() {
+  const modal = document.getElementById('thread-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// Fonction pour répondre depuis la modale de fil
+function replyToThreadFromModal(threadId, emailId) {
+  closeThreadModal();
+  replyToEmail(emailId);
 }
 
 // Fonction pour répondre à un email (placeholder)
