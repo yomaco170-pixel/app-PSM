@@ -3954,7 +3954,8 @@ async function viewDealModal(dealId) {
 
 async function loadDealQuotes(dealId) {
   try {
-    const quotes = await axios.get(`${API_URL}/api/quotes?deal_id=${dealId}`).then(r => r.data.quotes);
+    const response = await axios.get(`${API_URL}/api/quotes?deal_id=${dealId}`);
+    const quotes = safeArray(response.data.quotes || response.data);
     const devisInfo = document.getElementById('devisInfo');
     if (!devisInfo) return;
     
@@ -3965,10 +3966,10 @@ async function loadDealQuotes(dealId) {
         <div class="card mb-2" style="padding: 0.75rem; cursor: pointer;" onclick="editQuote(${q.id})">
           <div class="flex items-center justify-between">
             <div>
-              <strong>${q.quote_number}</strong>
-              <span class="badge badge-${q.status === 'brouillon' ? 'gray' : q.status === 'envoye' ? 'primary' : q.status === 'accepte' ? 'success' : 'danger'} ml-2">${q.status}</span>
+              <strong>${q.quote_number || 'Devis #' + q.id}</strong>
+              <span class="badge badge-${q.status === 'brouillon' ? 'gray' : q.status === 'envoye' ? 'primary' : q.status === 'accepte' ? 'success' : 'danger'} ml-2">${q.status || 'brouillon'}</span>
             </div>
-            <span class="text-xs text-gray-400">${formatRelativeTime(q.created_at)}</span>
+            <span class="text-xs text-gray-400">${q.created_at ? formatRelativeTime(q.created_at) : ''}</span>
           </div>
         </div>
       `).join('');
@@ -3977,7 +3978,7 @@ async function loadDealQuotes(dealId) {
     console.error('Error loading quotes:', error);
     const devisInfo = document.getElementById('devisInfo');
     if (devisInfo) {
-      devisInfo.innerHTML = '<p class="text-sm text-red-600">Erreur de chargement</p>';
+      devisInfo.innerHTML = '<p class="text-sm text-gray-400">Aucun devis pour ce dossier</p>';
     }
   }
 }

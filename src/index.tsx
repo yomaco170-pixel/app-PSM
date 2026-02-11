@@ -1401,14 +1401,29 @@ app.get('/api/quotes', async (c) => {
       return c.json({ error: 'Non autorisé' }, 401)
     }
 
-    const quotes = await c.env.DB.prepare(
-      'SELECT * FROM quotes ORDER BY created_at DESC'
-    ).all()
+    const dealId = c.req.query('deal_id')
+    let quotes
+    
+    if (dealId) {
+      // Filtrer par deal_id si fourni
+      try {
+        quotes = await c.env.DB.prepare(
+          'SELECT * FROM quotes WHERE deal_id = ? ORDER BY created_at DESC'
+        ).bind(dealId).all()
+      } catch (e) {
+        // Si colonne deal_id n'existe pas, retourner vide
+        quotes = { results: [] }
+      }
+    } else {
+      quotes = await c.env.DB.prepare(
+        'SELECT * FROM quotes ORDER BY created_at DESC'
+      ).all()
+    }
 
-    return c.json(quotes.results || [])
+    return c.json({ quotes: quotes.results || [] })
   } catch (error) {
     console.error('Error fetching quotes:', error)
-    return c.json([])
+    return c.json({ quotes: [] })
   }
 })
 
@@ -1440,6 +1455,29 @@ app.post('/api/quotes', async (c) => {
 // ============================================
 // TASKS ROUTES
 // ============================================
+
+// GET /api/photos - Récupérer les photos (mock pour l'instant)
+app.get('/api/photos', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+    return c.json({ photos: [] })
+  } catch (error) {
+    return c.json({ photos: [] })
+  }
+})
+
+// POST /api/photos - Upload photo (mock)
+app.post('/api/photos', async (c) => {
+  return c.json({ error: 'Fonctionnalité en cours de développement' }, 501)
+})
+
+// DELETE /api/photos/:id - Delete photo (mock)
+app.delete('/api/photos/:id', async (c) => {
+  return c.json({ success: true })
+})
 
 app.get('/api/tasks', async (c) => {
   try {
