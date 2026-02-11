@@ -5881,7 +5881,7 @@ async function renderMails() {
     appDiv.innerHTML = `
       <div class="card-header">
         <div class="flex items-center gap-3">
-          <button class="btn btn-secondary btn-sm" onclick="state.currentView = 'dashboard'; render();">
+          <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">
             <i class="fas fa-arrow-left"></i> Retour
           </button>
           <h2 class="text-2xl font-bold text-white">
@@ -5912,7 +5912,7 @@ async function renderMails() {
     <div class="card-header">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <button class="btn btn-secondary btn-sm" onclick="state.currentView = 'dashboard'; render();">
+          <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">
             <i class="fas fa-arrow-left"></i> Retour
           </button>
           <h2 class="text-2xl font-bold text-white">
@@ -6550,20 +6550,8 @@ function closeLeadConfirmModal() {
 async function goToPipeline() {
   closeLeadConfirmModal();
   
-  // Changer la vue active dans le menu
-  document.querySelectorAll('.sidebar-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  
-  // Activer l'onglet Pipeline
-  const pipelineTab = document.querySelector('[onclick*="renderPipeline"]');
-  if (pipelineTab) {
-    pipelineTab.classList.add('active');
-  }
-  
-  // Rendre le pipeline
-  window.currentView = 'pipeline';
-  await renderPipeline();
+  // Utiliser la fonction navigate standard
+  navigate('pipeline');
 }
 
 // Fonction pour répondre à un email (placeholder)
