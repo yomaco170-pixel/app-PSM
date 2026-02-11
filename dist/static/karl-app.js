@@ -6651,9 +6651,17 @@ ${email.snippet || email.body || ''}
     });
     
     if (!dealResponse.ok) {
-      const errorData = await dealResponse.json().catch(() => ({}));
+      let errorData;
+      try {
+        errorData = await dealResponse.json(); // Try to parse as JSON
+      } catch (jsonError) {
+        // If JSON parsing fails, read as plain text
+        errorData = await dealResponse.text();
+        console.warn('⚠️ Server response for error was not JSON:', errorData);
+      }
       console.error('❌ Erreur création deal:', errorData);
-      throw new Error(errorData.error || 'Erreur création deal');
+      // You might want to adjust the error message based on whether it was JSON or plain text
+      throw new Error(typeof errorData === 'object' && errorData.error ? errorData.error : `Erreur création deal: ${errorData}`);
     }
     
     const deal = await dealResponse.json();

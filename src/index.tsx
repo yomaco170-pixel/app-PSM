@@ -934,7 +934,17 @@ app.post('/api/deals', async (c) => {
 
     // Décoder le token pour récupérer user_id
     const token = authHeader.replace('Bearer ', '')
-    const decoded = JSON.parse(atob(token))
+    
+    let decoded
+    try {
+      decoded = JSON.parse(atob(token))
+    } catch (tokenError) {
+      console.error('❌ Erreur décodage token:', tokenError)
+      return c.json({ 
+        error: 'Token invalide', 
+        details: 'Le token d\'authentification est mal formé ou corrompu' 
+      }, 401)
+    }
 
     const data = await c.req.json()
 
