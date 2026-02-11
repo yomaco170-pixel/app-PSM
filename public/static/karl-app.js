@@ -6126,16 +6126,16 @@ async function renderMails() {
                         
                         <!-- Actions -->
                         <div class="flex gap-2 mt-4">
-                          <button class="btn btn-success btn-sm" onclick="createLeadFromEmail(${index})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                          <button class="btn btn-success btn-sm email-action-btn" data-action="create-lead" data-index="${index}" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                             <i class="fas fa-plus-circle"></i> Créer Lead
                           </button>
-                          <button class="btn btn-primary btn-sm" onclick="replyToEmail('${email.id}')">
+                          <button class="btn btn-primary btn-sm email-action-btn" data-action="reply" data-email-id="${email.id}">
                             <i class="fas fa-reply"></i> Répondre
                           </button>
-                          <button class="btn btn-primary btn-sm" onclick="viewThreadConversation('${email.threadId}', '${email.id}')">
+                          <button class="btn btn-primary btn-sm email-action-btn" data-action="view-thread" data-thread-id="${email.threadId}" data-email-id="${email.id}">
                             <i class="fas fa-comments"></i> Voir le fil
                           </button>
-                          <button class="btn btn-secondary btn-sm" onclick="changeEmailCategory('${email.id}', ${index})">
+                          <button class="btn btn-secondary btn-sm email-action-btn" data-action="change-category" data-email-id="${email.id}" data-index="${index}">
                             <i class="fas fa-tag"></i> Changer catégorie
                           </button>
                         </div>
@@ -6185,6 +6185,50 @@ function disconnectGmail() {
 function refreshEmails() {
   renderMails();
 }
+
+// ==================== EVENT LISTENER GLOBAL POUR LES ACTIONS EMAIL ====================
+// Utiliser la délégation d'événements au lieu de onclick
+document.addEventListener('click', function(event) {
+  const target = event.target.closest('.email-action-btn');
+  
+  if (!target) return; // Pas un bouton d'action email
+  
+  const action = target.dataset.action;
+  const index = target.dataset.index;
+  const emailId = target.dataset.emailId;
+  const threadId = target.dataset.threadId;
+  
+  console.log('🔘 Action email:', action, { index, emailId, threadId });
+  
+  switch(action) {
+    case 'create-lead':
+      if (index !== undefined) {
+        createLeadFromEmail(parseInt(index));
+      }
+      break;
+      
+    case 'reply':
+      if (emailId) {
+        replyToEmail(emailId);
+      }
+      break;
+      
+    case 'view-thread':
+      if (threadId && emailId) {
+        viewThreadConversation(threadId, emailId);
+      }
+      break;
+      
+    case 'change-category':
+      if (emailId && index !== undefined) {
+        changeEmailCategory(emailId, parseInt(index));
+      }
+      break;
+      
+    default:
+      console.warn('⚠️ Action inconnue:', action);
+  }
+});
 
 // Fonction pour développer/réduire un email
 function toggleEmailDetails(index) {
