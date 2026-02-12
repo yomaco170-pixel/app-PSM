@@ -2500,7 +2500,7 @@ function openNewQuoteModal() {
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-gray-400 text-xs">Validité (jours)</label>
-              <input type="number" id="validity_days" value="30" 
+              <input type="number" id="validity_days" value="15" 
                 class="w-full bg-gray-700 text-white p-2 rounded border border-gray-600" />
             </div>
             <div>
@@ -4386,7 +4386,7 @@ function calculateEditQuoteTotals() {
   if (!window.quoteLines) return;
   
   const totalHT = window.quoteLines.reduce((sum, line) => sum + (line.qty * line.unit_price_ht), 0);
-  const tvaPercent = parseFloat(document.getElementById('edit_tva_percent')?.value || 20);
+  const tvaPercent = parseFloat(document.getElementById('edit_tva_percent')?.value || 10);
   const depositPercent = parseFloat(document.getElementById('edit_deposit_percent')?.value || 50);
   
   const totalTVA = totalHT * (tvaPercent / 100);
@@ -4754,7 +4754,7 @@ function openCreateQuoteModal(dealId) {
             <div class="grid-2">
               <div class="input-group">
                 <label class="input-label">TVA (%)</label>
-                <input type="number" id="tva_percent" name="tva_percent" class="input" value="20" step="0.1" />
+                <input type="number" id="tva_percent" name="tva_percent" class="input" value="10" step="0.1" />
               </div>
               <div class="input-group">
                 <label class="input-label">Acompte (%)</label>
@@ -4763,7 +4763,7 @@ function openCreateQuoteModal(dealId) {
             </div>
             <div class="input-group">
               <label class="input-label">Validité (jours)</label>
-              <input type="number" id="validity_days" class="input" value="30" />
+              <input type="number" id="validity_days" class="input" value="15" />
             </div>
           </div>
 
@@ -4784,7 +4784,7 @@ function openCreateQuoteModal(dealId) {
               <strong id="totalHT">0.00 €</strong>
             </div>
             <div class="flex justify-between mb-2">
-              <span>TVA (<span id="tvaPercent">20</span>%) :</span>
+              <span>TVA (<span id="tvaPercent">10</span>%) :</span>
               <strong id="totalTVA">0.00 €</strong>
             </div>
             <div class="flex justify-between mb-2" style="font-size: 1.1rem; color: var(--psm-primary);">
@@ -4851,7 +4851,7 @@ function calculateLineTotal(line) {
 
 function calculateQuoteTotals() {
   const totalHT = quoteLines.reduce((sum, line) => sum + calculateLineTotal(line), 0);
-  const tvaPercent = parseFloat(document.getElementById('tva_percent')?.value || 20);
+  const tvaPercent = parseFloat(document.getElementById('tva_percent')?.value || 10);
   const depositPercent = parseFloat(document.getElementById('deposit_percent')?.value || 50);
   
   const totalTVA = totalHT * (tvaPercent / 100);
