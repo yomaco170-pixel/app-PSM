@@ -780,7 +780,7 @@ app.post('/api/emails/send', async (c) => {
 // POST /api/emails/generate-reply - Générer une réponse avec IA
 app.post('/api/emails/generate-reply', async (c) => {
   try {
-    const { email, tone, instruction } = await c.req.json()
+    const { email, tone, instruction, userContext } = await c.req.json()
     
     const apiKey = c.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY
     const baseURL = c.env.OPENAI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
@@ -789,18 +789,32 @@ app.post('/api/emails/generate-reply', async (c) => {
       return c.json({ error: 'OpenAI non configuré' }, 500)
     }
     
+    // Construction du contexte utilisateur si fourni
+    const contextSection = userContext ? `
+
+CONTEXTE DE L'UTILISATEUR :
+${userContext}
+
+Utilise ce contexte pour personnaliser ta réponse. N'invente JAMAIS d'informations qui ne sont pas dans ce contexte.` : ''
+    
     const prompt = `Tu es un assistant qui aide à rédiger des emails professionnels.
 
 Email reçu :
 De : ${email.from}
 Objet : ${email.subject}
-Contenu : ${email.snippet}
+Contenu : ${email.body || email.snippet}${contextSection}
 
 ${instruction}
 
-Rédige une réponse appropriée en français. Commence directement par le contenu de la réponse (pas de "Cher X," si l'email original n'est pas formel). Sois naturel et professionnel.
+RÈGLES STRICTES :
+- Rédige une réponse appropriée en français
+- Commence directement par le contenu (pas de formule excessive)
+- Sois naturel et professionnel
+- N'invente JAMAIS de pièces jointes, documents ou informations qui ne sont pas mentionnées
+- Si le contexte utilisateur mentionne quelque chose à envoyer, utilise-le. Sinon, ne mentionne RIEN.
+- Reste factuel et basé uniquement sur les informations fournies
 
-IMPORTANT : Termine TOUJOURS la réponse par :
+Termine TOUJOURS par :
 
 Cordialement,
 Guillaume PINOIT

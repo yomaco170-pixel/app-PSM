@@ -6895,6 +6895,21 @@ function replyToEmail(emailId) {
             </div>
           </div>
           
+          <!-- CONTEXTE UTILISATEUR (nouveau) -->
+          <div style="margin-bottom: 1rem;">
+            <label class="input-label" style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem; color: #9ca3af;">
+              📝 Contexte pour l'IA (optionnel)
+            </label>
+            <textarea 
+              id="user-context" 
+              class="input" 
+              rows="2" 
+              placeholder="Ex: Je vais lui envoyer un devis, Je confirme le RDV demain 14h, Je refuse poliment..."
+              style="font-family: inherit; resize: vertical; font-size: 0.875rem;"
+            ></textarea>
+            <p class="text-xs text-gray-500 mt-1">💡 Donne du contexte à l'IA pour qu'elle adapte sa réponse (elle n'inventera RIEN d'autre)</p>
+          </div>
+          
           <!-- Boutons d'assistance IA -->
           <div style="margin-bottom: 1rem;">
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -6911,7 +6926,6 @@ function replyToEmail(emailId) {
                 <i class="fas fa-magic"></i> Améliorer
               </button>
             </div>
-            <p class="text-xs text-gray-500 mt-2">💡 L'IA peut t'aider à rédiger une réponse adaptée</p>
           </div>
           
           <div class="input-group">
@@ -6973,6 +6987,10 @@ async function generateAIResponse(emailId, tone) {
     brief: 'Rédige une réponse courte et concise, allant droit au but.'
   };
   
+  // Récupérer le contexte utilisateur
+  const contextField = document.getElementById('user-context');
+  const userContext = contextField ? contextField.value.trim() : '';
+  
   try {
     const response = await fetch('/api/emails/generate-reply', {
       method: 'POST',
@@ -6981,10 +6999,12 @@ async function generateAIResponse(emailId, tone) {
         email: {
           from: email.from,
           subject: email.subject,
+          body: email.body || email.snippet, // Envoyer le contenu COMPLET
           snippet: email.snippet
         },
         tone: tone,
-        instruction: toneInstructions[tone] || toneInstructions.professional
+        instruction: toneInstructions[tone] || toneInstructions.professional,
+        userContext: userContext // Nouveau : contexte fourni par l'utilisateur
       })
     });
     
