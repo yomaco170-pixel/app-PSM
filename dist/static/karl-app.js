@@ -6175,11 +6175,11 @@ async function renderMails() {
                         <!-- Actions -->
                         <div class="flex gap-2 mt-4">
                           ${email.category === 'prospect' ? `
-                          <button class="btn btn-success btn-sm" onclick="window.createLeadFromEmail('${email.id}', ${index})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                          <button class="btn btn-success btn-sm" onclick="createLeadFromEmail('${email.id}', ${index})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                             <i class="fas fa-plus-circle"></i> Créer Lead
                           </button>
                           ` : ''}
-                          <button class="btn btn-primary btn-sm" onclick="alert('Réponse à implémenter')">
+                          <button class="btn btn-primary btn-sm" onclick="replyToEmail('${email.id}')">
                             <i class="fas fa-reply"></i> Répondre
                           </button>
                           <button class="btn btn-primary btn-sm email-action-btn" data-action="view-thread" data-thread-id="${email.threadId}" data-email-id="${email.id}">

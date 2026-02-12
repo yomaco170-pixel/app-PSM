@@ -10,5 +10,12 @@
       "database_id": "56a5b648-e0f8-435d-91b9-b1853b66b7dc"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "karl-crm-documents",
+      "preview_bucket_name": "karl-crm-documents-preview"
+    }
+  ],
   "compatibility_flags": ["nodejs_compat"]
 }
