@@ -6982,9 +6982,9 @@ async function generateAIResponse(emailId, tone) {
   `;
   
   const toneInstructions = {
-    professional: 'Rédige une réponse professionnelle, courtoise et formelle.',
-    friendly: 'Rédige une réponse amicale, chaleureuse mais professionnelle.',
-    brief: 'Rédige une réponse courte et concise, allant droit au but.'
+    professional: 'Rédige une réponse TRÈS professionnelle et formelle, avec un vocabulaire soutenu et courtois. Style business formel. Commence TOUJOURS par "Bonjour," ou "Bonjour [Prénom],". Vouvoie systématiquement.',
+    friendly: 'Rédige une réponse chaleureuse et amicale, mais TOUJOURS professionnelle. Commence par "Bonjour," ou "Bonjour [Prénom],". Vouvoie systématiquement. Ton courtois mais plus détendu.',
+    brief: 'Rédige une réponse courte et concise, mais TOUJOURS avec "Bonjour," au début. Vouvoie systématiquement. Va droit au but tout en restant poli et professionnel.'
   };
   
   // Récupérer le contexte utilisateur

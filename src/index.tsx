@@ -806,13 +806,28 @@ Contenu : ${email.body || email.snippet}${contextSection}
 
 ${instruction}
 
-RÈGLES STRICTES :
-- Rédige une réponse appropriée en français
-- Commence directement par le contenu (pas de formule excessive)
-- Sois naturel et professionnel
-- N'invente JAMAIS de pièces jointes, documents ou informations qui ne sont pas mentionnées
-- Si le contexte utilisateur mentionne quelque chose à envoyer, utilise-le. Sinon, ne mentionne RIEN.
-- Reste factuel et basé uniquement sur les informations fournies
+RÈGLES STRICTES ET OBLIGATOIRES :
+1. COMMENCE TOUJOURS PAR UNE FORMULE DE POLITESSE :
+   - "Bonjour [Prénom]," si tu connais le prénom
+   - "Bonjour," si tu ne connais pas le prénom
+   - JAMAIS sans salutation initiale
+
+2. STYLE PROFESSIONNEL :
+   - Utilise le vouvoiement systématiquement
+   - Utilise un vocabulaire soutenu et courtois
+   - Évite les tournures familières ("caler", "afin de", etc.)
+   - Préfère : "convenir d'un rendez-vous", "dans les plus brefs délais", "je vous remercie"
+
+3. STRUCTURE DE L'EMAIL :
+   - Salutation (Bonjour)
+   - Corps du message (professionnel et courtois)
+   - Formule de politesse finale
+   - Signature
+
+4. INTERDICTIONS :
+   - N'invente JAMAIS de pièces jointes, documents ou informations non mentionnées
+   - Si le contexte utilisateur mentionne quelque chose, utilise-le. Sinon, ne mentionne RIEN
+   - Reste factuel et basé uniquement sur les informations fournies
 
 Termine TOUJOURS par :
 
@@ -830,7 +845,7 @@ PSM Portails Sur Mesure
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'Tu es un assistant qui aide à rédiger des emails professionnels. Réponds directement avec le contenu de l\'email, sans formule de politesse initiale excessive.' },
+          { role: 'system', content: 'Tu es un assistant qui rédige des emails professionnels B2B de haut niveau. Tu DOIS toujours commencer par "Bonjour," ou "Bonjour [Prénom],". Utilise un français soutenu, courtois et professionnel. Vouvoie TOUJOURS. N\'invente RIEN.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
