@@ -395,16 +395,45 @@ app.post('/api/init-db', async (c) => {
       )
     `).run()
 
-    // Créer table quotes si elle n'existe pas
+    // Créer table quotes si elle n'existe pas (structure complète)
     await c.env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        number TEXT UNIQUE,
+        deal_id INTEGER,
         client_id INTEGER,
-        title TEXT,
-        amount REAL DEFAULT 0,
-        status TEXT DEFAULT 'draft',
+        total_ht REAL DEFAULT 0,
+        total_tva REAL DEFAULT 0,
+        total_ttc REAL DEFAULT 0,
+        deposit_rate REAL DEFAULT 30,
+        deposit_amount REAL DEFAULT 0,
+        validity_days INTEGER DEFAULT 30,
+        valid_until TEXT,
+        status TEXT DEFAULT 'brouillon',
+        notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (deal_id) REFERENCES deals(id),
         FOREIGN KEY (client_id) REFERENCES clients(id)
+      )
+    `).run()
+    
+    // Créer table quote_items si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS quote_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quote_id INTEGER NOT NULL,
+        position INTEGER DEFAULT 0,
+        title TEXT NOT NULL,
+        description TEXT,
+        qty REAL DEFAULT 1,
+        unit TEXT DEFAULT 'pce',
+        unit_price_ht REAL DEFAULT 0,
+        vat_rate REAL DEFAULT 10,
+        discount_percent REAL DEFAULT 0,
+        item_type TEXT DEFAULT 'product',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE
       )
     `).run()
 
@@ -475,12 +504,24 @@ app.post('/api/init-db', async (c) => {
     await safeAddColumn('deals', 'rdv_date', 'TEXT')
     await safeAddColumn('deals', 'rdv_notes', 'TEXT')
     
+    // Quotes: ajouter colonnes de la nouvelle structure
+    await safeAddColumn('quotes', 'number', 'TEXT UNIQUE')
+    await safeAddColumn('quotes', 'deal_id', 'INTEGER')
+    await safeAddColumn('quotes', 'total_ht', 'REAL DEFAULT 0')
+    await safeAddColumn('quotes', 'total_tva', 'REAL DEFAULT 0')
+    await safeAddColumn('quotes', 'total_ttc', 'REAL DEFAULT 0')
+    await safeAddColumn('quotes', 'deposit_rate', 'REAL DEFAULT 30')
+    await safeAddColumn('quotes', 'deposit_amount', 'REAL DEFAULT 0')
+    await safeAddColumn('quotes', 'validity_days', 'INTEGER DEFAULT 30')
+    await safeAddColumn('quotes', 'valid_until', 'TEXT')
+    await safeAddColumn('quotes', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
+    
     console.log('✅ Database tables initialized + migrations applied')
     
     return c.json({ 
       success: true, 
       message: 'Database initialized successfully',
-      tables: ['users', 'clients', 'deals', 'leads', 'quotes', 'tasks', 'calendar_events', 'email_categories']
+      tables: ['users', 'clients', 'deals', 'leads', 'quotes', 'quote_items', 'tasks', 'calendar_events', 'email_categories']
     })
   } catch (error) {
     console.error('Database initialization error:', error)
