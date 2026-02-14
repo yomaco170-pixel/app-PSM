@@ -1121,10 +1121,15 @@ app.put('/api/clients/:id', async (c) => {
     const values: any[] = []
     
     if (data.name !== undefined) { updates.push('name = ?'); values.push(data.name) }
+    if (data.first_name !== undefined) { updates.push('first_name = ?'); values.push(data.first_name) }
+    if (data.last_name !== undefined) { updates.push('last_name = ?'); values.push(data.last_name) }
+    if (data.civility !== undefined) { updates.push('civility = ?'); values.push(data.civility) }
     if (data.email !== undefined) { updates.push('email = ?'); values.push(data.email) }
     if (data.phone !== undefined) { updates.push('phone = ?'); values.push(data.phone) }
     if (data.company !== undefined) { updates.push('company = ?'); values.push(data.company) }
     if (data.status !== undefined) { updates.push('status = ?'); values.push(data.status) }
+    if (data.source !== undefined) { updates.push('source = ?'); values.push(data.source) }
+    if (data.notes !== undefined) { updates.push('notes = ?'); values.push(data.notes) }
     if (data.address !== undefined) {
       try { await c.env.DB.prepare('ALTER TABLE clients ADD COLUMN address TEXT').run() } catch(e) {}
       updates.push('address = ?'); values.push(data.address)
