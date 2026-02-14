@@ -1117,6 +1117,24 @@ app.put('/api/clients/:id', async (c) => {
     const clientId = c.req.param('id')
     const data = await c.req.json()
     
+    // Vérifier et créer les colonnes manquantes si nécessaire
+    const db = c.env.DB
+    try {
+      await db.prepare('ALTER TABLE clients ADD COLUMN first_name TEXT').run()
+    } catch(e) { /* Colonne existe déjà */ }
+    try {
+      await db.prepare('ALTER TABLE clients ADD COLUMN last_name TEXT').run()
+    } catch(e) { /* Colonne existe déjà */ }
+    try {
+      await db.prepare('ALTER TABLE clients ADD COLUMN civility TEXT').run()
+    } catch(e) { /* Colonne existe déjà */ }
+    try {
+      await db.prepare('ALTER TABLE clients ADD COLUMN source TEXT').run()
+    } catch(e) { /* Colonne existe déjà */ }
+    try {
+      await db.prepare('ALTER TABLE clients ADD COLUMN notes TEXT').run()
+    } catch(e) { /* Colonne existe déjà */ }
+    
     const updates: string[] = []
     const values: any[] = []
     
@@ -1131,7 +1149,7 @@ app.put('/api/clients/:id', async (c) => {
     if (data.source !== undefined) { updates.push('source = ?'); values.push(data.source) }
     if (data.notes !== undefined) { updates.push('notes = ?'); values.push(data.notes) }
     if (data.address !== undefined) {
-      try { await c.env.DB.prepare('ALTER TABLE clients ADD COLUMN address TEXT').run() } catch(e) {}
+      try { await db.prepare('ALTER TABLE clients ADD COLUMN address TEXT').run() } catch(e) {}
       updates.push('address = ?'); values.push(data.address)
     }
     if (data.archived !== undefined) { 
