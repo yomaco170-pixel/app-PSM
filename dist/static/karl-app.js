@@ -2447,7 +2447,20 @@ async function renderQuotes() {
 // Fonction pour éditer un devis
 // ==================== NEW QUOTE (EMPTY EDITOR) ====================
 
-function openNewQuoteModal() {
+async function openNewQuoteModal() {
+  // Charger les clients si pas déjà fait
+  if (!state.clients || state.clients.length === 0) {
+    try {
+      console.log('📥 Chargement des clients...');
+      state.clients = await api.getClients();
+      console.log('✅ Clients chargés:', state.clients.length);
+    } catch (error) {
+      console.error('❌ Erreur chargement clients:', error);
+      alert('Erreur lors du chargement des clients');
+      return;
+    }
+  }
+
   // État local de l'éditeur (vide)
   window.currentQuote = {
     id: null,
