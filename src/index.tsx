@@ -34,7 +34,27 @@ app.get('/api/init-db', async (c) => {
   try {
     const db = c.env.DB
     
-    console.log('🔄 Initialisation des tables leads et clients...')
+    console.log('🔄 Initialisation des tables...')
+    
+    // Créer/Vérifier toutes les colonnes de la table clients
+    const clientColumns = [
+      'first_name TEXT',
+      'last_name TEXT',
+      'civility TEXT',
+      'source TEXT',
+      'notes TEXT',
+      'address TEXT',
+      'archived INTEGER DEFAULT 0'
+    ]
+    
+    for (const col of clientColumns) {
+      try {
+        await db.prepare(`ALTER TABLE clients ADD COLUMN ${col}`).run()
+        console.log(`✅ Colonne ajoutée: ${col}`)
+      } catch(e) {
+        console.log(`⚠️ Colonne existe déjà: ${col.split(' ')[0]}`)
+      }
+    }
     
     // Créer la table leads
     await db.prepare(`
