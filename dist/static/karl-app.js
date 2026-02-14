@@ -2816,46 +2816,206 @@ function renderQuoteLines() {
     <tr class="hover:bg-gray-700">
       <td class="p-2 text-gray-400">${index + 1}</td>
       <td class="p-2">
-        <input type="text" class="w-full bg-gray-700 text-white p-1 rounded border border-gray-600 mb-1" 
-          value="${line.title || ''}" 
-          onchange="updateLine(${index}, 'title', this.value)" 
-          placeholder="Désignation" />
-        <textarea class="w-full bg-gray-700 text-gray-300 p-1 rounded border border-gray-600 text-xs" 
-          rows="2" 
-          onchange="updateLine(${index}, 'description', this.value)" 
-          placeholder="Description (optionnelle)">${line.description || ''}</textarea>
+        <div class="font-semibold text-white">${line.title || 'Sans titre'}</div>
+        <div class="text-xs text-gray-400 mt-1">${line.description || ''}</div>
       </td>
-      <td class="p-2 text-center">
-        <input type="number" class="w-16 bg-gray-700 text-white p-1 rounded border border-gray-600 text-center" 
-          value="${line.qty}" 
-          step="0.01" 
-          onchange="updateLine(${index}, 'qty', parseFloat(this.value))" />
-      </td>
-      <td class="p-2 text-center">
-        <input type="text" class="w-20 bg-gray-700 text-white p-1 rounded border border-gray-600 text-center" 
-          value="${line.unit || 'pce'}" 
-          onchange="updateLine(${index}, 'unit', this.value)" />
-      </td>
-      <td class="p-2 text-right">
-        <input type="number" class="w-24 bg-gray-700 text-white p-1 rounded border border-gray-600 text-right" 
-          value="${parseFloat(line.unit_price_ht).toFixed(2)}" 
-          step="0.01" 
-          onchange="updateLine(${index}, 'unit_price_ht', parseFloat(this.value))" />
-      </td>
-      <td class="p-2 text-center">
-        <input type="number" class="w-16 bg-gray-700 text-white p-1 rounded border border-gray-600 text-center" 
-          value="${line.vat_rate || 10}" 
-          step="0.1" 
-          onchange="updateLine(${index}, 'vat_rate', parseFloat(this.value))" />
-      </td>
-      <td class="p-2 text-right font-medium">${(line.qty * line.unit_price_ht).toFixed(2)} €</td>
-      <td class="p-2 text-center">
-        <button class="text-red-400 hover:text-red-300" onclick="removeLine(${index})" title="Supprimer">
-          <i class="fas fa-trash"></i>
-        </button>
+      <td class="p-2 text-center text-white">${line.qty}</td>
+      <td class="p-2 text-center text-white">${line.unit || 'pce'}</td>
+      <td class="p-2 text-right text-white">${parseFloat(line.unit_price_ht).toFixed(2)} €</td>
+      <td class="p-2 text-center text-white">${line.vat_rate || 10}%</td>
+      <td class="p-2 text-right font-medium text-white">${(line.qty * line.unit_price_ht).toFixed(2)} €</td>
+      <td class="p-2">
+        <div class="flex gap-1">
+          ${index > 0 ? `
+            <button class="text-blue-400 hover:text-blue-300" onclick="moveLineUp(${index})" title="Monter">
+              <i class="fas fa-arrow-up"></i>
+            </button>
+          ` : '<span style="width: 20px; display: inline-block;"></span>'}
+          ${index < window.quoteLines.length - 1 ? `
+            <button class="text-blue-400 hover:text-blue-300" onclick="moveLineDown(${index})" title="Descendre">
+              <i class="fas fa-arrow-down"></i>
+            </button>
+          ` : '<span style="width: 20px; display: inline-block;"></span>'}
+          <button class="text-yellow-400 hover:text-yellow-300" onclick="openEditLineModal(${index})" title="Modifier">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="text-green-400 hover:text-green-300" onclick="duplicateLine(${index})" title="Dupliquer">
+            <i class="fas fa-copy"></i>
+          </button>
+          <button class="text-red-400 hover:text-red-300" onclick="removeLine(${index})" title="Supprimer">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
       </td>
     </tr>
   `).join('');
+}
+
+// Ouvrir la modale d'édition de ligne
+function openEditLineModal(index) {
+  const line = window.quoteLines[index];
+  if (!line) return;
+
+  const modalHTML = `
+    <div class="modal-backdrop" id="edit-line-modal" onclick="if(event.target.id === 'edit-line-modal') closeEditLineModal()">
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+          <h3><i class="fas fa-edit"></i> Modifier la ligne</h3>
+          <button class="modal-close" onclick="closeEditLineModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="input-group">
+            <label class="input-label">Libellé *</label>
+            <input type="text" id="edit-line-title" class="input" value="${line.title || ''}" placeholder="Portail coulissant" />
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Description</label>
+            <textarea id="edit-line-description" class="input" rows="3" placeholder="Détails de la prestation...">${line.description || ''}</textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="input-group">
+              <label class="input-label">Quantité *</label>
+              <input type="number" id="edit-line-qty" class="input" value="${line.qty}" step="0.01" min="0" />
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Unité</label>
+              <select id="edit-line-unit" class="input">
+                <option value="pce" ${line.unit === 'pce' ? 'selected' : ''}>Pièce (pce)</option>
+                <option value="forfait" ${line.unit === 'forfait' ? 'selected' : ''}>Forfait</option>
+                <option value="ml" ${line.unit === 'ml' ? 'selected' : ''}>Mètre linéaire (ml)</option>
+                <option value="m2" ${line.unit === 'm2' ? 'selected' : ''}>Mètre carré (m²)</option>
+                <option value="h" ${line.unit === 'h' ? 'selected' : ''}>Heure (h)</option>
+                <option value="j" ${line.unit === 'j' ? 'selected' : ''}>Jour (j)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="input-group">
+              <label class="input-label">Prix unitaire HT *</label>
+              <input type="number" id="edit-line-price" class="input" value="${parseFloat(line.unit_price_ht).toFixed(2)}" step="0.01" min="0" />
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">TVA (%)</label>
+              <select id="edit-line-vat" class="input">
+                <option value="0" ${line.vat_rate == 0 ? 'selected' : ''}>0%</option>
+                <option value="5.5" ${line.vat_rate == 5.5 ? 'selected' : ''}>5,5%</option>
+                <option value="10" ${line.vat_rate == 10 ? 'selected' : ''}>10%</option>
+                <option value="20" ${line.vat_rate == 20 ? 'selected' : ''}>20%</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-gray-700 p-3 rounded mt-4">
+            <div class="flex justify-between text-white">
+              <span>Total HT :</span>
+              <span class="font-bold" id="edit-line-total">0,00 €</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeEditLineModal()">
+            <i class="fas fa-times"></i> Annuler
+          </button>
+          <button class="btn btn-primary" onclick="saveEditedLine(${index})">
+            <i class="fas fa-save"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  // Calculer le total en temps réel
+  const updateTotal = () => {
+    const qty = parseFloat(document.getElementById('edit-line-qty').value) || 0;
+    const price = parseFloat(document.getElementById('edit-line-price').value) || 0;
+    const total = qty * price;
+    document.getElementById('edit-line-total').textContent = total.toFixed(2) + ' €';
+  };
+
+  document.getElementById('edit-line-qty').addEventListener('input', updateTotal);
+  document.getElementById('edit-line-price').addEventListener('input', updateTotal);
+  updateTotal();
+}
+
+// Fermer la modale d'édition
+function closeEditLineModal() {
+  document.getElementById('edit-line-modal')?.remove();
+}
+
+// Sauvegarder la ligne modifiée
+function saveEditedLine(index) {
+  const title = document.getElementById('edit-line-title').value.trim();
+  const description = document.getElementById('edit-line-description').value.trim();
+  const qty = parseFloat(document.getElementById('edit-line-qty').value) || 1;
+  const unit = document.getElementById('edit-line-unit').value;
+  const price = parseFloat(document.getElementById('edit-line-price').value) || 0;
+  const vat = parseFloat(document.getElementById('edit-line-vat').value) || 10;
+
+  if (!title) {
+    alert('Le libellé est obligatoire');
+    return;
+  }
+
+  window.quoteLines[index] = {
+    title,
+    description,
+    qty,
+    unit,
+    unit_price_ht: price,
+    vat_rate: vat
+  };
+
+  closeEditLineModal();
+  renderQuoteLines();
+  calculateTotals();
+}
+
+// Dupliquer une ligne
+function duplicateLine(index) {
+  const line = window.quoteLines[index];
+  if (!line) return;
+
+  const duplicate = {
+    ...line,
+    title: line.title + ' (copie)'
+  };
+
+  window.quoteLines.splice(index + 1, 0, duplicate);
+  renderQuoteLines();
+  calculateTotals();
+}
+
+// Monter une ligne
+function moveLineUp(index) {
+  if (index === 0) return;
+
+  const temp = window.quoteLines[index];
+  window.quoteLines[index] = window.quoteLines[index - 1];
+  window.quoteLines[index - 1] = temp;
+
+  renderQuoteLines();
+}
+
+// Descendre une ligne
+function moveLineDown(index) {
+  if (index === window.quoteLines.length - 1) return;
+
+  const temp = window.quoteLines[index];
+  window.quoteLines[index] = window.quoteLines[index + 1];
+  window.quoteLines[index + 1] = temp;
+
+  renderQuoteLines();
 }
 
 // Mettre à jour une ligne
@@ -9348,6 +9508,17 @@ function addChatMessage(role, content) {
   window.changeEmailCategory = changeEmailCategory;
   window.closeCategoryModal = closeCategoryModal;
   window.selectCategory = selectCategory;
+  
+  // Fonctions de gestion des lignes de devis
+  window.openEditLineModal = openEditLineModal;
+  window.closeEditLineModal = closeEditLineModal;
+  window.saveEditedLine = saveEditedLine;
+  window.removeLine = removeLine;
+  window.duplicateLine = duplicateLine;
+  window.moveLineUp = moveLineUp;
+  window.moveLineDown = moveLineDown;
+  window.updateLine = updateLine;
+  window.calculateTotals = calculateTotals;
   
   console.log('✅ Fonctions globales exposées');
 })();
