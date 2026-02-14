@@ -1564,19 +1564,87 @@ app.post('/api/quotes', async (c) => {
 
     const data = await c.req.json()
 
+    // Générer le numéro de devis (format: DEV-YYYYMMDD-XXX)
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
+    
+    // Compter les devis du jour
+    const count = await c.env.DB.prepare(
+      `SELECT COUNT(*) as cnt FROM quotes WHERE number LIKE 'DEV-${dateStr}%'`
+    ).first()
+    
+    const num = String((count?.cnt || 0) + 1).padStart(3, '0')
+    const quoteNumber = `DEV-${dateStr}-${num}`
+
+    // Calculer les totaux depuis les items
+    let totalHT = 0
+    let totalTVA = 0
+    
+    data.items.forEach((item: any) => {
+      const lineHT = item.qty * item.unit_price_ht * (1 - (item.discount_percent || 0) / 100)
+      const lineTVA = lineHT * (item.vat_rate / 100)
+      totalHT += lineHT
+      totalTVA += lineTVA
+    })
+    
+    const totalTTC = totalHT + totalTVA
+    const depositAmount = totalTTC * (data.deposit_rate / 100)
+
+    // Insérer le devis
     const result = await c.env.DB.prepare(
-      'INSERT INTO quotes (quote_number, client_id, amount, status, notes) VALUES (?, ?, ?, ?, ?)'
+      `INSERT INTO quotes (
+        number, deal_id, client_id, total_ht, total_tva, total_ttc,
+        deposit_rate, deposit_amount, validity_days, valid_until, status, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      data.quote_number,
-      data.client_id,
-      data.amount || 0,
-      data.status || 'brouillon',
+      quoteNumber,
+      data.deal_id,
+      data.client_id || null,
+      totalHT,
+      totalTVA,
+      totalTTC,
+      data.deposit_rate || 30,
+      depositAmount,
+      data.validity_days || 30,
+      data.valid_until || null,
+      'brouillon',
       data.notes || null
     ).run()
 
-    return c.json({ id: result.meta.last_row_id, ...data }, 201)
-  } catch (error) {
-    return c.json({ error: 'Erreur serveur' }, 500)
+    const quoteId = result.meta.last_row_id
+
+    // Insérer les lignes
+    for (const item of data.items) {
+      await c.env.DB.prepare(
+        `INSERT INTO quote_items (
+          quote_id, position, title, description, qty, unit,
+          unit_price_ht, vat_rate, discount_percent, item_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        quoteId,
+        item.position,
+        item.title,
+        item.description || null,
+        item.qty,
+        item.unit || 'pce',
+        item.unit_price_ht,
+        item.vat_rate || 10,
+        item.discount_percent || 0,
+        item.item_type || 'product'
+      ).run()
+    }
+
+    return c.json({ 
+      id: quoteId, 
+      number: quoteNumber,
+      total_ht: totalHT,
+      total_tva: totalTVA,
+      total_ttc: totalTTC,
+      deposit_amount: depositAmount
+    }, 201)
+  } catch (error: any) {
+    console.error('Error creating quote:', error)
+    return c.json({ error: 'Erreur serveur: ' + error.message }, 500)
   }
 })
 

@@ -2679,6 +2679,7 @@ async function saveNewQuote() {
     
     const quoteData = {
       deal_id: dealId,
+      client_id: parseInt(clientId),
       deposit_rate: parseFloat(document.getElementById('deposit_rate').value || 50),
       vat_rate: 10, // TODO: calculer depuis les lignes
       validity_days: validityDays,
