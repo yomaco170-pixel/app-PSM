@@ -1840,6 +1840,7 @@ app.get('/', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="/static/karl-app.js"></script>
+        <script src="/static/dossier-client.js"></script>
         
         <!-- Service Worker Registration - DÉSACTIVÉ pour debug -->
         <script>
@@ -1892,6 +1893,7 @@ app.get('/*', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="/static/karl-app.js"></script>
+        <script src="/static/dossier-client.js"></script>
         
         <!-- Service Worker Registration - DÉSACTIVÉ pour debug -->
         <script>

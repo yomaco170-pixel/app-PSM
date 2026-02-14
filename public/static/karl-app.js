@@ -2328,6 +2328,9 @@ async function renderClients() {
       </div>
       
       <div class="flex gap-2 pt-3 border-t border-gray-700">
+        <button class="btn btn-secondary" onclick="event.stopPropagation(); openClientDossier(${client.id})" title="Voir le dossier complet">
+          <i class="fas fa-folder-open"></i> Dossier
+        </button>
         <button class="btn btn-primary flex-1" onclick="event.stopPropagation(); openEditClientModal(${client.id})">
           <i class="fas fa-edit"></i> Modifier
         </button>
