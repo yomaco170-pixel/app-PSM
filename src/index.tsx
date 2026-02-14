@@ -1914,4 +1914,241 @@ app.get('/*', (c) => {
   `)
 })
 
+// ===== GESTION DOCUMENTAIRE CLIENT =====
+
+// POST /api/documents/upload - Upload un document (devis/photo)
+app.post('/api/documents/upload', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const formData = await c.req.formData()
+    const clientId = formData.get('client_id') as string
+    const type = formData.get('type') as string // 'devis' ou 'photo'
+    const title = formData.get('title') as string
+    const file = formData.get('file') as File
+
+    if (!clientId || !type || !file) {
+      return c.json({ error: 'Paramètres manquants' }, 400)
+    }
+
+    // Lire le fichier en base64
+    const arrayBuffer = await file.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+
+    // Stocker dans D1
+    const db = c.env.DB
+    
+    // Créer la table si elle n'existe pas
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS client_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        file_name TEXT,
+        file_size INTEGER,
+        file_type TEXT,
+        file_data TEXT,
+        content TEXT,
+        created_at DATETIME DEFAULT (datetime('now')),
+        updated_at DATETIME DEFAULT (datetime('now'))
+      )
+    `).run()
+
+    const result = await db.prepare(`
+      INSERT INTO client_documents (client_id, type, title, file_name, file_size, file_type, file_data)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      clientId,
+      type,
+      title || file.name,
+      file.name,
+      file.size,
+      file.type,
+      base64
+    ).run()
+
+    return c.json({
+      id: result.meta.last_row_id,
+      client_id: clientId,
+      type,
+      title: title || file.name,
+      file_name: file.name,
+      file_size: file.size,
+      file_type: file.type,
+      message: 'Document uploadé avec succès'
+    })
+  } catch (error) {
+    console.error('Upload error:', error)
+    return c.json({ error: 'Erreur upload document' }, 500)
+  }
+})
+
+// GET /api/documents/:clientId - Lister documents d'un client
+app.get('/api/documents/:clientId', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const clientId = c.req.param('clientId')
+    const type = c.req.query('type') // Filtrer par type (optionnel)
+
+    const db = c.env.DB
+
+    let query = `
+      SELECT id, client_id, type, title, description, file_name, 
+             file_size, file_type, created_at, updated_at
+      FROM client_documents 
+      WHERE client_id = ?
+    `
+    const params: any[] = [clientId]
+
+    if (type) {
+      query += ` AND type = ?`
+      params.push(type)
+    }
+
+    query += ` ORDER BY created_at DESC`
+
+    const result = await db.prepare(query).bind(...params).all()
+
+    return c.json({
+      documents: result.results || [],
+      total: result.results?.length || 0
+    })
+  } catch (error) {
+    console.error('List documents error:', error)
+    return c.json({ error: 'Erreur récupération documents' }, 500)
+  }
+})
+
+// GET /api/documents/file/:id - Télécharger un document
+app.get('/api/documents/file/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const id = c.req.param('id')
+    const db = c.env.DB
+
+    const result = await db.prepare(`
+      SELECT file_data, file_name, file_type 
+      FROM client_documents 
+      WHERE id = ?
+    `).bind(id).first()
+
+    if (!result || !result.file_data) {
+      return c.json({ error: 'Document introuvable' }, 404)
+    }
+
+    // Décoder le base64
+    const binaryString = atob(result.file_data as string)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    return new Response(bytes, {
+      headers: {
+        'Content-Type': result.file_type as string || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${result.file_name}"`
+      }
+    })
+  } catch (error) {
+    console.error('Download error:', error)
+    return c.json({ error: 'Erreur téléchargement document' }, 500)
+  }
+})
+
+// DELETE /api/documents/:id - Supprimer un document
+app.delete('/api/documents/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const id = c.req.param('id')
+    const db = c.env.DB
+
+    await db.prepare(`
+      DELETE FROM client_documents WHERE id = ?
+    `).bind(id).run()
+
+    return c.json({ message: 'Document supprimé' })
+  } catch (error) {
+    console.error('Delete error:', error)
+    return c.json({ error: 'Erreur suppression document' }, 500)
+  }
+})
+
+// POST /api/documents/note - Créer/Modifier une note
+app.post('/api/documents/note', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) {
+      return c.json({ error: 'Non autorisé' }, 401)
+    }
+
+    const { client_id, title, content, id } = await c.req.json()
+
+    if (!client_id || !title || !content) {
+      return c.json({ error: 'Paramètres manquants' }, 400)
+    }
+
+    const db = c.env.DB
+
+    // Créer la table si elle n'existe pas
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS client_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        file_name TEXT,
+        file_size INTEGER,
+        file_type TEXT,
+        file_data TEXT,
+        content TEXT,
+        created_at DATETIME DEFAULT (datetime('now')),
+        updated_at DATETIME DEFAULT (datetime('now'))
+      )
+    `).run()
+
+    if (id) {
+      // Mise à jour
+      await db.prepare(`
+        UPDATE client_documents 
+        SET title = ?, content = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `).bind(title, content, id).run()
+
+      return c.json({ id, message: 'Note mise à jour' })
+    } else {
+      // Création
+      const result = await db.prepare(`
+        INSERT INTO client_documents (client_id, type, title, content)
+        VALUES (?, 'note', ?, ?)
+      `).bind(client_id, title, content).run()
+
+      return c.json({
+        id: result.meta.last_row_id,
+        message: 'Note créée'
+      })
+    }
+  } catch (error) {
+    console.error('Note error:', error)
+    return c.json({ error: 'Erreur note' }, 500)
+  }
+})
+
 export default app
