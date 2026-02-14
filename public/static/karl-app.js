@@ -2529,8 +2529,19 @@ async function openNewQuoteModal() {
         </div>
       </div>
       
-      <!-- Tableau des lignes -->
-      <div class="bg-gray-800 rounded-lg overflow-hidden mb-4">
+      <!-- Version MOBILE : Cartes (visible < 768px) -->
+      <div class="md:hidden space-y-3 mb-4" id="quoteLinesCards">
+        <!-- Cartes générées dynamiquement -->
+      </div>
+      
+      <div class="md:hidden bg-gray-800 rounded-lg p-3 mb-4">
+        <button class="btn btn-primary btn-sm w-full" onclick="openAddLineModal()">
+          <i class="fas fa-plus"></i> Ajouter une ligne
+        </button>
+      </div>
+      
+      <!-- Version DESKTOP : Tableau (visible ≥ 768px) -->
+      <div class="hidden md:block bg-gray-800 rounded-lg overflow-hidden mb-4">
         <table class="w-full text-sm" id="quoteTable">
           <thead class="bg-gray-900 text-gray-300">
             <tr>
@@ -2747,8 +2758,19 @@ async function editQuote(quoteId) {
         </div>
       </div>
       
-      <!-- Tableau des lignes -->
-      <div class="bg-gray-800 rounded-lg overflow-hidden mb-4">
+      <!-- Version MOBILE : Cartes (visible < 768px) -->
+      <div class="md:hidden space-y-3 mb-4" id="quoteLinesCards">
+        <!-- Cartes générées dynamiquement -->
+      </div>
+      
+      <div class="md:hidden bg-gray-800 rounded-lg p-3 mb-4">
+        <button class="btn btn-primary btn-sm w-full" onclick="openAddLineModal()">
+          <i class="fas fa-plus"></i> Ajouter une ligne
+        </button>
+      </div>
+      
+      <!-- Version DESKTOP : Tableau (visible ≥ 768px) -->
+      <div class="hidden md:block bg-gray-800 rounded-lg overflow-hidden mb-4">
         <table class="w-full text-sm" id="quoteTable">
           <thead class="bg-gray-900 text-gray-300">
             <tr>
@@ -2810,45 +2832,118 @@ async function editQuote(quoteId) {
 // Render les lignes du devis
 function renderQuoteLines() {
   const tbody = document.getElementById('quoteLinesBody');
-  if (!tbody) return;
+  const mobileContainer = document.getElementById('quoteLinesCards');
   
-  tbody.innerHTML = window.quoteLines.map((line, index) => `
-    <tr class="hover:bg-gray-700">
-      <td class="p-2 text-gray-400">${index + 1}</td>
-      <td class="p-2">
-        <div class="font-semibold text-white">${line.title || 'Sans titre'}</div>
-        <div class="text-xs text-gray-400 mt-1">${line.description || ''}</div>
-      </td>
-      <td class="p-2 text-center text-white">${line.qty}</td>
-      <td class="p-2 text-center text-white">${line.unit || 'pce'}</td>
-      <td class="p-2 text-right text-white">${parseFloat(line.unit_price_ht).toFixed(2)} €</td>
-      <td class="p-2 text-center text-white">${line.vat_rate || 10}%</td>
-      <td class="p-2 text-right font-medium text-white">${(line.qty * line.unit_price_ht).toFixed(2)} €</td>
-      <td class="p-2">
-        <div class="flex gap-1">
-          ${index > 0 ? `
-            <button class="text-blue-400 hover:text-blue-300" onclick="moveLineUp(${index})" title="Monter">
-              <i class="fas fa-arrow-up"></i>
-            </button>
-          ` : '<span style="width: 20px; display: inline-block;"></span>'}
-          ${index < window.quoteLines.length - 1 ? `
-            <button class="text-blue-400 hover:text-blue-300" onclick="moveLineDown(${index})" title="Descendre">
-              <i class="fas fa-arrow-down"></i>
-            </button>
-          ` : '<span style="width: 20px; display: inline-block;"></span>'}
-          <button class="text-yellow-400 hover:text-yellow-300" onclick="openEditLineModal(${index})" title="Modifier">
-            <i class="fas fa-edit"></i>
+  if (!tbody && !mobileContainer) return;
+  
+  // Version DESKTOP (tableau)
+  if (tbody) {
+    tbody.innerHTML = window.quoteLines.map((line, index) => `
+      <tr class="hover:bg-gray-700">
+        <td class="p-2 text-gray-400">${index + 1}</td>
+        <td class="p-2">
+          <div class="font-semibold text-white">${line.title || 'Sans titre'}</div>
+          <div class="text-xs text-gray-400 mt-1">${line.description || ''}</div>
+        </td>
+        <td class="p-2 text-center text-white">${line.qty}</td>
+        <td class="p-2 text-center text-white">${line.unit || 'pce'}</td>
+        <td class="p-2 text-right text-white">${parseFloat(line.unit_price_ht).toFixed(2)} €</td>
+        <td class="p-2 text-center text-white">${line.vat_rate || 10}%</td>
+        <td class="p-2 text-right font-medium text-white">${(line.qty * line.unit_price_ht).toFixed(2)} €</td>
+        <td class="p-2 relative">
+          <button class="text-gray-400 hover:text-white" onclick="toggleLineMenu(${index})" title="Actions">
+            <i class="fas fa-ellipsis-v"></i>
           </button>
-          <button class="text-green-400 hover:text-green-300" onclick="duplicateLine(${index})" title="Dupliquer">
-            <i class="fas fa-copy"></i>
+          <div id="line-menu-${index}" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-50 border border-gray-700">
+            <div class="py-1">
+              <button onclick="openEditLineModal(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 flex items-center gap-2">
+                <i class="fas fa-edit w-4"></i> Modifier
+              </button>
+              <button onclick="duplicateLine(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-green-400 hover:bg-gray-700 flex items-center gap-2">
+                <i class="fas fa-copy w-4"></i> Dupliquer
+              </button>
+              ${index > 0 ? `
+                <button onclick="moveLineUp(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 flex items-center gap-2">
+                  <i class="fas fa-arrow-up w-4"></i> Monter
+                </button>
+              ` : ''}
+              ${index < window.quoteLines.length - 1 ? `
+                <button onclick="moveLineDown(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 flex items-center gap-2">
+                  <i class="fas fa-arrow-down w-4"></i> Descendre
+                </button>
+              ` : ''}
+              <hr class="border-gray-700 my-1">
+              <button onclick="removeLine(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
+                <i class="fas fa-trash w-4"></i> Supprimer
+              </button>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  // Version MOBILE (cartes)
+  if (mobileContainer) {
+    mobileContainer.innerHTML = window.quoteLines.map((line, index) => `
+      <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 relative">
+        <div class="absolute top-3 right-3">
+          <button class="text-gray-400 hover:text-white" onclick="toggleLineMenu(${index})" title="Actions">
+            <i class="fas fa-ellipsis-v"></i>
           </button>
-          <button class="text-red-400 hover:text-red-300" onclick="removeLine(${index})" title="Supprimer">
-            <i class="fas fa-trash"></i>
-          </button>
+          <div id="line-menu-${index}" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-50 border border-gray-700">
+            <div class="py-1">
+              <button onclick="openEditLineModal(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 flex items-center gap-2">
+                <i class="fas fa-edit w-4"></i> Modifier
+              </button>
+              <button onclick="duplicateLine(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-green-400 hover:bg-gray-700 flex items-center gap-2">
+                <i class="fas fa-copy w-4"></i> Dupliquer
+              </button>
+              ${index > 0 ? `
+                <button onclick="moveLineUp(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 flex items-center gap-2">
+                  <i class="fas fa-arrow-up w-4"></i> Monter
+                </button>
+              ` : ''}
+              ${index < window.quoteLines.length - 1 ? `
+                <button onclick="moveLineDown(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 flex items-center gap-2">
+                  <i class="fas fa-arrow-down w-4"></i> Descendre
+                </button>
+              ` : ''}
+              <hr class="border-gray-700 my-1">
+              <button onclick="removeLine(${index}); toggleLineMenu(${index})" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
+                <i class="fas fa-trash w-4"></i> Supprimer
+              </button>
+            </div>
+          </div>
         </div>
-      </td>
-    </tr>
-  `).join('');
+        
+        <div class="mb-3">
+          <div class="text-sm text-gray-400 mb-1">Ligne #${index + 1}</div>
+          <div class="font-semibold text-white text-lg">${line.title || 'Sans titre'}</div>
+          ${line.description ? `<div class="text-sm text-gray-400 mt-1">${line.description}</div>` : ''}
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div class="text-gray-400">Quantité</div>
+            <div class="text-white font-medium">${line.qty} ${line.unit || 'pce'}</div>
+          </div>
+          <div>
+            <div class="text-gray-400">Prix unitaire HT</div>
+            <div class="text-white font-medium">${parseFloat(line.unit_price_ht).toFixed(2)} €</div>
+          </div>
+          <div>
+            <div class="text-gray-400">TVA</div>
+            <div class="text-white font-medium">${line.vat_rate || 10}%</div>
+          </div>
+          <div>
+            <div class="text-gray-400">Total HT</div>
+            <div class="text-white font-bold text-lg">${(line.qty * line.unit_price_ht).toFixed(2)} €</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 // Ouvrir la modale d'édition de ligne
@@ -3057,6 +3152,29 @@ function removeLine(index) {
     calculateTotals();
   }
 }
+
+// Toggle menu actions ligne
+function toggleLineMenu(index) {
+  const menu = document.getElementById(`line-menu-${index}`);
+  if (!menu) return;
+  
+  // Fermer tous les autres menus
+  document.querySelectorAll('[id^="line-menu-"]').forEach(m => {
+    if (m.id !== `line-menu-${index}`) {
+      m.classList.add('hidden');
+    }
+  });
+  
+  // Toggle le menu actuel
+  menu.classList.toggle('hidden');
+}
+
+// Fermer les menus si on clique ailleurs
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[onclick^="toggleLineMenu"]') && !e.target.closest('[id^="line-menu-"]')) {
+    document.querySelectorAll('[id^="line-menu-"]').forEach(m => m.classList.add('hidden'));
+  }
+});
 
 // Catalogue PSM - Articles prédéfinis
 const CATALOG_PSM = [
@@ -9519,6 +9637,7 @@ function addChatMessage(role, content) {
   window.moveLineDown = moveLineDown;
   window.updateLine = updateLine;
   window.calculateTotals = calculateTotals;
+  window.toggleLineMenu = toggleLineMenu;
   
   console.log('✅ Fonctions globales exposées');
 })();
