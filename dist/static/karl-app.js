@@ -2640,8 +2640,13 @@ async function saveNewQuote() {
   }
   
   try {
-    // 1. Vérifier si le client a un dossier
-    let deals = state.safeArray(deals).filter(d => d.client_id === parseInt(clientId));
+    // 1. Charger les deals si pas encore chargés
+    if (!state.deals) {
+      state.deals = await api.getDeals();
+    }
+    
+    // 2. Vérifier si le client a un dossier
+    let deals = safeArray(state.deals).filter(d => d.client_id === parseInt(clientId));
     let dealId;
     
     if (deals.length === 0) {
