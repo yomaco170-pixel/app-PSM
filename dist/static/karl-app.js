@@ -2967,10 +2967,26 @@ function renderQuoteLines() {
           <div class="font-semibold text-white">${line.title || 'Sans titre'}</div>
           <div class="text-xs text-gray-400 mt-1">${line.description || ''}</div>
         </td>
-        <td class="p-2 text-center text-white">${line.qty}</td>
+        <td class="p-2 text-center text-white">
+          <input type="number" value="${line.qty}" step="0.01" min="0" 
+            class="w-20 bg-gray-700 text-white p-1 rounded border border-gray-600 text-center"
+            onchange="updateLine(${index}, 'qty', parseFloat(this.value)); renderQuoteLines()" />
+        </td>
         <td class="p-2 text-center text-white">${line.unit || 'pce'}</td>
-        <td class="p-2 text-right text-white">${parseFloat(line.unit_price_ht).toFixed(2)} €</td>
-        <td class="p-2 text-center text-white">${line.vat_rate || 10}%</td>
+        <td class="p-2 text-right text-white">
+          <input type="number" value="${parseFloat(line.unit_price_ht).toFixed(2)}" step="0.01" min="0" 
+            class="w-28 bg-gray-700 text-white p-1 rounded border border-gray-600 text-right"
+            onchange="updateLine(${index}, 'unit_price_ht', parseFloat(this.value)); renderQuoteLines()" />
+        </td>
+        <td class="p-2 text-center text-white">
+          <select class="bg-gray-700 text-white p-1 rounded border border-gray-600"
+            onchange="updateLine(${index}, 'vat_rate', parseFloat(this.value)); renderQuoteLines()">
+            <option value="0" ${line.vat_rate == 0 ? 'selected' : ''}>0%</option>
+            <option value="5.5" ${line.vat_rate == 5.5 ? 'selected' : ''}>5,5%</option>
+            <option value="10" ${line.vat_rate == 10 ? 'selected' : ''}>10%</option>
+            <option value="20" ${line.vat_rate == 20 ? 'selected' : ''}>20%</option>
+          </select>
+        </td>
         <td class="p-2 text-right font-medium text-white">${(line.qty * line.unit_price_ht).toFixed(2)} €</td>
         <td class="p-2 relative">
           <button class="text-gray-400 hover:text-white" onclick="toggleLineMenu(${index})" title="Actions">
@@ -3511,8 +3527,10 @@ function selectCatalogItem(index) {
             <div>
               <label class="block text-sm font-medium mb-2 text-white">TVA (%)</label>
               <select id="lineVAT" class="w-full bg-gray-700 text-white p-2 rounded border border-gray-600" onchange="updateLinePreview()">
-                <option value="10" ${item.vat_rate === 10 ? 'selected' : ''}>10%</option>
-                <option value="20" ${item.vat_rate === 20 ? 'selected' : ''}>20%</option>
+                <option value="0" ${item.vat_rate === 0 ? 'selected' : ''}>0% (Exonéré)</option>
+                <option value="5.5" ${item.vat_rate === 5.5 ? 'selected' : ''}>5,5% (Réduit)</option>
+                <option value="10" ${item.vat_rate === 10 ? 'selected' : ''}>10% (Intermédiaire)</option>
+                <option value="20" ${item.vat_rate === 20 ? 'selected' : ''}>20% (Normal)</option>
               </select>
             </div>
           </div>

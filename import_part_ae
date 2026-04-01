@@ -1,0 +1,1000 @@
+
+
+', '', '1.0', 'u', '1055.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('848', '133', '4', 'Gâche électrique à émission
+. La gâche est déverrouillée pendant la durée d’alimentation
+ou émission de courant ou impulsion (avec un bouton-poussoir par exemple). La porte ne peut être ouverte que pendant cette durée. Sans alimentation la gâche ne se déverrouille pas.
+. 12 Vac ou Vcc
+Garantie 2 ans_
+', '', '1.0', 'u', '71.5', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('849', '133', '5', 'Clavier à code filaire AIPHONE AC10S
+2 canaux #1 60codes, #2 40 codes
+100 codes d’accès maxi
+Tempo 1 à 99 secondes 
+Saillie  
+Aluminium
+Résistance au vandalisme
+
+Garantie 2 ans', '', '1.0', 'u', '201.3', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('850', '133', '6', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('851', '133', '7', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('852', '133', '8', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '230.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('853', '133', '9', 'Clôture Pare Vue Horizontale : Hauteur 64,5 cm soit 4 lames                                                 Couleur : gris argent fine texture 
+', '', '9.0', 'u', '192.22', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('854', '133', '10', 'Pose Clôture', '', '9.0', 'u', '45.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('855', '134', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 4500 X 1400 mm                                                                                                                          Couleur :  gris argent fine texture                                                                                                                            Remplissage : semi ajouré horizontal en lame de 92 et 50 x 25 mm
+possibilité de passer avec des lames en plus de 25x25 mm
+
+
+Trois parties dans le portail : deux côtés extérieur en lame puis la partie centrale en découpe laser', '', '1.0', 'u', '3400.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('856', '134', '2', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '800.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('857', '134', '3', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 1000 X 1400 MM                         Type :  gâche électrique                                                                            Couleur :  gris argent fine texture                                                                                                                                   Remplissage : idem portail avec un montant intermédiaire puis décor en tôle alu découpe laser
+
+
+', '', '1.0', 'u', '964.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('858', '134', '4', 'Gâche électrique à émission
+. La gâche est déverrouillée pendant la durée d’alimentation
+ou émission de courant ou impulsion (avec un bouton-poussoir par exemple). La porte ne peut être ouverte que pendant cette durée. Sans alimentation la gâche ne se déverrouille pas.
+. 12 Vac ou Vcc
+Garantie 2 ans_
+', '', '1.0', 'u', '71.5', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('859', '134', '5', 'Kit Vidéo couleur AIPHONE JO wifi
+Ecran LCD couleur 7‘’ tactile
+Moniteur wifi, jusqu’à 8 smartphones
+Mémorisation des images
+Platine de rue en saillie résistance vandalisme
+2 platine en extérieur
+
+Garantie 5 ans', '', '1.0', 'u', '801.24', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('860', '134', '6', 'Clavier à code filaire AIPHONE AC10S
+2 canaux #1 60codes, #2 40 codes
+100 codes d’accès maxi
+Tempo 1 à 99 secondes 
+Saillie  
+Aluminium
+Résistance au vandalisme
+
+Garantie 2 ans', '', '1.0', 'u', '200.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('861', '134', '7', 'Ensemble de tôle pour portail et portillon en découpe laser 
+
+Motif abstrait (validation client par BAT)', '', '1.0', 'u', '682.5', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('862', '134', '8', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('863', '134', '9', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('864', '134', '10', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '230.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('865', '135', '1', 'Gonds cuproalu thermolaqué en gris 7016 fine texture', '', '2.0', 'u', '43.69', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('866', '135', '2', 'Cache gonds alu thermolaqué 7016', '', '2.0', 'u', '39.2', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('867', '135', '3', 'Paumelle à fixer sur le portail thermolaqué 7016', '', '2.0', 'u', '82.94', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('868', '135', '4', 'Livraison dep', '', '1.0', 'u', '48.79', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('869', '136', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3987*1600 mm                                                                                                                         Couleur : nrvol fine texture                                                                                                                            Remplissage : plein droit horizontal en lame de 300*25 mm
+
+
+', '', '1.0', 'u', '3412.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('870', '136', '2', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '840.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('871', '136', '3', 'Kit Vidéo couleur AIPHONE JOS1V
+Ecran LCD couleur 7‘’ 
+Platine de rue en saillie résistance vandalisme
+
+Garantie 5 ans ', '', '1.0', 'u', '605.22', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('872', '136', '4', 'Tirage câble', '', '1.0', 'u', '150.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('873', '136', '5', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('874', '136', '6', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('875', '137', '1', 'Clôture Pare Vue Horizontale : Hauteur 110 cm soit 7 lames                                                 Couleur : 
+', '', '22.2', 'u', '309.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('876', '137', '2', 'Pose Clôture', '', '22.2', 'u', '45.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('877', '137', '3', 'Tôle déco en découpe laser alu pour remplissage avec décors 
+
+', '', '4.0', 'u', '1081.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('878', '138', '1', 'Clôture Pare Vue Horizontale : Hauteur 112 cm soit 7 lames                                                 Couleur : gris désert et rouge basque 
+
+jour de 60 mm entre le muret et la première lame
+
+poteau à sceller par carré de 30*30 mm (fourniture client) 
+
+
+', '', '54.0', 'u', '279.95', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('879', '138', '2', 'Livraison comprise', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('880', '139', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 2839*2000 mm                                                                                                                           Couleur : nr vol fine texture                                                                                                                                    Remplissage : plein droit horizontal en lame de 163*25 mm 
+
+
+', '', '1.0', 'u', '2420.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('881', '139', '2', 'Seuil pour portail avec ouverture du muret à gauche vue intérieure ', '', '1.0', 'u', '950.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('882', '139', '3', 'Poteaux 3 mm 180*180 mm en aluminium thermolaqué avec bouchons dans la couleur                                 
+
+scellement dans le seuil en béton', '', '2.0', 'u', '396.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('883', '139', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('884', '139', '5', 'Pose Poteaux Alu', '', '2.0', 'u', '50.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('885', '139', '6', 'Clôture Pare Vue Horizontale : Hauteur 33 cm soit 2 lames                                                 Couleur : nr vol 
+', '', '5.84', 'u', '122.43', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('886', '139', '7', 'Pose Clôture', '', '5.84', 'u', '45.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('887', '140', '1', 'Fourniture d’un ensemble de clôture en lame pare vue en partie basse de 49 cm soit 3 lames puis ensemble de tôle en découpe laser (motif à définir) avec un pli sup et inf 
+
+Couleur  F 7011', '', '8.32', 'u', '503.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('888', '140', '2', 'Pose Clôture', '', '8.32', 'u', '55.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('889', '141', '1', 'Couvertine Alu couleur standard
+Long :   517  cm
+Largeur du muret :   20  cm
+Couleur : F7016', '', '5.17', 'u', '39.05', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('890', '141', '2', 'Pose couvertine', '', '1.0', 'u', '75.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('891', '141', '3', 'Chapeau de pilier en couvertine alu', '', '4.0', 'u', '71.5', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('892', '141', '4', 'Pose chapeau de pilier', '', '4.0', 'u', '10.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('893', '142', '1', 'Changement de carte électronique de contrôle moteur suite orage', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('894', '142', '2', 'Carte pour moteur de coulissant FAAC C720', '', '1.0', 'u', '620.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('895', '143', '1', 'Changement suite orage carte électronique de contrôle de moteur coulissant 
+
+défaut constaté : la carte ne réceptionne plus le signal radio et ne transmet plus les informations de contrôle au moteur ', '', '1.0', 'u', '0.0', '45', '0.0', 'service');
+INSERT INTO quote_items VALUES ('896', '143', '2', 'Carte électronique de contrôle moteur coulissant FACC C 700', '', '1.0', 'u', '620.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('897', '143', '3', 'Déplacement et MO ', '', '1.0', 'u', '150.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('898', '143', '4', 'Carte de couplage pour réception des télécommandes', '', '1.0', 'u', '205.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('899', '144', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3146 X 1630 mm                                                                                                                          Couleur : gris 7016 fine texture                                                                                                                            Remplissage : plein droit horizontal en lame de 163x25 mm
+
+
+', '', '1.0', 'u', '2690.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('900', '144', '3', 'Poteaux 105*105 mm en aluminium thermolaqué avec bouchons dans la couleur                                 
+
+SCELLEMENT DANS LE SEUIL 
+', '', '1.0', 'u', '120.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('901', '145', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3843*1200 mm côté gonds 
+FORM CDG                                                                                                                          Couleur : Rouge Basque Fine Texture                                                                                                                                     Remplissage :  semi ajouré avec soubassement plein en lame de 163*25 mlm horizontal, traverse intermédiaire puis ajourage vertical en lame de 92*25 mm en partie haute
+
+système par gonds bouchons pour la partie haute et pivots de motorisation au sol pour la partie basse
+
+
+
+', '', '1.0', 'u', '2700.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('902', '145', '2', 'Montant 92x60 mm avec cloison renforcée, profilé avec porte joint anti bruit,        traverse 92x 50 mm, profilé avec porte joint anti bruit, traverse intermédiaire renforcée (si necessaire pour la pose d''une motorisation) - plat d''alu de 50x10 mm, poignée en aluminium dans la couleur avec retour automatique (si portail ou portillon manuel), fixation par paumelle dans la couleur du portail avec renfort pour fixation de celle ci dans chanque angle avec plat de renfort de 50x10x100 mm                                       cache gond en aluminium dans la couleur , sabot et visserie interne en inox                                                                          
+', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('903', '145', '3', 'Motorisation NICE M-FAB (moteur enterré) . 2 Opérateurs électromécaniques
+. 2 Caissons de fondation
+. 1 Logique de commande
+. 2 Émetteurs (3 canaux)
+. SANS Batterie (de secours)
+. 2 Paires de photocellules . 1 Lampe clignotante
+Garantie 4 ans_
+Attention : caissons de fondation installés par vos soins ou un maçon_
+', '', '1.0', 'u', '1557.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('904', '145', '4', 'Interphone sans fil Ultrasecure avec un combiné sans fil intérieur
+Portée champs libre 600 m
+Platine de rue avec pile longue durée 
+Boitier intérieur sans fil sur base de recharge sur prise secteur
+Garantie 2 ans
+
+', '', '1.0', 'u', '470.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('905', '145', '5', 'Clavier à code RADIO EDSWG
+1 canal 
+12 touches 
+Aluminium
+
+Garantie 4 ans', '', '1.0', 'u', '210.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('906', '145', '6', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('907', '145', '7', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '340.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('908', '145', '8', 'Pose Accessoire complexe', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('909', '145', '9', 'Bouton poussoir type plexo pour ouverture depuis l’intérieur
+', '', '1.0', 'u', '0.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('910', '145', '10', 'système de déverrouillage à clef', '', '1.0', 'u', '143.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('911', '145', '11', 'Nécessité de mettre en oeuvre les caissons lors du coulage du seuil par le maçon', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('912', '146', '1', 'Portail coulissant  en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3843*1200 mm sur le côté 
+FORM CDG                                                                                                                          Couleur : Rouge Basque Fine Texture                                                                                                                                     Remplissage :  semi ajouré avec soubassement plein en lame de 163*25 mlm horizontal, traverse intermédiaire puis ajourage vertical en lame de 92*25 mm en partie haute
+
+
+', '', '1.0', 'u', '3137.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('913', '146', '2', 'Montant 92x60 mm avec cloison renforcée, profilé avec porte joint anti bruit,        traverse 92x 50 mm, profilé avec porte joint anti bruit, traverse intermédiaire renforcée (si necessaire pour la pose d''une motorisation) - plat d''alu de 50x10 mm, poignée en aluminium dans la couleur avec retour automatique (si portail ou portillon manuel), fixation par paumelle dans la couleur du portail avec renfort pour fixation de celle ci dans chanque angle avec plat de renfort de 50x10x100 mm                                       cache gond en aluminium dans la couleur , sabot et visserie interne en inox                                                                          
+', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('914', '146', '3', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '840.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('915', '146', '4', 'Interphone sans fil Ultrasecure avec un combiné sans fil intérieur
+Portée champs libre 600 m
+Platine de rue avec pile longue durée 
+Boitier intérieur sans fil sur base de recharge sur prise secteur
+Garantie 2 ans
+
+', '', '1.0', 'u', '540.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('916', '146', '5', 'Clavier à code RADIO EDSWG
+1 canal 
+12 touches 
+Aluminium
+
+Garantie 4 ans', '', '1.0', 'u', '210.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('917', '146', '6', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('918', '146', '7', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '340.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('919', '146', '8', 'Pose Accessoire complexe', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('920', '146', '9', 'Bouton poussoir type plexo pour ouverture depuis l’intérieur
+', '', '1.0', 'u', '50.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('921', '146', '10', 'Batterie de secours Nice PS324
+Permet de manoeuvrer le portail en cas de coupure de courant 
+Tension 24V', '', '1.0', 'u', '210.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('922', '146', '12', 'Poteaux 3 mm 180*180 mm en aluminium thermolaqué avec bouchons dans la couleur                                 
+
+pour refoulement du portail
+
+à sceller dans le seuil lors de la mise en oeuvre de la longrine par le maçon', '', '1.0', 'u', '396.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('923', '147', '1', 'Début des travaux à partir de fin mai 2024
+
+1 Mise en oeuvre du seuil et des Poteaux alu
+
+2 Temps de séchage
+
+3 Mise en oeuvre portillon et clôture ', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('924', '147', '2', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 1000*1885 mm                  Type : manuel                                                                             Couleur : F 7016                                                                                                                                     Remplissage : plein droit horizontal en lame pare vue idem clôture
+
+
+', '', '1.0', 'u', '1036.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('925', '147', '3', 'Clôture alu en lame pare vue 
+
+hauteur 12 lames soit 1,88 m
+
+longueur 1,54 m
+
+', '', '1.0', 'u', '721.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('926', '147', '4', 'Poteaux 105*105 mm en aluminium thermolaqué avec bouchons dans la couleur   AVEC U d’Encadrement                             ', '', '3.0', 'u', '192.7', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('927', '147', '5', 'seuil pour clôture et portillon
+
+comprenant le scellement des poteaux', '', '1.0', 'u', '650.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('928', '147', '6', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '250.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('929', '147', '7', 'Pose Clôture', '', '1.0', 'u', '120.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('930', '147', '8', 'Remise commerciale', '', '-1.0', 'u', '82.37', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('931', '148', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3073 X 1750 MM                                                                                                                          Couleur :  noir volcan (idem 2100 sablé)                                                                                                                                   Remplissage :  semi ajouré droit horizontal en remplissage plein en partie basse avec lame de 163x25 mm puis lame de 92x25 mm en partie haute avec jour de 52 mm environ 
+
+
+', '', '1.0', 'u', '2365.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('932', '148', '2', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('933', '148', '3', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 1014 X 1750 MM                      Type : manuel                                                                             Couleur : idem portail                                                                                                                                     Remplissage : idem portail
+
+
+', '', '1.0', 'u', '1026.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('934', '148', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('935', '148', '5', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '230.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('936', '148', '6', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('937', '148', '7', 'Clôture Horizontale Lame de 92 mm : Hauteur 101 cm soit 7 lames                                      Couleur : NOIR VOLCAN
+
+ajour&ge de environ 52 mm entre lames
+
+platine de fixation en aluminium de 10 mm thermolaqué
+', '', '14.1', 'u', '222.34', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('938', '148', '8', 'Pose Clôture', '', '14.1', 'u', '45.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('939', '149', '1', 'PORTE MÉRIDIEN 1 VANTAIL - K-LINE - Dormant rénovationCotes fabrication : Largeur 850 mm x Hauteur 2100 mmAllège maçonnerie : 0 mm - Pose sur bois
+
+COULEUR : Bicoloration Noir 2100 sablé extérieur classe 2 et RAL 9016Blanc satiné intérieur - Les accessoires (autres que poignées et cachespaumelles)sont blancs
+
+', '', '1.0', 'u', '5290.79', '57', '0.0', 'service');
+INSERT INTO quote_items VALUES ('940', '149', '2', 'DESCRIPTIF CHASSIS : Porte Méridien 1 vantailDormant rénovation Pose 5 - en applique avec clips et rainure extérieure -Clip plat pour recouvrement de 60 mm (06989) - Clip avec 1 mm desurlongueur, peut nécessiter un ajustage final sur chantier - habillageextérieur: Cornière 01305 : 120x50x2 - Seuil PMROuvrant : Tirant droit - Collection Surface - Modèle Méridien - avec plintheAccessoires : BS2 : Poignée ronde XL inox satiné (base tarif) - Cachespaumelles de la couleur de la poignée intérieure - Serrure à relevage (basetarif) - Barillet 65x45 de sécurité, débrayable, avec carte d''identification, 5clés réversibles (base tarif) - Sans entrebâilleur', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('941', '149', '3', 'FERMETURE : Sans passage de volet roulantVENTILATION : SansINFORMATIONS : Gamme : KL-PL - Clair passage = 714 (non conforme à laréglementation handicap) - Réservations maçonnerie planche N° 109.650Coefficient de transmission thermique Ud = 1,2 W/(m².K)Facteur solaire Sw = 0,04Transmission lumineuse TLw = 0 %Acoustique RA,tr = 32 dB (RE1435)', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('942', '149', '4', 'Dépose et pose de la nouvelle porte incluse dans le tarif', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('943', '150', '1', 'Changement carte électronique moteur bras articulés 
+FAAC
+
+Réinitialisation et programmation 
+
+Remise en route des télécommandes
+
+Déplacement et MO comprise ', '', '1.0', 'u', '496.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('944', '151', '1', 'Moteur Nice HOPP (bras articulé)
+ouverture rapide
+
+2 Opérateur électromécanique
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans
+ ', '', '1.0', 'u', '1081.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('945', '151', '2', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('946', '151', '3', 'Dépose Moteur et recyclage', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('947', '152', '1', 'Couvertine Alu couleur hors standard
+Long : 14,1 ml
+Largeur du muret :  20  cm
+Couleur :  2100 Sablé
+
+Pose comprise', '', '14.1', 'u', '55.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('948', '153', '1', 'Changement d’un moteur pour portail deux vantaux suite tempête Domingos', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('949', '153', '2', 'Moteur intégré Type R somfy', '', '1.0', 'u', '1117.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('950', '153', '3', 'Déplacement pour démontage et remontage sur site du vantail', '', '1.0', 'u', '450.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('951', '153', '4', 'MO atelier pour changement moteur 
+
+démontage montant, changement moteur et pré câblage en atelier ', '', '1.0', 'u', '250.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('952', '154', '1', 'Changement d’un moteur pour portail deux vantaux suite tempête Domingos', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('953', '154', '2', 'Moteur intégré Type R somfy', '', '1.0', 'u', '1280.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('954', '154', '3', 'Déplacement pour démontage et remontage sur site du vantail', '', '1.0', 'u', '500.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('955', '154', '4', 'MO atelier pour changement moteur 
+
+démontage montant, changement moteur et pré câblage en atelier ', '', '1.0', 'u', '375.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('956', '155', '1', 'Changement suite orage carte électronique de contrôle de moteur coulissant 
+
+défaut constaté : la carte ne réceptionne plus le signal radio et ne transmet plus les informations de contrôle au moteur ', '', '1.0', 'u', '0.0', '45', '0.0', 'service');
+INSERT INTO quote_items VALUES ('957', '155', '2', 'Carte électronique de contrôle moteur coulissant FACC C 700', '', '1.0', 'u', '620.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('958', '155', '3', 'Déplacement et MO ', '', '1.0', 'u', '182.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('959', '156', '1', 'Enlèvement des poteaux PVC et mise en place d’un seuil maçonné ', '', '1.0', 'u', '1050.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('960', '156', '2', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension :  3000*1250 mm                                                                                                                         Couleur : F 7016                                                                                                                                     Remplissage :  droit semi ajouré horizontal en lame de 1263*25 mm sur le côté puis deux montant intermédiaire avec remplissage ajouré en lame de 92*25 mm
+deux traverses renforcées
+
+', '', '1.0', 'u', '2121.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('961', '156', '3', 'Poteaux 3 mm 180*180 mm en aluminium thermolaqué avec bouchons dans la couleur                                 ', '', '2.0', 'u', '396.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('962', '156', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('963', '156', '5', 'Pose Poteaux Alu', '', '2.0', 'u', '50.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('964', '157', '1', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('965', '157', '2', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('966', '157', '3', 'Sonnette sans fil URMET
+Portée 150 m 
+17 mélodies
+Emetteur IP54  -15° à +50 °C
+Récepteur +5° à +40°C
+
+Garantie 2 ans', '', '1.0', 'u', '120.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('967', '158', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3988*1800                                                                                                                          Couleur : F 7016                                                                                                                                    Remplissage :  Plein droit horizontal en lame de 163*25 avec traverse intermédiaire renforcée
+
+
+', '', '1.0', 'u', '3213.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('968', '158', '2', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('969', '158', '3', 'Récepteur Universel OX2
+2 canaux
+Pré cablé
+Mémoires 256 codes
+Permet de commander le portail et la porte de garage avec la même télécommande
+
+Garantie 4 ans', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('970', '158', '4', 'Sonnette sans fil URMET
+Portée 150 m 
+17 mélodies
+Emetteur IP54  -15° à +50 °C
+Récepteur +5° à +40°C
+
+Garantie 2 ans', '', '1.0', 'u', '120.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('971', '158', '5', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('972', '158', '6', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('973', '159', '1', 'Clôture Pare Vue Horizontale : Hauteur 64,5 cm soit 4 lames                                                 Couleur : gris désert fine texture', '', '16.94', 'u', '226.33', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('974', '159', '2', 'Boite aux lettre incluse dans le chiffrage dans la couleur de la clôture', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('975', '159', '3', 'Pose incluse de l’ensemble dans le chiffrage', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('976', '159', '4', 'Platine de fixation des poteaux en aluminium dans la couleur
+
+ep 10 mm 
+
+vis de fixation en inox', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('977', '160', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3640*1900 mm                                                                                                                          Couleur :  ral bronze 1247 fine texture                                                                                                                                    Remplissage :  plein droit style fer forgé
+- soubassement plein en tôle 
+- rond de 105 mm en intermédiaire puis tube avec Rainure intégré pour tôle de festonnage dans le milieu du tube 
+- traverse haute puis tube avec pointe en dépassement de 10 cm au dessus 
+
+systeme manuel
+
+
+', '', '1.0', 'u', '3550.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('978', '160', '2', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 914*1896 mm                     Type : gâche électrique                                                                             Couleur : idem portail                                                                                                                        Remplissage : idem portail sans décoration en partie basse
+battue de fermeture
+
+
+', '', '1.0', 'u', '1279.86', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('979', '160', '3', 'Kit Vidéo couleur AIPHONE JOS1V
+Ecran LCD couleur 7‘’ 
+Platine de rue en saillie résistance vandalisme
+
+Garantie 5 ans ', '', '1.0', 'u', '605.22', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('980', '160', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('981', '160', '5', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '230.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('982', '160', '6', 'Pose Accessoire complexe', '', '1.0', 'u', '125.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('983', '160', '7', 'Canon s’entrouvrant pour portail et portillon ', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('984', '160', '8', 'Raccord maçonnerie en ciment pour bouchage de l’ancienne gâche électrique du portillon à faire ', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('985', '160', '9', 'Barre de contreventement 
+
+(mise en place lors de la pose du portail pour reprise si possible de l’ancien plot existant)
+', '', '1.0', 'u', '228.8', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('986', '161', '1', 'Changement suite TEMPETE DOMINGOS de la carte électronique de contrôle de moteur coulissant 
+
+défaut constaté : la carte à explosé, nettoyage et changement du fusible interne sans résultat, la sécurité saute à chaque fois. Nécessite de changer la carte électronique de contrôle. 
+Cause surtension électrique du réseau domestique
+', '', '1.0', 'u', '0.0', '45', '0.0', 'service');
+INSERT INTO quote_items VALUES ('987', '161', '2', 'Carte électronique de contrôle pour moteur coulissant 
+FAAC 400 kg', '', '1.0', 'u', '627.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('988', '161', '3', 'Déplacement et MO
+
+dont 1 pour établir le diagnostique', '', '2.0', 'u', '75.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('989', '162', '1', 'Changement suite TEMPETE DOMINGOS de la carte électronique de contrôle de moteur coulissant 
+
+défaut constaté : la carte à explosé, nettoyage et changement du fusible interne sans résultat, la sécurité saute à chaque fois. Nécessite de changer la carte électronique de contrôle. 
+Cause surtension électrique du réseau domestique
+', '', '1.0', 'u', '0.0', '45', '0.0', 'service');
+INSERT INTO quote_items VALUES ('990', '162', '2', 'Carte électronique de contrôle pour moteur coulissant 
+FAAC 400 kg', '', '1.0', 'u', '627.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('991', '162', '3', 'Déplacement et MO
+
+dont 1 pour établir le diagnostique', '', '2.0', 'u', '75.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('992', '163', '1', 'Clôture Pare Vue Horizontale : Hauteur 180 cm soit 11 lames                                                 Couleur : gris 7016 ft
+', '', '3.14', 'u', '449.36', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('993', '163', '2', 'Poteaux 105*105 mm en aluminium thermolaqué avec bouchons dans la couleur                                 ', '', '1.0', 'u', '151.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('994', '163', '3', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 971 * 1800 mm                        Type : manuel                                                                             Couleur : gris 7016                                                                                                                                      Remplissage : plein droit horizontal en lame pare vue de 160*25 mm
+un montant intermédiaire pour décoration sur le côté
+
+
+', '', '1.0', 'u', '1138.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('995', '163', '4', 'Décoration en aluminium découpe laser pour le portillon de devant
+
+motif à définir', '', '1.0', 'u', '474.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('996', '163', '5', 'Poteaux 105*105 mm en aluminium thermolaqué avec bouchons dans la couleur                                 ', '', '2.0', 'u', '151.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('997', '163', '6', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 887*1600 mm                            Type : Manuel                                                                            Couleur : 7016 ft                                                                                                                                    Remplissage : plein droit horizontal en lame pare vue de 160*25 mm
+
+avec un montant intermédiaire puis décoration 
+
+
+', '', '1.0', 'u', '1050.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('998', '163', '7', 'Décoration en aluminium découpe laser pour le portillon de devant
+
+motif à définir', '', '1.0', 'u', '237.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('999', '163', '8', 'Pose de l’ensemble à 1 €', '', '1.0', 'u', '1.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1000', '164', '1', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '840.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1001', '164', '2', 'Cremallière pour portail en nylon avec âme en acier 
+Fixation par insert
+', '', '1.0', 'u', '80.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1002', '164', '3', 'Rail en inox longueur de 3ml ', '', '1.0', 'u', '534.6', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1003', '164', '4', 'Récepteur Universel OX2
+2 canaux
+Pré cablé
+Mémoires 256 codes
+Permet de commander le portail et la porte de garage avec la même télécommande
+
+Garantie 4 ans', '', '1.0', 'u', '120.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1004', '164', '5', 'lame de remplissage en pvc 80x28 mm blanc
+
+avec bouchons
+
+28 lames verticale
+', '', '1.0', 'u', '387.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1005', '164', '6', 'Forfait trajet pour rapatriement en atelier 
+MO atelier', '', '1.0', 'u', '350.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1006', '164', '7', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1007', '164', '8', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '0.5', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1008', '165', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 5000*1700 mm                                                                                                                           Couleur : NR VOL 2 = 2100 sablé                                                                                                                           Remplissage : plein droit horizontal en lame de 163*25 mm avec un montant intermédiaire 
+
+
+', '', '1.0', 'u', '4972.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1009', '165', '2', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '801.24', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1010', '165', '3', 'Kit Vidéo couleur AIPHONE JOS1V
+Ecran LCD couleur 7‘’ 
+Platine de rue en saillie résistance vandalisme
+
+Garantie 5 ans ', '', '1.0', 'u', '605.22', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1011', '165', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1012', '165', '5', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1013', '165', '6', 'Pose Accessoire complexe', '', '1.0', 'u', '200.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1014', '165', '10', 'Clavier à code filaire AIPHONE AC10S
+2 canaux #1 60codes, #2 40 codes
+100 codes d’accès maxi
+Tempo 1 à 99 secondes 
+Saillie  
+Aluminium
+Résistance au vandalisme
+
+Garantie 2 ans', '', '1.0', 'u', '210.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1015', '165', '11', 'Bouton poussoir pour ouverture depuis l’intérieur 
+
+', '', '1.0', 'u', '50.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1016', '165', '12', 'Couvertine Alu couleur standard
+Long : 2640 cm
+Largeur du muret :  20  cm
+Couleur :  2100 Sablé', '', '26.4', 'u', '35.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1017', '165', '13', 'Clôture Pare Vue Horizontale : Hauteur 80 cm soit 5 lames                                                 Couleur : gris 7016 fine texture
+
+fourniture seule
+
+vis de fixation pour les platines ', '', '26.4', 'u', '205.09', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1018', '166', '1', 'Clôture Pare Vue PVC Horizontale : Hauteur 110 cm soit 7 lames                                                 Couleur : PCV plaxé 
+
+PTX couleur gris quartz 6047
+LAME  couleur Anteak 3241
+
+
+Poteaux de 90*90*3D
+U cache rainure 30*27*24
+Brise vue plat 160*30
+Embout poteaux 90*90
+Entretoise de finition
+Platine de fixation galva 5 mm', '', '29.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1019', '166', '2', 'Pose Clôture', '', '29.0', 'u', '49.16', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1020', '167', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension :  4400*1600 mm                                                                                                                         Couleur :  7016 ft                                                                                                                                  Remplissage :  plein droit horizontal en lame de 163*25 mm 
+sans traverse ni montant intermédiaire 
+
+poignée dans la couleur du portail
+
+canon 30/30 avec 3 clefs
+
+sabot inox
+
+
+
+', '', '1.0', 'u', '2844.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1021', '167', '2', 'Seuil pour portail deux vantaux
+
+terrassement 
+
+mise en palce du ferraillage 
+
+coulage béton 
+
+coulage des poteaux alu dans le seuil
+
+nettoyage du chantier
+
+', '', '1.0', 'u', '1250.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1022', '167', '3', 'Poteaux 3 mm 180*180 mm en aluminium thermolaqué avec bouchons dans la couleur                                 ', '', '2.0', 'u', '396.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1023', '167', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1024', '167', '5', 'Pose Poteaux Alu', '', '2.0', 'u', '50.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1025', '167', '6', 'Tôle alu découpe laser suivant motif à préciser
+
+ep 3 mm
+
+thermolaquage gris 7016 FT 
+
+plis sur les côté pour fixation par vissage tout autour 
+
+', '', '1.0', 'u', '1197.64', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1026', '167', '7', 'Pose tôle déco', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1027', '168', '1', 'Poteaux 105*105 mm en aluminium thermolaqué avec bouchons dans la couleur                                 ', '', '2.0', 'u', '140.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1028', '168', '2', 'Maçonnerie pour portail
+', '', '1.0', 'u', '800.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1029', '168', '3', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 1490*1700 mm                                                                                                                          Couleur : NR VOL 2   idem 2100 sablé                                                                                                                                     Remplissage :  plein droit horizontal en lame de 300 mm 
+
+2/3 à droite vue ext avec panneau en découpe laser et poignée de service dans la couleur
+
+et 1/3 à gauche plein en lame de 300 
+
+sabot en inox 
+
+', '', '1.0', 'u', '1314.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1030', '168', '4', 'Découpe laser en tôle alu de 3 mm
+
+motif résille à définir
+
+côté poignée sur le vantail de droite
+
+intégration dans closoir de 3 mm en alu', '', '1.0', 'u', '550.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1031', '168', '5', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1032', '168', '6', 'Pose Poteaux Alu', '', '2.0', 'u', '50.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1033', '169', '1', 'Porte de Garage ACIER / ACIER Sectionnelle plafond
+hublot rectangulaire en partie haute Finition SANS RAINURE aspect lisseLarg : 2480 mm x Haut : 2544 mm. Panneaux ACIER / ACIER- Face extérieure en ACIER- Face intérieure en ACIER aspect stucco blanc 9010- Finition SANS RAINURE. Panneaux isolés double paroi de 40 mm d''épaisseur. Compensation par RESSORTS positionnés dans les montants. Rail en aluminium (galets montés sur roulement à billes,charnières INOX). Coloris BLANCGarantie 10 ans_', '', '1.0', 'u', '3288.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1034', '169', '2', 'Moteur pour porte de garage sectionnelle plafond
+Nice Spinbus 
+24 v
+', '', '1.0', 'u', '385.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1035', '169', '3', 'Pose de l’ensemble PG', '', '1.0', 'u', '440.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1036', '169', '4', 'Remise commerciale ', '', '-1.0', 'u', '90.9', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1037', '169', '5', 'Extension de Garantie du moteur de porte de garage 
+
+OFFERT
+
++ 1 an soit 5 ans au total', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1038', '170', '1', 'Carte électronique de contrôle moteur coulissant
+ FACC C 700', '', '1.0', 'u', '620.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1039', '170', '2', 'Déplacement 
+
+1 : pour repositionnement des poteaux 
+2 : diagnostic moteur et réparation du digicode
+3 : changement carte et reprogrammation', '', '3.0', 'u', '75.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1040', '170', '3', 'MO 
+
+préfixation des poteaux et portail
+réparation du digicode
+changement carte ', '', '2.5', 'u', '82.0', '21', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1041', '170', '4', 'Réparation portail et changement nécessaire suite tempête de la
+carte électronique de contrôle de moteur coulissant 
+
+défaut constaté : la carte n’enregistrement plus la manoeuvre du portail ni les photocellules 
+plus d’informations de contrôle envoyés au moteur ', '', '1.0', 'u', '0.0', '45', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1042', '171', '1', 'Porte de Garage ACIER / ACIER Sectionnelle plafond
+Finition SANS RAINURE aspect lisseLarg : 2400 mm x Haut : 2000 mm. Panneaux ACIER / ACIER- Face extérieure en ACIER- Face intérieure en ACIER aspect stucco blanc 9010- Finition SANS RAINURE. Panneaux isolés double paroi de 40 mm d''épaisseur. Compensation par RESSORTS positionnés dans les montants. Rail en aluminium (galets montés sur roulement à billes,charnières INOX). Coloris 7016Garantie 10 ans_', '', '1.0', 'u', '1725.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1043', '171', '2', 'Moteur pour porte de garage sectionnelle plafond
+Nice Spinbus 
+24 v
+', '', '1.0', 'u', '385.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1044', '171', '3', 'Pose de l’ensemble PG', '', '1.0', 'u', '440.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1045', '171', '4', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 4000 X 1800 mm                                                                                                                          Couleur :  F 7016                                                                                                                           Remplissage : plein droit horizontal en lame de 163x25 mm 
+
+
+', '', '1.0', 'u', '3442.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1046', '171', '5', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '801.24', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1047', '171', '6', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1048', '171', '7', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1049', '172', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 4028*1500 mm                                                                                                                          Couleur : Gris désert fine texture                                                                                                                            Remplissage : semi ajouré en partie centrale ou bien totalement plein 
+2 montants intermédiaires 
+remplissage horizontal en lame de 163*25 mm
+lames de 92*25 mm en cas de remplissage ajouré au centre
+', '', '1.0', 'u', '3373.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1050', '172', '2', 'Moteur pour portail coulissant Nice Robus Hi Speed 250
+ouverture rapide
+
+1 Opérateur 
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+* 10 secondes pour un portail de 4m
+Garantie 4 Ans
+', '', '1.0', 'u', '840.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1051', '172', '3', 'Dépose de l’ensemble
+repérage de l’ensemble des câblages', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1052', '172', '4', 'Maçonnerie pour portail coulissant', '', '1.0', 'u', '1250.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1053', '172', '5', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1054', '172', '6', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1055', '172', '7', '‘’Coulissant et bras articulés’’ Batterie de secours Nice PS324
+Permet de manoeuvrer le portail en cas de coupure de courant 
+Tension 24V (copie)', '', '1.0', 'u', '250.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1056', '172', '8', '
+
+Pièce de guidage supplémentaire pour pré réception du portail en cas de vent important 
+
+', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1057', '172', '9', '« Pièce de guidage en refoulement et en fermeture en partie haute »
+« traverse renforcée en partie haute pour maintient face au vent »', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1058', '173', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3523 X 1100 mm                                                                                                                          Couleur : blanc velours                                                                                                                                    Remplissage : semi ajouré avec soubassement plein en lame de 163x25 mm, traverse intermédiaire renforcée puis ajourage vertical en lame de 92x25 mm puis traverse cintrée en partie haute
+
+
+', '', '1.0', 'u', '2386.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1059', '173', '2', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1060', '173', '3', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1061', '173', '4', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1062', '173', '5', 'Clavier à code RADIO EDSWG
+1 canal 
+12 touches 
+Aluminium
+
+Garantie 4 ans', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1063', '173', '6', 'Sonnette sans fil URMET
+Portée 150 m 
+17 mélodies
+Emetteur IP54  -15° à +50 °C
+Récepteur +5° à +40°C
+
+Garantie 2 ans', '', '1.0', 'u', '120.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1064', '173', '7', 'MO prépa pilier et goulotte ', '', '1.0', 'u', '100.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1065', '174', '1', 'Mise en place de platine pour la fixation des poteaux de 180 x 180 mm', '', '2.0', 'u', '200.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1066', '174', '2', '
+Nécessite de mettre en place des platines pour la fixation des poteaux, en effet lors du démontage complet du portail comme prévu initialement, nous nous sommes  aperçu que les plots béton étaient trop gros pour être enlevé sans abimer de manière conséquente l’entrée. 
+
+Ils ont été par conséquent coulés dans le nouveau seuil  ', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1067', '175', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3075 X 1150 mm                                                                                                                          Couleur : plaxé bois couleur Teck (ref TECKA)                                                                                                                                    Remplissage :  semi ajouré FORME CDG 
+soubassement plein en lames de 163x25 mm traverse intermédiaire renforcée pour motorisation 
+ajourage vertical en lame de 92x25 mm 
+
+1 er ouverture à droite 
+
+', '', '1.0', 'u', '2919.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1068', '175', '2', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1069', '175', '3', 'Préparation de pose ', '', '1.0', 'u', '300.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1070', '175', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1071', '175', '5', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1072', '175', '6', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension : 1026 X 1200 MM                   Type :  manuel                                                                            Couleur : idem portail                                                                                                                                      Remplissage : semi ajouré forme droite 
+Forme Chapeau de gendarme
+
+Poussant droit 
+
+
+', '', '1.0', 'u', '1349.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1073', '175', '7', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '250.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1074', '176', '1', 'Clôture Horizontale lame de 163 mm : Hauteur 165 cm soit 10  lames                                     Couleur : GRIS DESERT FINE TEXTURE
+', '', '6.88', 'u', '565.42', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1075', '176', '2', 'Pose Clôture', '', '6.88', 'u', '55.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1076', '176', '3', 'Préparation pose et enlèvement ancienne clôture', '', '1.0', 'u', '350.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1077', '177', '1', 'Clôture Pare Vue Horizontale : Hauteur 49 cm soit 3 lames                                                 Couleur : Rouge 3004 satiné
+
+hauteur sous reserve de la prise de côté de la hauteur globale du chantier. 
+
+(possibilité de délignage de la première lame pour alignement avec la clôture plus basse)
+', '', '9.49', 'u', '138.25', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1078', '177', '2', 'Clôture Pare Vue Horizontale : Hauteur 80 cm soit 5 lames                                                 Couleur : Rouge 3004 satiné
+', '', '10.7', 'u', '228.97', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1079', '177', '3', 'Pose Clôture
+sur platine alu thermolaqué dans la couleur', '', '20.19', 'u', '55.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1080', '177', '4', 'Possibilité d’option gratuite de mettre la première et ou la deuxième en partant du portail de chaque côté en couleur gris antique
+
+à définir lors du passage de la commande', '', '1.0', 'u', '0.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1081', '177', '5', 'Remise commercial (ancien client)', '', '-1.0', 'u', '201.89', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1082', '178', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3112 X 1800 MM                                                                                                                          Couleur :   Gris 7016 fine texture                                                                                                                                  Remplissage :  plein droit horizontal en lame de 163x25 mm 
+traverse intermédiaire renforcée pour motorisation
+
+
+', '', '1.0', 'u', '2629.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1083', '178', '2', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1084', '178', '3', 'Fotocellule à pile pour réception sans fil de l’information', '', '1.0', 'u', '210.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1085', '178', '4', 'Préparation dépose boîtier de commande et goulotte ', '', '1.0', 'u', '100.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1086', '178', '5', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1087', '178', '6', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '340.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1088', '179', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3523 X 1100 mm                                                                                                                          Couleur : blanc velours                                                                                                                                    Remplissage : DROIT semi ajouré avec soubassement plein en lame de 163x25 mm, traverse intermédiaire renforcée puis ajourage vertical en lame de 92x25 mm 
+
+
+', '', '1.0', 'u', '2100.67', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1089', '179', '2', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1090', '179', '3', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1091', '179', '4', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1092', '179', '5', 'Clavier à code RADIO EDSWG
+1 canal 
+12 touches 
+Aluminium
+
+Garantie 4 ans', '', '1.0', 'u', '150.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1093', '179', '6', 'Sonnette sans fil URMET
+Portée 150 m 
+17 mélodies
+Emetteur IP54  -15° à +50 °C
+Récepteur +5° à +40°C
+
+Garantie 2 ans', '', '1.0', 'u', '120.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1094', '179', '7', 'MO prépa pilier et goulotte ', '', '1.0', 'u', '100.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1095', '180', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension :  3423 X 1850 MM                                                                                                                         Couleur : Couleur à définir                                                                                                                                     Remplissage : plein droit horizontal en lame de 163x25 mm 
+
+Fixation par paumelles pour augmentation de la hauteur du portail par rapport aux poteaux béton existant  
+
+
+', '', '1.0', 'u', '2758.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1096', '180', '2', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '30', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1097', '181', '1', 'Portail 2 vtx en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3640 X 1600 MM                                                                                                                          Couleur : Noir 9005 Fine texture                                                                                                                                    Remplissage : plein droit horizontal en lame de 163x25 mm
+Traverse intermédiaire pour motorisation  
+
+
+', '', '1.0', 'u', '2604.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1098', '181', '2', 'Montant 92x60 mm avec cloison renforcée, profilé avec porte joint anti bruit,        traverse 92x 50 mm, profilé avec porte joint anti bruit, traverse intermédiaire renforcée (si necessaire pour la pose d''une motorisation) - plat d''alu de 50x10 mm, poignée en aluminium dans la couleur avec retour automatique (si portail ou portillon manuel), fixation par paumelle dans la couleur du portail avec renfort pour fixation de celle ci dans chanque angle avec plat de renfort de                50x10x100 mm cache gond en aluminium dans la couleur , visserie interne en inox                                                                          
+', '', '1.0', 'u', '0.0', '29', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1099', '181', '3', 'Moteur Nice TOONA (vérin)
+ouverture rapide
+
+2 Opérateur électromécanique
+1 boite logique de commande
+2 Emetteurs (3 Canaux)
+1 Paire de photocellule 
+1 Lampe clignotante
+
+Garantie 4 Ans', '', '1.0', 'u', '1180.08', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1100', '181', '4', 'Poteaux 3 mm 180*180 mm en aluminium thermolaqué avec bouchons dans la couleur                                 
+
+SCELLEMENT DES POTEAUX DANS LE SEUIL 
+
+(le seuil béton est à la charge client et la pose des poteaux sera à effectuer par la maçon, un plan d’implantation sera fourni pour le passage des gaines)', '', '2.0', 'u', '408.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1101', '181', '5', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1102', '181', '6', 'Pose Motorisation
+. Mise en place des moteurs
+. Mise en place de la logique de commande
+. Mise en place des accessoires (photocellules, lampe
+clignotante...)
+. Réglage, programmation et mise en service', '', '1.0', 'u', '330.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1103', '181', '7', 'Portillon en aluminium Thermolaqué label Qualicoat & Qualimarine               Dimension :  1100 x 1760 mm                        Type : Manuel                                                                             Couleur : Noir 9005 Fine texture                                                                                                                                     Remplissage : plein droit horizontal en lame de 163x25 mm idem portail
+
+
+', '', '1.0', 'u', '987.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1104', '181', '8', 'Pose Portillon
+. Mise en place du portillon avec ses accessoires', '', '1.0', 'u', '230.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1105', '181', '9', '‘’Verin’’ Batterie de secours Nice PS324
+Permet de manoeuvrer le portail en cas de coupure de courant 
+Tension 24V', '', '1.0', 'u', '176.6', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1106', '181', '10', 'Remise commercial', '', '-1.0', 'u', '295.35', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1107', '182', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 3500*1600 mm                                                                                                                          Couleur : 7016 FT                                                                                                                            Remplissage : plein droit horizontal en lame de 163*25 mm 
+
+
+', '', '1.0', 'u', '2988.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1108', '182', '4', 'Pose Portail
+. Mise en place du portail avec ses accessoires', '', '1.0', 'u', '430.0', '8', '0.0', 'service');
+INSERT INTO quote_items VALUES ('1109', '183', '1', 'Portail coulissant en aluminium Thermolaqué label Qualicoat & Qualimarine         Dimension : 4720*1600 mm                                                                                                                          Couleur : gris platine                                                                                                                            Remplissage : plein droit horizontal en lame de 163*25 mm avec un montant intermédiaire 
+
+
