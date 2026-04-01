@@ -5110,34 +5110,44 @@ async function toggleTask(taskId, done) {
 
 function filterClients(query) {
   const list = document.getElementById('clientsList');
-  const filtered = state.safeArray(clients).filter(c => 
-    `${c.first_name} ${c.last_name} ${c.company || ''}`.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = safeArray(state.clients).filter(c => {
+    const name = c.name || '';
+    const company = c.company || '';
+    const email = c.email || '';
+    const phone = c.phone || '';
+    const searchText = `${name} ${company} ${email} ${phone}`.toLowerCase();
+    return searchText.includes(query.toLowerCase());
+  });
   
   list.innerHTML = filtered.map(client => {
-    const firstName = client.first_name?.trim() || '';
-    const lastName = client.last_name?.trim() || '';
-    const initials = (firstName[0] || '') + (lastName[0] || '') || '?';
-    const fullName = (firstName || lastName) 
-      ? `${firstName} ${lastName}`.trim()
-      : `Client #${client.id}`;
+    const displayName = client.name || `Client #${client.id}`;
+    const initials = displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
     
     return `
-    <div class="card card-hover" onclick="viewClientModal(${client.id})">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-12 h-12 bg-gradient-to-br from-blue-900 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
-          ${initials}
-        </div>
-        <div class="flex-1">
-          <h3 class="font-bold text-white">${fullName}</h3>
-          ${client.company ? `<p class="text-sm text-gray-300">${client.company}</p>` : ''}
+    <div class="flex items-center gap-3 p-3 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors border border-gray-700" onclick="openEditClientModal(${client.id})">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+        ${initials}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-white truncate">${displayName}</div>
+        <div class="text-sm text-gray-400 truncate">
+          ${client.phone ? `📞 ${client.phone}` : ''}
+          ${client.phone && client.email ? ' • ' : ''}
+          ${client.email ? `✉️ ${client.email}` : ''}
         </div>
       </div>
-      ${client.phone ? `<p class="text-sm text-gray-700 mb-1"><i class="fas fa-phone text-blue-600"></i> ${client.phone}</p>` : ''}
-      ${client.email ? `<p class="text-sm text-gray-700 mb-1"><i class="fas fa-envelope text-blue-600"></i> ${client.email}</p>` : ''}
+      <div class="flex gap-2 flex-shrink-0">
+        <button class="p-2 hover:bg-gray-600 rounded transition-colors" onclick="event.stopPropagation(); openClientDossier(${client.id})" title="Dossier">
+          <i class="fas fa-folder text-blue-400"></i>
+        </button>
+        <button class="p-2 hover:bg-red-600 rounded transition-colors" onclick="event.stopPropagation(); confirmDeleteClient(${client.id})" title="Supprimer">
+          <i class="fas fa-trash text-red-400"></i>
+        </button>
+      </div>
     </div>
     `;
   }).join('');
+}
 }
 
 // CREATE QUOTE MODAL (Éditeur de devis complet)
