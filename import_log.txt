@@ -1,0 +1,680 @@
+================================================================================
+🚀 IMPORT AUTOMATIQUE : Gestion-Com → KARL CRM
+================================================================================
+✅ Connexion aux bases établie
+
+👥 ÉTAPE 1/3 : Import des clients (ZTIERS → clients)
+  ⚠️ Erreur client 9: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 11: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 14: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 20: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 21: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 26: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 45: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 49: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 61: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 63: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 64: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 65: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 76: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 83: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 87: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 94: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 97: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 98: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 101: UNIQUE constraint failed: clients.email
+  ✅ 50 clients importés...
+  ⚠️ Erreur client 107: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 115: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 134: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 153: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 154: UNIQUE constraint failed: clients.email
+  ✅ 100 clients importés...
+  ⚠️ Erreur client 164: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 174: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 183: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 184: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 185: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 190: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 214: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 220: UNIQUE constraint failed: clients.email
+  ✅ 150 clients importés...
+  ⚠️ Erreur client 250: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 261: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 262: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 268: UNIQUE constraint failed: clients.email
+  ✅ 200 clients importés...
+  ⚠️ Erreur client 303: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 313: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 315: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 322: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 323: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 324: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 335: UNIQUE constraint failed: clients.email
+  ✅ 250 clients importés...
+  ⚠️ Erreur client 342: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 347: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 356: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 359: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 365: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 373: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 378: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 380: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 384: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 388: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 394: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 397: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 402: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 404: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 405: UNIQUE constraint failed: clients.email
+  ✅ 300 clients importés...
+  ⚠️ Erreur client 412: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 423: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 436: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 439: UNIQUE constraint failed: clients.email
+  ✅ 350 clients importés...
+  ⚠️ Erreur client 465: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 466: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 467: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 477: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 485: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 488: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 489: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 495: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 508: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 525: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 526: UNIQUE constraint failed: clients.email
+  ⚠️ Erreur client 527: UNIQUE constraint failed: clients.email
+  ✅ 400 clients importés...
+
+  ✅ 429 clients importés
+  ⚠️ 123 clients ignorés (doublons email)
+
+📊 ÉTAPE 2/3 : Import des devis/factures (ZFACTURECLIENT → quotes)
+  ⚠️ Erreur devis 12: table quotes has no column named number
+  ⚠️ Erreur devis 13: table quotes has no column named number
+  ⚠️ Erreur devis 14: table quotes has no column named number
+  ⚠️ Erreur devis 15: table quotes has no column named number
+  ⚠️ Erreur devis 16: table quotes has no column named number
+  ⚠️ Erreur devis 17: table quotes has no column named number
+  ⚠️ Erreur devis 18: table quotes has no column named number
+  ⚠️ Erreur devis 19: table quotes has no column named number
+  ⚠️ Erreur devis 20: table quotes has no column named number
+  ⚠️ Erreur devis 21: table quotes has no column named number
+  ⚠️ Erreur devis 22: table quotes has no column named number
+  ⚠️ Erreur devis 24: table quotes has no column named number
+  ⚠️ Erreur devis 25: table quotes has no column named number
+  ⚠️ Erreur devis 26: table quotes has no column named number
+  ⚠️ Erreur devis 27: table quotes has no column named number
+  ⚠️ Erreur devis 28: table quotes has no column named number
+  ⚠️ Erreur devis 30: table quotes has no column named number
+  ⚠️ Erreur devis 31: table quotes has no column named number
+  ⚠️ Erreur devis 32: table quotes has no column named number
+  ⚠️ Erreur devis 33: table quotes has no column named number
+  ⚠️ Erreur devis 34: table quotes has no column named number
+  ⚠️ Erreur devis 36: table quotes has no column named number
+  ⚠️ Erreur devis 37: table quotes has no column named number
+  ⚠️ Erreur devis 38: table quotes has no column named number
+  ⚠️ Erreur devis 39: table quotes has no column named number
+  ⚠️ Erreur devis 40: table quotes has no column named number
+  ⚠️ Erreur devis 41: table quotes has no column named number
+  ⚠️ Erreur devis 42: table quotes has no column named number
+  ⚠️ Erreur devis 43: table quotes has no column named number
+  ⚠️ Erreur devis 44: table quotes has no column named number
+  ⚠️ Erreur devis 46: table quotes has no column named number
+  ⚠️ Erreur devis 47: table quotes has no column named number
+  ⚠️ Erreur devis 48: table quotes has no column named number
+  ⚠️ Erreur devis 49: table quotes has no column named number
+  ⚠️ Erreur devis 50: table quotes has no column named number
+  ⚠️ Erreur devis 51: table quotes has no column named number
+  ⚠️ Erreur devis 52: table quotes has no column named number
+  ⚠️ Erreur devis 53: table quotes has no column named number
+  ⚠️ Erreur devis 54: table quotes has no column named number
+  ⚠️ Erreur devis 55: table quotes has no column named number
+  ⚠️ Erreur devis 56: table quotes has no column named number
+  ⚠️ Erreur devis 57: table quotes has no column named number
+  ⚠️ Erreur devis 59: table quotes has no column named number
+  ⚠️ Erreur devis 62: table quotes has no column named number
+  ⚠️ Erreur devis 63: table quotes has no column named number
+  ⚠️ Erreur devis 64: table quotes has no column named number
+  ⚠️ Erreur devis 66: table quotes has no column named number
+  ⚠️ Erreur devis 67: table quotes has no column named number
+  ⚠️ Erreur devis 68: table quotes has no column named number
+  ⚠️ Erreur devis 69: table quotes has no column named number
+  ⚠️ Erreur devis 70: table quotes has no column named number
+  ⚠️ Erreur devis 71: table quotes has no column named number
+  ⚠️ Erreur devis 72: table quotes has no column named number
+  ⚠️ Erreur devis 73: table quotes has no column named number
+  ⚠️ Erreur devis 75: table quotes has no column named number
+  ⚠️ Erreur devis 76: table quotes has no column named number
+  ⚠️ Erreur devis 79: table quotes has no column named number
+  ⚠️ Erreur devis 80: table quotes has no column named number
+  ⚠️ Erreur devis 82: table quotes has no column named number
+  ⚠️ Erreur devis 83: table quotes has no column named number
+  ⚠️ Erreur devis 84: table quotes has no column named number
+  ⚠️ Erreur devis 85: table quotes has no column named number
+  ⚠️ Erreur devis 86: table quotes has no column named number
+  ⚠️ Erreur devis 87: table quotes has no column named number
+  ⚠️ Erreur devis 89: table quotes has no column named number
+  ⚠️ Erreur devis 90: table quotes has no column named number
+  ⚠️ Erreur devis 91: table quotes has no column named number
+  ⚠️ Erreur devis 92: table quotes has no column named number
+  ⚠️ Erreur devis 93: table quotes has no column named number
+  ⚠️ Erreur devis 94: table quotes has no column named number
+  ⚠️ Erreur devis 95: table quotes has no column named number
+  ⚠️ Erreur devis 96: table quotes has no column named number
+  ⚠️ Erreur devis 97: table quotes has no column named number
+  ⚠️ Erreur devis 98: table quotes has no column named number
+  ⚠️ Erreur devis 100: table quotes has no column named number
+  ⚠️ Erreur devis 101: table quotes has no column named number
+  ⚠️ Erreur devis 102: table quotes has no column named number
+  ⚠️ Erreur devis 103: table quotes has no column named number
+  ⚠️ Erreur devis 104: table quotes has no column named number
+  ⚠️ Erreur devis 105: table quotes has no column named number
+  ⚠️ Erreur devis 106: table quotes has no column named number
+  ⚠️ Erreur devis 107: table quotes has no column named number
+  ⚠️ Erreur devis 108: table quotes has no column named number
+  ⚠️ Erreur devis 109: table quotes has no column named number
+  ⚠️ Erreur devis 110: table quotes has no column named number
+  ⚠️ Erreur devis 111: table quotes has no column named number
+  ⚠️ Erreur devis 112: table quotes has no column named number
+  ⚠️ Erreur devis 113: table quotes has no column named number
+  ⚠️ Erreur devis 114: table quotes has no column named number
+  ⚠️ Erreur devis 115: table quotes has no column named number
+  ⚠️ Erreur devis 116: table quotes has no column named number
+  ⚠️ Erreur devis 117: table quotes has no column named number
+  ⚠️ Erreur devis 118: table quotes has no column named number
+  ⚠️ Erreur devis 120: table quotes has no column named number
+  ⚠️ Erreur devis 121: table quotes has no column named number
+  ⚠️ Erreur devis 122: table quotes has no column named number
+  ⚠️ Erreur devis 123: table quotes has no column named number
+  ⚠️ Erreur devis 124: table quotes has no column named number
+  ⚠️ Erreur devis 125: table quotes has no column named number
+  ⚠️ Erreur devis 126: table quotes has no column named number
+  ⚠️ Erreur devis 128: table quotes has no column named number
+  ⚠️ Erreur devis 129: table quotes has no column named number
+  ⚠️ Erreur devis 130: table quotes has no column named number
+  ⚠️ Erreur devis 131: table quotes has no column named number
+  ⚠️ Erreur devis 132: table quotes has no column named number
+  ⚠️ Erreur devis 133: table quotes has no column named number
+  ⚠️ Erreur devis 134: table quotes has no column named number
+  ⚠️ Erreur devis 135: table quotes has no column named number
+  ⚠️ Erreur devis 136: table quotes has no column named number
+  ⚠️ Erreur devis 137: table quotes has no column named number
+  ⚠️ Erreur devis 138: table quotes has no column named number
+  ⚠️ Erreur devis 139: table quotes has no column named number
+  ⚠️ Erreur devis 140: table quotes has no column named number
+  ⚠️ Erreur devis 141: table quotes has no column named number
+  ⚠️ Erreur devis 142: table quotes has no column named number
+  ⚠️ Erreur devis 143: table quotes has no column named number
+  ⚠️ Erreur devis 144: table quotes has no column named number
+  ⚠️ Erreur devis 147: table quotes has no column named number
+  ⚠️ Erreur devis 148: table quotes has no column named number
+  ⚠️ Erreur devis 149: table quotes has no column named number
+  ⚠️ Erreur devis 150: table quotes has no column named number
+  ⚠️ Erreur devis 151: table quotes has no column named number
+  ⚠️ Erreur devis 152: table quotes has no column named number
+  ⚠️ Erreur devis 153: table quotes has no column named number
+  ⚠️ Erreur devis 154: table quotes has no column named number
+  ⚠️ Erreur devis 155: table quotes has no column named number
+  ⚠️ Erreur devis 157: table quotes has no column named number
+  ⚠️ Erreur devis 159: table quotes has no column named number
+  ⚠️ Erreur devis 160: table quotes has no column named number
+  ⚠️ Erreur devis 161: table quotes has no column named number
+  ⚠️ Erreur devis 162: table quotes has no column named number
+  ⚠️ Erreur devis 163: table quotes has no column named number
+  ⚠️ Erreur devis 164: table quotes has no column named number
+  ⚠️ Erreur devis 165: table quotes has no column named number
+  ⚠️ Erreur devis 169: table quotes has no column named number
+  ⚠️ Erreur devis 170: table quotes has no column named number
+  ⚠️ Erreur devis 171: table quotes has no column named number
+  ⚠️ Erreur devis 172: table quotes has no column named number
+  ⚠️ Erreur devis 173: table quotes has no column named number
+  ⚠️ Erreur devis 174: table quotes has no column named number
+  ⚠️ Erreur devis 175: table quotes has no column named number
+  ⚠️ Erreur devis 176: table quotes has no column named number
+  ⚠️ Erreur devis 177: table quotes has no column named number
+  ⚠️ Erreur devis 178: table quotes has no column named number
+  ⚠️ Erreur devis 179: table quotes has no column named number
+  ⚠️ Erreur devis 180: table quotes has no column named number
+  ⚠️ Erreur devis 184: table quotes has no column named number
+  ⚠️ Erreur devis 185: table quotes has no column named number
+  ⚠️ Erreur devis 186: table quotes has no column named number
+  ⚠️ Erreur devis 187: table quotes has no column named number
+  ⚠️ Erreur devis 188: table quotes has no column named number
+  ⚠️ Erreur devis 190: table quotes has no column named number
+  ⚠️ Erreur devis 191: table quotes has no column named number
+  ⚠️ Erreur devis 192: table quotes has no column named number
+  ⚠️ Erreur devis 193: table quotes has no column named number
+  ⚠️ Erreur devis 194: table quotes has no column named number
+  ⚠️ Erreur devis 195: table quotes has no column named number
+  ⚠️ Erreur devis 196: table quotes has no column named number
+  ⚠️ Erreur devis 197: table quotes has no column named number
+  ⚠️ Erreur devis 198: table quotes has no column named number
+  ⚠️ Erreur devis 199: table quotes has no column named number
+  ⚠️ Erreur devis 200: table quotes has no column named number
+  ⚠️ Erreur devis 201: table quotes has no column named number
+  ⚠️ Erreur devis 202: table quotes has no column named number
+  ⚠️ Erreur devis 203: table quotes has no column named number
+  ⚠️ Erreur devis 204: table quotes has no column named number
+  ⚠️ Erreur devis 205: table quotes has no column named number
+  ⚠️ Erreur devis 206: table quotes has no column named number
+  ⚠️ Erreur devis 207: table quotes has no column named number
+  ⚠️ Erreur devis 208: table quotes has no column named number
+  ⚠️ Erreur devis 209: table quotes has no column named number
+  ⚠️ Erreur devis 210: table quotes has no column named number
+  ⚠️ Erreur devis 211: table quotes has no column named number
+  ⚠️ Erreur devis 213: table quotes has no column named number
+  ⚠️ Erreur devis 214: table quotes has no column named number
+  ⚠️ Erreur devis 215: table quotes has no column named number
+  ⚠️ Erreur devis 216: table quotes has no column named number
+  ⚠️ Erreur devis 217: table quotes has no column named number
+  ⚠️ Erreur devis 218: table quotes has no column named number
+  ⚠️ Erreur devis 219: table quotes has no column named number
+  ⚠️ Erreur devis 220: table quotes has no column named number
+  ⚠️ Erreur devis 222: table quotes has no column named number
+  ⚠️ Erreur devis 223: table quotes has no column named number
+  ⚠️ Erreur devis 224: table quotes has no column named number
+  ⚠️ Erreur devis 225: table quotes has no column named number
+  ⚠️ Erreur devis 226: table quotes has no column named number
+  ⚠️ Erreur devis 228: table quotes has no column named number
+  ⚠️ Erreur devis 229: table quotes has no column named number
+  ⚠️ Erreur devis 230: table quotes has no column named number
+  ⚠️ Erreur devis 231: table quotes has no column named number
+  ⚠️ Erreur devis 232: table quotes has no column named number
+  ⚠️ Erreur devis 233: table quotes has no column named number
+  ⚠️ Erreur devis 234: table quotes has no column named number
+  ⚠️ Erreur devis 235: table quotes has no column named number
+  ⚠️ Erreur devis 236: table quotes has no column named number
+  ⚠️ Erreur devis 238: table quotes has no column named number
+  ⚠️ Erreur devis 239: table quotes has no column named number
+  ⚠️ Erreur devis 240: table quotes has no column named number
+  ⚠️ Erreur devis 241: table quotes has no column named number
+  ⚠️ Erreur devis 242: table quotes has no column named number
+  ⚠️ Erreur devis 243: table quotes has no column named number
+  ⚠️ Erreur devis 244: table quotes has no column named number
+  ⚠️ Erreur devis 245: table quotes has no column named number
+  ⚠️ Erreur devis 246: table quotes has no column named number
+  ⚠️ Erreur devis 247: table quotes has no column named number
+  ⚠️ Erreur devis 248: table quotes has no column named number
+  ⚠️ Erreur devis 249: table quotes has no column named number
+  ⚠️ Erreur devis 250: table quotes has no column named number
+  ⚠️ Erreur devis 251: table quotes has no column named number
+  ⚠️ Erreur devis 252: table quotes has no column named number
+  ⚠️ Erreur devis 253: table quotes has no column named number
+  ⚠️ Erreur devis 254: table quotes has no column named number
+  ⚠️ Erreur devis 255: table quotes has no column named number
+  ⚠️ Erreur devis 256: table quotes has no column named number
+  ⚠️ Erreur devis 257: table quotes has no column named number
+  ⚠️ Erreur devis 258: table quotes has no column named number
+  ⚠️ Erreur devis 259: table quotes has no column named number
+  ⚠️ Erreur devis 260: table quotes has no column named number
+  ⚠️ Erreur devis 261: table quotes has no column named number
+  ⚠️ Erreur devis 262: table quotes has no column named number
+  ⚠️ Erreur devis 263: table quotes has no column named number
+  ⚠️ Erreur devis 264: table quotes has no column named number
+  ⚠️ Erreur devis 265: table quotes has no column named number
+  ⚠️ Erreur devis 267: table quotes has no column named number
+  ⚠️ Erreur devis 268: table quotes has no column named number
+  ⚠️ Erreur devis 269: table quotes has no column named number
+  ⚠️ Erreur devis 270: table quotes has no column named number
+  ⚠️ Erreur devis 271: table quotes has no column named number
+  ⚠️ Erreur devis 272: table quotes has no column named number
+  ⚠️ Erreur devis 273: table quotes has no column named number
+  ⚠️ Erreur devis 274: table quotes has no column named number
+  ⚠️ Erreur devis 275: table quotes has no column named number
+  ⚠️ Erreur devis 276: table quotes has no column named number
+  ⚠️ Erreur devis 278: table quotes has no column named number
+  ⚠️ Erreur devis 279: table quotes has no column named number
+  ⚠️ Erreur devis 280: table quotes has no column named number
+  ⚠️ Erreur devis 281: table quotes has no column named number
+  ⚠️ Erreur devis 282: table quotes has no column named number
+  ⚠️ Erreur devis 283: table quotes has no column named number
+  ⚠️ Erreur devis 284: table quotes has no column named number
+  ⚠️ Erreur devis 285: table quotes has no column named number
+  ⚠️ Erreur devis 287: table quotes has no column named number
+  ⚠️ Erreur devis 288: table quotes has no column named number
+  ⚠️ Erreur devis 289: table quotes has no column named number
+  ⚠️ Erreur devis 290: table quotes has no column named number
+  ⚠️ Erreur devis 291: table quotes has no column named number
+  ⚠️ Erreur devis 292: table quotes has no column named number
+  ⚠️ Erreur devis 293: table quotes has no column named number
+  ⚠️ Erreur devis 294: table quotes has no column named number
+  ⚠️ Erreur devis 295: table quotes has no column named number
+  ⚠️ Erreur devis 296: table quotes has no column named number
+  ⚠️ Erreur devis 297: table quotes has no column named number
+  ⚠️ Erreur devis 298: table quotes has no column named number
+  ⚠️ Erreur devis 299: table quotes has no column named number
+  ⚠️ Erreur devis 300: table quotes has no column named number
+  ⚠️ Erreur devis 301: table quotes has no column named number
+  ⚠️ Erreur devis 302: table quotes has no column named number
+  ⚠️ Erreur devis 303: table quotes has no column named number
+  ⚠️ Erreur devis 305: table quotes has no column named number
+  ⚠️ Erreur devis 306: table quotes has no column named number
+  ⚠️ Erreur devis 307: table quotes has no column named number
+  ⚠️ Erreur devis 308: table quotes has no column named number
+  ⚠️ Erreur devis 309: table quotes has no column named number
+  ⚠️ Erreur devis 310: table quotes has no column named number
+  ⚠️ Erreur devis 311: table quotes has no column named number
+  ⚠️ Erreur devis 312: table quotes has no column named number
+  ⚠️ Erreur devis 313: table quotes has no column named number
+  ⚠️ Erreur devis 314: table quotes has no column named number
+  ⚠️ Erreur devis 315: table quotes has no column named number
+  ⚠️ Erreur devis 316: table quotes has no column named number
+  ⚠️ Erreur devis 317: table quotes has no column named number
+  ⚠️ Erreur devis 318: table quotes has no column named number
+  ⚠️ Erreur devis 319: table quotes has no column named number
+  ⚠️ Erreur devis 320: table quotes has no column named number
+  ⚠️ Erreur devis 321: table quotes has no column named number
+  ⚠️ Erreur devis 322: table quotes has no column named number
+  ⚠️ Erreur devis 324: table quotes has no column named number
+  ⚠️ Erreur devis 325: table quotes has no column named number
+  ⚠️ Erreur devis 326: table quotes has no column named number
+  ⚠️ Erreur devis 327: table quotes has no column named number
+  ⚠️ Erreur devis 328: table quotes has no column named number
+  ⚠️ Erreur devis 329: table quotes has no column named number
+  ⚠️ Erreur devis 330: table quotes has no column named number
+  ⚠️ Erreur devis 332: table quotes has no column named number
+  ⚠️ Erreur devis 333: table quotes has no column named number
+  ⚠️ Erreur devis 334: table quotes has no column named number
+  ⚠️ Erreur devis 335: table quotes has no column named number
+  ⚠️ Erreur devis 336: table quotes has no column named number
+  ⚠️ Erreur devis 338: table quotes has no column named number
+  ⚠️ Erreur devis 339: table quotes has no column named number
+  ⚠️ Erreur devis 340: table quotes has no column named number
+  ⚠️ Erreur devis 341: table quotes has no column named number
+  ⚠️ Erreur devis 342: table quotes has no column named number
+  ⚠️ Erreur devis 343: table quotes has no column named number
+  ⚠️ Erreur devis 344: table quotes has no column named number
+  ⚠️ Erreur devis 345: table quotes has no column named number
+  ⚠️ Erreur devis 346: table quotes has no column named number
+  ⚠️ Erreur devis 347: table quotes has no column named number
+  ⚠️ Erreur devis 351: table quotes has no column named number
+  ⚠️ Erreur devis 352: table quotes has no column named number
+  ⚠️ Erreur devis 355: table quotes has no column named number
+  ⚠️ Erreur devis 356: table quotes has no column named number
+  ⚠️ Erreur devis 357: table quotes has no column named number
+  ⚠️ Erreur devis 360: table quotes has no column named number
+  ⚠️ Erreur devis 361: table quotes has no column named number
+  ⚠️ Erreur devis 362: table quotes has no column named number
+  ⚠️ Erreur devis 363: table quotes has no column named number
+  ⚠️ Erreur devis 364: table quotes has no column named number
+  ⚠️ Erreur devis 365: table quotes has no column named number
+  ⚠️ Erreur devis 366: table quotes has no column named number
+  ⚠️ Erreur devis 367: table quotes has no column named number
+  ⚠️ Erreur devis 368: table quotes has no column named number
+  ⚠️ Erreur devis 370: table quotes has no column named number
+  ⚠️ Erreur devis 371: table quotes has no column named number
+  ⚠️ Erreur devis 372: table quotes has no column named number
+  ⚠️ Erreur devis 373: table quotes has no column named number
+  ⚠️ Erreur devis 374: table quotes has no column named number
+  ⚠️ Erreur devis 375: table quotes has no column named number
+  ⚠️ Erreur devis 377: table quotes has no column named number
+  ⚠️ Erreur devis 378: table quotes has no column named number
+  ⚠️ Erreur devis 379: table quotes has no column named number
+  ⚠️ Erreur devis 380: table quotes has no column named number
+  ⚠️ Erreur devis 381: table quotes has no column named number
+  ⚠️ Erreur devis 382: table quotes has no column named number
+  ⚠️ Erreur devis 383: table quotes has no column named number
+  ⚠️ Erreur devis 384: table quotes has no column named number
+  ⚠️ Erreur devis 385: table quotes has no column named number
+  ⚠️ Erreur devis 386: table quotes has no column named number
+  ⚠️ Erreur devis 388: table quotes has no column named number
+  ⚠️ Erreur devis 389: table quotes has no column named number
+  ⚠️ Erreur devis 390: table quotes has no column named number
+  ⚠️ Erreur devis 391: table quotes has no column named number
+  ⚠️ Erreur devis 392: table quotes has no column named number
+  ⚠️ Erreur devis 394: table quotes has no column named number
+  ⚠️ Erreur devis 395: table quotes has no column named number
+  ⚠️ Erreur devis 396: table quotes has no column named number
+  ⚠️ Erreur devis 397: table quotes has no column named number
+  ⚠️ Erreur devis 400: table quotes has no column named number
+  ⚠️ Erreur devis 401: table quotes has no column named number
+  ⚠️ Erreur devis 402: table quotes has no column named number
+  ⚠️ Erreur devis 403: table quotes has no column named number
+  ⚠️ Erreur devis 404: table quotes has no column named number
+  ⚠️ Erreur devis 405: table quotes has no column named number
+  ⚠️ Erreur devis 406: table quotes has no column named number
+  ⚠️ Erreur devis 407: table quotes has no column named number
+  ⚠️ Erreur devis 409: table quotes has no column named number
+  ⚠️ Erreur devis 410: table quotes has no column named number
+  ⚠️ Erreur devis 411: table quotes has no column named number
+  ⚠️ Erreur devis 412: table quotes has no column named number
+  ⚠️ Erreur devis 413: table quotes has no column named number
+  ⚠️ Erreur devis 414: table quotes has no column named number
+  ⚠️ Erreur devis 415: table quotes has no column named number
+  ⚠️ Erreur devis 416: table quotes has no column named number
+  ⚠️ Erreur devis 417: table quotes has no column named number
+  ⚠️ Erreur devis 419: table quotes has no column named number
+  ⚠️ Erreur devis 420: table quotes has no column named number
+  ⚠️ Erreur devis 421: table quotes has no column named number
+  ⚠️ Erreur devis 422: table quotes has no column named number
+  ⚠️ Erreur devis 424: table quotes has no column named number
+  ⚠️ Erreur devis 426: table quotes has no column named number
+  ⚠️ Erreur devis 427: table quotes has no column named number
+  ⚠️ Erreur devis 428: table quotes has no column named number
+  ⚠️ Erreur devis 429: table quotes has no column named number
+  ⚠️ Erreur devis 431: table quotes has no column named number
+  ⚠️ Erreur devis 432: table quotes has no column named number
+  ⚠️ Erreur devis 433: table quotes has no column named number
+  ⚠️ Erreur devis 434: table quotes has no column named number
+  ⚠️ Erreur devis 435: table quotes has no column named number
+  ⚠️ Erreur devis 436: table quotes has no column named number
+  ⚠️ Erreur devis 438: table quotes has no column named number
+  ⚠️ Erreur devis 439: table quotes has no column named number
+  ⚠️ Erreur devis 440: table quotes has no column named number
+  ⚠️ Erreur devis 441: table quotes has no column named number
+  ⚠️ Erreur devis 442: table quotes has no column named number
+  ⚠️ Erreur devis 443: table quotes has no column named number
+  ⚠️ Erreur devis 444: table quotes has no column named number
+  ⚠️ Erreur devis 445: table quotes has no column named number
+  ⚠️ Erreur devis 447: table quotes has no column named number
+  ⚠️ Erreur devis 448: table quotes has no column named number
+  ⚠️ Erreur devis 449: table quotes has no column named number
+  ⚠️ Erreur devis 451: table quotes has no column named number
+  ⚠️ Erreur devis 452: table quotes has no column named number
+  ⚠️ Erreur devis 453: table quotes has no column named number
+  ⚠️ Erreur devis 455: table quotes has no column named number
+  ⚠️ Erreur devis 457: table quotes has no column named number
+  ⚠️ Erreur devis 458: table quotes has no column named number
+  ⚠️ Erreur devis 459: table quotes has no column named number
+  ⚠️ Erreur devis 460: table quotes has no column named number
+  ⚠️ Erreur devis 461: table quotes has no column named number
+  ⚠️ Erreur devis 462: table quotes has no column named number
+  ⚠️ Erreur devis 463: table quotes has no column named number
+  ⚠️ Erreur devis 464: table quotes has no column named number
+  ⚠️ Erreur devis 465: table quotes has no column named number
+  ⚠️ Erreur devis 466: table quotes has no column named number
+  ⚠️ Erreur devis 467: table quotes has no column named number
+  ⚠️ Erreur devis 468: table quotes has no column named number
+  ⚠️ Erreur devis 469: table quotes has no column named number
+  ⚠️ Erreur devis 470: table quotes has no column named number
+  ⚠️ Erreur devis 471: table quotes has no column named number
+  ⚠️ Erreur devis 472: table quotes has no column named number
+  ⚠️ Erreur devis 473: table quotes has no column named number
+  ⚠️ Erreur devis 474: table quotes has no column named number
+  ⚠️ Erreur devis 475: table quotes has no column named number
+  ⚠️ Erreur devis 476: table quotes has no column named number
+  ⚠️ Erreur devis 477: table quotes has no column named number
+  ⚠️ Erreur devis 478: table quotes has no column named number
+  ⚠️ Erreur devis 479: table quotes has no column named number
+  ⚠️ Erreur devis 480: table quotes has no column named number
+  ⚠️ Erreur devis 481: table quotes has no column named number
+  ⚠️ Erreur devis 482: table quotes has no column named number
+  ⚠️ Erreur devis 483: table quotes has no column named number
+  ⚠️ Erreur devis 484: table quotes has no column named number
+  ⚠️ Erreur devis 485: table quotes has no column named number
+  ⚠️ Erreur devis 486: table quotes has no column named number
+  ⚠️ Erreur devis 487: table quotes has no column named number
+  ⚠️ Erreur devis 488: table quotes has no column named number
+  ⚠️ Erreur devis 489: table quotes has no column named number
+  ⚠️ Erreur devis 490: table quotes has no column named number
+  ⚠️ Erreur devis 491: table quotes has no column named number
+  ⚠️ Erreur devis 492: table quotes has no column named number
+  ⚠️ Erreur devis 493: table quotes has no column named number
+  ⚠️ Erreur devis 494: table quotes has no column named number
+  ⚠️ Erreur devis 497: table quotes has no column named number
+  ⚠️ Erreur devis 498: table quotes has no column named number
+  ⚠️ Erreur devis 499: table quotes has no column named number
+  ⚠️ Erreur devis 500: table quotes has no column named number
+  ⚠️ Erreur devis 501: table quotes has no column named number
+  ⚠️ Erreur devis 502: table quotes has no column named number
+  ⚠️ Erreur devis 503: table quotes has no column named number
+  ⚠️ Erreur devis 504: table quotes has no column named number
+  ⚠️ Erreur devis 505: table quotes has no column named number
+  ⚠️ Erreur devis 506: table quotes has no column named number
+  ⚠️ Erreur devis 507: table quotes has no column named number
+  ⚠️ Erreur devis 508: table quotes has no column named number
+  ⚠️ Erreur devis 509: table quotes has no column named number
+  ⚠️ Erreur devis 510: table quotes has no column named number
+  ⚠️ Erreur devis 511: table quotes has no column named number
+  ⚠️ Erreur devis 512: table quotes has no column named number
+  ⚠️ Erreur devis 513: table quotes has no column named number
+  ⚠️ Erreur devis 514: table quotes has no column named number
+  ⚠️ Erreur devis 515: table quotes has no column named number
+  ⚠️ Erreur devis 516: table quotes has no column named number
+  ⚠️ Erreur devis 517: table quotes has no column named number
+  ⚠️ Erreur devis 518: table quotes has no column named number
+  ⚠️ Erreur devis 519: table quotes has no column named number
+  ⚠️ Erreur devis 520: table quotes has no column named number
+  ⚠️ Erreur devis 521: table quotes has no column named number
+  ⚠️ Erreur devis 522: table quotes has no column named number
+  ⚠️ Erreur devis 523: table quotes has no column named number
+  ⚠️ Erreur devis 524: table quotes has no column named number
+  ⚠️ Erreur devis 525: table quotes has no column named number
+  ⚠️ Erreur devis 526: table quotes has no column named number
+  ⚠️ Erreur devis 527: table quotes has no column named number
+  ⚠️ Erreur devis 534: table quotes has no column named number
+  ⚠️ Erreur devis 536: table quotes has no column named number
+  ⚠️ Erreur devis 537: table quotes has no column named number
+  ⚠️ Erreur devis 538: table quotes has no column named number
+  ⚠️ Erreur devis 539: table quotes has no column named number
+  ⚠️ Erreur devis 540: table quotes has no column named number
+  ⚠️ Erreur devis 541: table quotes has no column named number
+  ⚠️ Erreur devis 542: table quotes has no column named number
+  ⚠️ Erreur devis 543: table quotes has no column named number
+  ⚠️ Erreur devis 544: table quotes has no column named number
+  ⚠️ Erreur devis 545: table quotes has no column named number
+  ⚠️ Erreur devis 546: table quotes has no column named number
+  ⚠️ Erreur devis 547: table quotes has no column named number
+  ⚠️ Erreur devis 548: table quotes has no column named number
+  ⚠️ Erreur devis 549: table quotes has no column named number
+  ⚠️ Erreur devis 551: table quotes has no column named number
+  ⚠️ Erreur devis 552: table quotes has no column named number
+  ⚠️ Erreur devis 553: table quotes has no column named number
+  ⚠️ Erreur devis 554: table quotes has no column named number
+  ⚠️ Erreur devis 555: table quotes has no column named number
+  ⚠️ Erreur devis 556: table quotes has no column named number
+  ⚠️ Erreur devis 557: table quotes has no column named number
+  ⚠️ Erreur devis 558: table quotes has no column named number
+  ⚠️ Erreur devis 559: table quotes has no column named number
+  ⚠️ Erreur devis 560: table quotes has no column named number
+  ⚠️ Erreur devis 561: table quotes has no column named number
+  ⚠️ Erreur devis 562: table quotes has no column named number
+  ⚠️ Erreur devis 563: table quotes has no column named number
+  ⚠️ Erreur devis 564: table quotes has no column named number
+  ⚠️ Erreur devis 565: table quotes has no column named number
+  ⚠️ Erreur devis 569: table quotes has no column named number
+  ⚠️ Erreur devis 570: table quotes has no column named number
+  ⚠️ Erreur devis 571: table quotes has no column named number
+  ⚠️ Erreur devis 572: table quotes has no column named number
+  ⚠️ Erreur devis 575: table quotes has no column named number
+  ⚠️ Erreur devis 576: table quotes has no column named number
+  ⚠️ Erreur devis 577: table quotes has no column named number
+  ⚠️ Erreur devis 578: table quotes has no column named number
+  ⚠️ Erreur devis 579: table quotes has no column named number
+  ⚠️ Erreur devis 580: table quotes has no column named number
+  ⚠️ Erreur devis 581: table quotes has no column named number
+  ⚠️ Erreur devis 582: table quotes has no column named number
+  ⚠️ Erreur devis 583: table quotes has no column named number
+  ⚠️ Erreur devis 584: table quotes has no column named number
+  ⚠️ Erreur devis 585: table quotes has no column named number
+  ⚠️ Erreur devis 586: table quotes has no column named number
+  ⚠️ Erreur devis 587: table quotes has no column named number
+  ⚠️ Erreur devis 588: table quotes has no column named number
+  ⚠️ Erreur devis 589: table quotes has no column named number
+  ⚠️ Erreur devis 592: table quotes has no column named number
+  ⚠️ Erreur devis 593: table quotes has no column named number
+  ⚠️ Erreur devis 594: table quotes has no column named number
+  ⚠️ Erreur devis 595: table quotes has no column named number
+  ⚠️ Erreur devis 596: table quotes has no column named number
+  ⚠️ Erreur devis 597: table quotes has no column named number
+  ⚠️ Erreur devis 598: table quotes has no column named number
+  ⚠️ Erreur devis 599: table quotes has no column named number
+  ⚠️ Erreur devis 600: table quotes has no column named number
+  ⚠️ Erreur devis 601: table quotes has no column named number
+  ⚠️ Erreur devis 602: table quotes has no column named number
+  ⚠️ Erreur devis 603: table quotes has no column named number
+  ⚠️ Erreur devis 604: table quotes has no column named number
+  ⚠️ Erreur devis 605: table quotes has no column named number
+  ⚠️ Erreur devis 606: table quotes has no column named number
+  ⚠️ Erreur devis 607: table quotes has no column named number
+  ⚠️ Erreur devis 608: table quotes has no column named number
+  ⚠️ Erreur devis 609: table quotes has no column named number
+  ⚠️ Erreur devis 610: table quotes has no column named number
+  ⚠️ Erreur devis 611: table quotes has no column named number
+  ⚠️ Erreur devis 612: table quotes has no column named number
+  ⚠️ Erreur devis 613: table quotes has no column named number
+  ⚠️ Erreur devis 614: table quotes has no column named number
+  ⚠️ Erreur devis 615: table quotes has no column named number
+  ⚠️ Erreur devis 616: table quotes has no column named number
+  ⚠️ Erreur devis 617: table quotes has no column named number
+  ⚠️ Erreur devis 618: table quotes has no column named number
+  ⚠️ Erreur devis 619: table quotes has no column named number
+  ⚠️ Erreur devis 620: table quotes has no column named number
+  ⚠️ Erreur devis 621: table quotes has no column named number
+  ⚠️ Erreur devis 622: table quotes has no column named number
+  ⚠️ Erreur devis 623: table quotes has no column named number
+  ⚠️ Erreur devis 625: table quotes has no column named number
+  ⚠️ Erreur devis 626: table quotes has no column named number
+  ⚠️ Erreur devis 627: table quotes has no column named number
+  ⚠️ Erreur devis 628: table quotes has no column named number
+  ⚠️ Erreur devis 629: table quotes has no column named number
+  ⚠️ Erreur devis 630: table quotes has no column named number
+  ⚠️ Erreur devis 631: table quotes has no column named number
+  ⚠️ Erreur devis 632: table quotes has no column named number
+  ⚠️ Erreur devis 633: table quotes has no column named number
+  ⚠️ Erreur devis 634: table quotes has no column named number
+  ⚠️ Erreur devis 635: table quotes has no column named number
+  ⚠️ Erreur devis 636: table quotes has no column named number
+  ⚠️ Erreur devis 637: table quotes has no column named number
+  ⚠️ Erreur devis 638: table quotes has no column named number
+  ⚠️ Erreur devis 639: table quotes has no column named number
+  ⚠️ Erreur devis 640: table quotes has no column named number
+  ⚠️ Erreur devis 641: table quotes has no column named number
+  ⚠️ Erreur devis 642: table quotes has no column named number
+  ⚠️ Erreur devis 643: table quotes has no column named number
+  ⚠️ Erreur devis 644: table quotes has no column named number
+  ⚠️ Erreur devis 645: table quotes has no column named number
+  ⚠️ Erreur devis 646: table quotes has no column named number
+  ⚠️ Erreur devis 647: table quotes has no column named number
+  ⚠️ Erreur devis 648: table quotes has no column named number
+  ⚠️ Erreur devis 649: table quotes has no column named number
+  ⚠️ Erreur devis 650: table quotes has no column named number
+  ⚠️ Erreur devis 651: table quotes has no column named number
+  ⚠️ Erreur devis 652: table quotes has no column named number
+  ⚠️ Erreur devis 653: table quotes has no column named number
+  ⚠️ Erreur devis 654: table quotes has no column named number
+  ⚠️ Erreur devis 655: table quotes has no column named number
+  ⚠️ Erreur devis 656: table quotes has no column named number
+  ⚠️ Erreur devis 657: table quotes has no column named number
+  ⚠️ Erreur devis 658: table quotes has no column named number
+
+  ✅ 0 devis importés
+  ⚠️ 642 devis ignorés (client non trouvé)
+
+📝 ÉTAPE 3/3 : Import des lignes de devis (ZLIGNEFACTURECLIENT → quote_items)
+
+  ✅ 0 lignes importées
+  ⚠️ 3920 lignes ignorées (devis non trouvé)
+
+================================================================================
+🎉 IMPORT TERMINÉ !
+================================================================================
+👥 Clients  : 429 importés, 123 ignorés
+📊 Devis    : 0 importés, 642 ignorés
+📝 Lignes   : 0 importées, 3920 ignorées
+================================================================================
+
+✅ Tu peux maintenant tester KARL avec tes données !
+🔗 URL de test : https://karl-crm.pages.dev
