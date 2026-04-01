@@ -329,6 +329,15 @@ const api = {
     return data;
   },
 
+  async loginSimple(name) {
+    const { data } = await axios.post(`${API_URL}/api/auth/login-simple`, { name });
+    state.user = data.user;
+    state.token = data.token;
+    storage.set('user', data.user);
+    api.setToken(data.token);
+    return data;
+  },
+
   async signup(userData) {
     const { data } = await axios.post(`${API_URL}/api/auth/signup`, userData);
     return data;
@@ -1682,20 +1691,11 @@ function renderLogin() {
           </button>
         </div>
 
-        <!-- Formulaire de connexion -->
+        <!-- Formulaire de connexion simplifié -->
         <form id="loginForm" class="space-y-4" style="display: ${window.loginState.activeTab === 'login' ? 'block' : 'none'};">
           <div class="input-group">
-            <label class="input-label">Email</label>
-            <input type="email" id="loginEmail" class="input" placeholder="votre@email.fr" required autocomplete="email" />
-          </div>
-          <div class="input-group">
-            <label class="input-label">Mot de passe</label>
-            <input type="password" id="loginPassword" class="input" placeholder="••••••••" required autocomplete="current-password" />
-          </div>
-          <div class="text-right">
-            <button type="button" onclick="showForgotPassword()" class="text-sm text-blue-300 hover:text-blue-200 transition-colors">
-              <i class="fas fa-key"></i> Mot de passe oublié ?
-            </button>
+            <label class="input-label">Votre nom</label>
+            <input type="text" id="loginEmail" class="input" placeholder="Guillaume PINOIT" required autocomplete="name" />
           </div>
           <button type="submit" class="btn btn-primary w-full">
             <i class="fas fa-sign-in-alt"></i>
@@ -1703,28 +1703,11 @@ function renderLogin() {
           </button>
         </form>
 
-        <!-- Formulaire d'inscription -->
+        <!-- Formulaire d'inscription simplifié -->
         <form id="signupForm" class="space-y-4" style="display: ${window.loginState.activeTab === 'signup' ? 'block' : 'none'};">
           <div class="input-group">
-            <label class="input-label">Nom de l'entreprise</label>
-            <input type="text" id="signupCompany" class="input" placeholder="Votre société" required />
-          </div>
-          <div class="input-group">
-            <label class="input-label">Votre nom complet</label>
-            <input type="text" id="signupName" class="input" placeholder="Votre nom" required />
-          </div>
-          <div class="input-group">
-            <label class="input-label">Email professionnel</label>
-            <input type="email" id="signupEmail" class="input" placeholder="votre@entreprise.fr" required autocomplete="email" />
-          </div>
-          <div class="input-group">
-            <label class="input-label">Mot de passe</label>
-            <input type="password" id="signupPassword" class="input" placeholder="••••••••" required autocomplete="new-password" />
-            <p class="text-xs text-gray-300 mt-1">Minimum 8 caractères</p>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Confirmer le mot de passe</label>
-            <input type="password" id="signupPasswordConfirm" class="input" placeholder="••••••••" required autocomplete="new-password" />
+            <label class="input-label">Votre nom</label>
+            <input type="text" id="signupName" class="input" placeholder="Guillaume PINOIT" required />
           </div>
           <button type="submit" class="btn btn-primary w-full">
             <i class="fas fa-user-plus"></i>
@@ -1739,11 +1722,11 @@ function renderLogin() {
   // Event listener pour la connexion
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    const name = document.getElementById('loginEmail').value;
     
     try {
-      await api.login(email, password);
+      // Connexion simplifiée sans mot de passe
+      await api.loginSimple(name);
       navigate('dashboard');
     } catch (error) {
       alert('Erreur de connexion : ' + (error.response?.data?.error || error.message));
@@ -1754,31 +1737,13 @@ function renderLogin() {
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const company = document.getElementById('signupCompany').value;
     const name = document.getElementById('signupName').value;
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
-    const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
-    
-    // Validation
-    if (password !== passwordConfirm) {
-      alert('⚠️ Les mots de passe ne correspondent pas !');
-      return;
-    }
-    
-    if (password.length < 8) {
-      alert('⚠️ Le mot de passe doit contenir au moins 8 caractères !');
-      return;
-    }
     
     try {
-      // Appeler l'API de signup
-      const response = await api.signup({ company_name: company, name, email, password });
+      // Connexion simplifiée (crée l'utilisateur s'il n'existe pas)
+      await api.loginSimple(name);
       
-      // Connexion automatique après inscription
-      await api.login(email, password);
-      
-      alert('✅ Compte créé avec succès ! Bienvenue sur KARL CRM !');
+      alert('✅ Bienvenue sur KARL CRM !');
       navigate('dashboard');
     } catch (error) {
       alert('Erreur lors de la création du compte : ' + (error.response?.data?.error || error.message));

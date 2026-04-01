@@ -166,6 +166,59 @@ app.post('/api/auth/login', async (c) => {
   }
 })
 
+// POST /api/auth/login-simple - Connexion simplifiée sans mot de passe
+app.post('/api/auth/login-simple', async (c) => {
+  try {
+    const { name } = await c.req.json()
+
+    if (!name) {
+      return c.json({ error: 'Nom requis' }, 400)
+    }
+
+    // Chercher ou créer l'utilisateur par nom
+    let result = await c.env.DB.prepare(
+      'SELECT id, email, name, role, company_name FROM users WHERE name = ?'
+    ).bind(name).first()
+
+    // Si l'utilisateur n'existe pas, le créer
+    if (!result) {
+      const email = `${name.toLowerCase().replace(/\s+/g, '.')}@psm.local`
+      const insertResult = await c.env.DB.prepare(
+        'INSERT INTO users (email, password, name, role, company_name) VALUES (?, ?, ?, ?, ?)'
+      ).bind(email, 'no-password', name, 'user', 'PSM Portails Sur Mesure').run()
+      
+      result = {
+        id: insertResult.meta.last_row_id,
+        email,
+        name,
+        role: 'user',
+        company_name: 'PSM Portails Sur Mesure'
+      }
+    }
+
+    // Générer un token
+    const token = btoa(JSON.stringify({ 
+      id: result.id, 
+      email: result.email, 
+      exp: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1 an
+    }))
+
+    return c.json({
+      token,
+      user: {
+        id: result.id,
+        email: result.email,
+        name: result.name,
+        role: result.role,
+        company_name: result.company_name
+      }
+    })
+  } catch (error) {
+    console.error('Login simple error:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
 // POST /api/auth/signup - Inscription
 app.post('/api/auth/signup', async (c) => {
   try {
