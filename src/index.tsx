@@ -2118,7 +2118,8 @@ app.get('/', (c) => {
         <div id="app"></div>
         
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- Chart.js temporairement désactivé car non utilisé -->
+        <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
         <script src="/static/karl-app.js"></script>
         <script src="/static/dossier-client.js"></script>
         
@@ -2171,7 +2172,8 @@ app.get('/*', (c) => {
         <div id="app"></div>
         
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- Chart.js temporairement désactivé car non utilisé -->
+        <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
         <script src="/static/karl-app.js"></script>
         <script src="/static/dossier-client.js"></script>
         
