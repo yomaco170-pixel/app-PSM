@@ -2343,6 +2343,12 @@ async function renderPipelineKanban(filterStatus = null) {
 
 async function renderClients() {
   console.log('🔵 renderClients() appelé');
+  
+  // État de tri (alphabétique par défaut)
+  if (!window.clientsSortOrder) {
+    window.clientsSortOrder = 'alpha'; // 'alpha' ou 'date'
+  }
+  
   try {
     state.clients = await api.getClients();
     console.log('✅ Clients récupérés:', safeArray(state.clients).length);
@@ -2352,84 +2358,46 @@ async function renderClients() {
     return;
   }
   
-  const clientsHTML = safeArray(state.clients).map(client => {
-    // Gérer les noms vides
-    const firstName = client.first_name?.trim() || '';
-    const lastName = client.last_name?.trim() || '';
-    const initials = (firstName[0] || '') + (lastName[0] || '') || '?';
-    const fullName = (firstName || lastName) 
-      ? `${client.civility ? client.civility + ' ' : ''}${firstName} ${lastName}`.trim()
-      : `Client #${client.id}`;
+  // Trier les clients
+  const sortedClients = [...safeArray(state.clients)];
+  if (window.clientsSortOrder === 'alpha') {
+    sortedClients.sort((a, b) => {
+      const nameA = (a.name || `Client #${a.id}`).toLowerCase();
+      const nameB = (b.name || `Client #${b.id}`).toLowerCase();
+      return nameA.localeCompare(nameB, 'fr');
+    });
+  } else {
+    // Tri par date (plus récent en premier)
+    sortedClients.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateB - dateA;
+    });
+  }
+  
+  const clientsHTML = sortedClients.map(client => {
+    const displayName = client.name || `Client #${client.id}`;
+    const initials = displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
     
     return `
-    <div class="card">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-14 h-14 bg-gradient-to-br from-blue-900 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-xl">
-          ${initials}
-        </div>
-        <div class="flex-1">
-          <h3 class="font-bold text-white text-lg">
-            ${fullName}
-          </h3>
-          ${client.company ? `<p class="text-sm text-blue-400"><i class="fas fa-building"></i> ${client.company}</p>` : ''}
+    <div class="flex items-center gap-3 p-3 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors border border-gray-700" onclick="openEditClientModal(${client.id})">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+        ${initials}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-white truncate">${displayName}</div>
+        <div class="text-sm text-gray-400 truncate">
+          ${client.phone ? `📞 ${client.phone}` : ''}
+          ${client.phone && client.email ? ' • ' : ''}
+          ${client.email ? `✉️ ${client.email}` : ''}
         </div>
       </div>
-      
-      <div class="space-y-2 mb-4">
-        ${client.phone ? `
-          <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-phone text-blue-500 mt-1"></i>
-            <a href="tel:${client.phone.replace(/\s/g, '')}" class="text-blue-400 hover:text-blue-300 underline" title="Appeler ${client.phone}">
-              ${client.phone}
-            </a>
-          </div>
-        ` : ''}
-        ${client.email ? `
-          <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-envelope text-blue-500 mt-1"></i>
-            <a href="mailto:${client.email}" class="text-blue-400 hover:text-blue-300 underline" title="Envoyer un email à ${client.email}">
-              ${client.email}
-            </a>
-          </div>
-        ` : ''}
-        ${client.address ? `
-          <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-map-marker-alt text-blue-500 mt-1"></i>
-            <div class="text-gray-300">
-              ${client.address}
-              ${client.zipcode && client.city ? `<br>${client.zipcode} ${client.city}` : ''}
-            </div>
-          </div>
-        ` : ''}
-        ${client.source ? `
-          <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-tag text-blue-500 mt-1"></i>
-            <span class="text-gray-300">Source: ${client.source}</span>
-          </div>
-        ` : ''}
-        ${client.notes ? `
-          <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-sticky-note text-blue-500 mt-1"></i>
-            <span class="text-gray-300 italic">${client.notes}</span>
-          </div>
-        ` : ''}
-        ${client.created_at ? `
-          <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-clock text-blue-500 mt-1"></i>
-            <span class="text-gray-400 text-xs">Ajouté ${formatRelativeTime(client.created_at)}</span>
-          </div>
-        ` : ''}
-      </div>
-      
-      <div class="flex gap-2 pt-3 border-t border-gray-700">
-        <button class="btn btn-secondary" onclick="event.stopPropagation(); openClientDossier(${client.id})" title="Voir le dossier complet">
-          <i class="fas fa-folder-open"></i> Dossier
+      <div class="flex gap-2 flex-shrink-0">
+        <button class="p-2 hover:bg-gray-600 rounded transition-colors" onclick="event.stopPropagation(); openClientDossier(${client.id})" title="Dossier">
+          <i class="fas fa-folder text-blue-400"></i>
         </button>
-        <button class="btn btn-primary flex-1" onclick="event.stopPropagation(); openEditClientModal(${client.id})">
-          <i class="fas fa-edit"></i> Modifier
-        </button>
-        <button class="btn btn-danger" onclick="event.stopPropagation(); confirmDeleteClient(${client.id})">
-          <i class="fas fa-trash"></i> Supprimer
+        <button class="p-2 hover:bg-red-600 rounded transition-colors" onclick="event.stopPropagation(); confirmDeleteClient(${client.id})" title="Supprimer">
+          <i class="fas fa-trash text-red-400"></i>
         </button>
       </div>
     </div>
@@ -2439,13 +2407,19 @@ async function renderClients() {
   const content = `
     <div class="card-header">
       <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-white"><i class="fas fa-users"></i> Clients</h2>
+        <h2 class="text-2xl font-bold text-white"><i class="fas fa-users"></i> Clients (${sortedClients.length})</h2>
         <div class="flex gap-2">
+          <button class="btn ${window.clientsSortOrder === 'alpha' ? 'btn-primary' : 'btn-secondary'}" onclick="window.clientsSortOrder = 'alpha'; renderClients();" title="Tri alphabétique">
+            <i class="fas fa-sort-alpha-down"></i> A-Z
+          </button>
+          <button class="btn ${window.clientsSortOrder === 'date' ? 'btn-primary' : 'btn-secondary'}" onclick="window.clientsSortOrder = 'date'; renderClients();" title="Tri par date">
+            <i class="fas fa-calendar"></i> Date
+          </button>
           <button class="btn btn-secondary" onclick="api.exportClients()" title="Exporter en CSV">
             <i class="fas fa-download"></i> Exporter
           </button>
           <button class="btn btn-primary" onclick="openCreateClientModal()">
-            <i class="fas fa-plus"></i> Nouveau client
+            <i class="fas fa-plus"></i> Nouveau
           </button>
         </div>
       </div>
@@ -2453,7 +2427,7 @@ async function renderClients() {
         <input type="search" class="input" placeholder="🔍 Rechercher un client..." onkeyup="filterClients(this.value)" />
       </div>
     </div>
-    <div class="grid-3" id="clientsList">${clientsHTML}</div>
+    <div class="space-y-2 p-4" id="clientsList">${clientsHTML}</div>
     <button class="fab" onclick="openCreateClientModal()"><i class="fas fa-plus"></i></button>
   `;
 
