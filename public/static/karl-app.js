@@ -1692,6 +1692,11 @@ function renderLogin() {
             <label class="input-label">Mot de passe</label>
             <input type="password" id="loginPassword" class="input" placeholder="••••••••" required autocomplete="current-password" />
           </div>
+          <div class="text-right">
+            <button type="button" onclick="showForgotPassword()" class="text-sm text-blue-300 hover:text-blue-200 transition-colors">
+              <i class="fas fa-key"></i> Mot de passe oublié ?
+            </button>
+          </div>
           <button type="submit" class="btn btn-primary w-full">
             <i class="fas fa-sign-in-alt"></i>
             Se connecter
@@ -1786,6 +1791,130 @@ function switchLoginTab(tab) {
   window.loginState.activeTab = tab;
   renderLogin();
 }
+
+// Afficher la page "Mot de passe oublié"
+function showForgotPassword() {
+  document.getElementById('app').innerHTML = `
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 px-4">
+      <div class="card" style="max-width: 480px; width: 100%;">
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl mb-4 shadow-lg">
+            <i class="fas fa-key text-white text-3xl"></i>
+          </div>
+          <h1 class="text-2xl font-bold text-white">Mot de passe oublié</h1>
+          <p class="text-gray-300 mt-2">Réinitialisez votre mot de passe</p>
+        </div>
+
+        <div id="forgotPasswordStep1" style="display: block;">
+          <form id="forgotPasswordForm" class="space-y-4">
+            <div class="input-group">
+              <label class="input-label">Email</label>
+              <input type="email" id="forgotEmail" class="input" placeholder="votre@email.fr" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-full">
+              <i class="fas fa-paper-plane"></i>
+              Demander un code
+            </button>
+            <button type="button" onclick="renderLogin()" class="btn btn-secondary w-full">
+              <i class="fas fa-arrow-left"></i>
+              Retour à la connexion
+            </button>
+          </form>
+        </div>
+
+        <div id="forgotPasswordStep2" style="display: none;">
+          <div class="bg-blue-900 bg-opacity-50 p-4 rounded-lg mb-4">
+            <p class="text-white text-sm">
+              <i class="fas fa-info-circle mr-2"></i>
+              <strong>Code affiché dans la console</strong><br/>
+              Appuyez sur <kbd class="bg-gray-700 px-2 py-1 rounded">F12</kbd> pour ouvrir la console et copier votre code.
+            </p>
+          </div>
+          <form id="resetPasswordForm" class="space-y-4">
+            <div class="input-group">
+              <label class="input-label">Code de réinitialisation (6 chiffres)</label>
+              <input type="text" id="resetCode" class="input" placeholder="123456" required maxlength="6" pattern="[0-9]{6}" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Nouveau mot de passe</label>
+              <input type="password" id="resetPassword" class="input" placeholder="••••••••" required minlength="8" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Confirmer le mot de passe</label>
+              <input type="password" id="resetPasswordConfirm" class="input" placeholder="••••••••" required minlength="8" />
+            </div>
+            <button type="submit" class="btn btn-success w-full">
+              <i class="fas fa-check"></i>
+              Réinitialiser le mot de passe
+            </button>
+            <button type="button" onclick="renderLogin()" class="btn btn-secondary w-full">
+              <i class="fas fa-arrow-left"></i>
+              Retour à la connexion
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  // Event listener pour demander le code
+  document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value;
+    
+    try {
+      const response = await axios.post('/api/auth/forgot-password', { email });
+      
+      // Afficher le code dans la console
+      console.log('🔐 CODE DE RÉINITIALISATION:', response.data.devCode);
+      console.log('📧 Email:', email);
+      
+      alert('✅ Code généré ! Ouvrez la console (F12) pour le récupérer.\n\nLe code est aussi affiché ci-dessous : ' + response.data.devCode);
+      
+      // Sauvegarder l'email pour l'étape 2
+      window.resetEmail = email;
+      
+      // Passer à l'étape 2
+      document.getElementById('forgotPasswordStep1').style.display = 'none';
+      document.getElementById('forgotPasswordStep2').style.display = 'block';
+    } catch (error) {
+      alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
+    }
+  });
+
+  // Event listener pour réinitialiser le mot de passe
+  document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('resetCode').value;
+    const newPassword = document.getElementById('resetPassword').value;
+    const confirmPassword = document.getElementById('resetPasswordConfirm').value;
+    
+    if (newPassword !== confirmPassword) {
+      alert('❌ Les mots de passe ne correspondent pas');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      alert('❌ Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    
+    try {
+      await axios.post('/api/auth/reset-password', {
+        email: window.resetEmail,
+        code: code,
+        newPassword: newPassword
+      });
+      
+      alert('✅ Mot de passe réinitialisé avec succès ! Vous pouvez maintenant vous connecter.');
+      renderLogin();
+    } catch (error) {
+      alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
+    }
+  });
+}
+
 function renderLayout(content) {
   const isMobile = window.innerWidth < 769;
   const unreadCount = state.notificationUnreadCount || 0;
@@ -9632,6 +9761,10 @@ function addChatMessage(role, content) {
   window.changeEmailCategory = changeEmailCategory;
   window.closeCategoryModal = closeCategoryModal;
   window.selectCategory = selectCategory;
+  
+  // Fonctions d'authentification
+  window.showForgotPassword = showForgotPassword;
+  window.switchLoginTab = switchLoginTab;
   
   // Fonctions de gestion des lignes de devis
   window.openEditLineModal = openEditLineModal;

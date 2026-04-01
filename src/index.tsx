@@ -221,6 +221,134 @@ app.post('/api/auth/signup', async (c) => {
   }
 })
 
+// POST /api/auth/forgot-password - Demande de réinitialisation
+app.post('/api/auth/forgot-password', async (c) => {
+  try {
+    const { email } = await c.req.json()
+
+    if (!email) {
+      return c.json({ error: 'Email requis' }, 400)
+    }
+
+    // Vérifier si l'utilisateur existe
+    const user = await c.env.DB.prepare(
+      'SELECT id, email, name FROM users WHERE email = ?'
+    ).bind(email).first()
+
+    if (!user) {
+      // Pour la sécurité, on ne révèle pas si l'email existe
+      return c.json({ 
+        success: true, 
+        message: 'Si cet email existe, un code de réinitialisation a été généré.' 
+      })
+    }
+
+    // Générer un code de réinitialisation (6 chiffres)
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
+
+    // Créer la table reset_codes si elle n'existe pas
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS reset_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        code TEXT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        used INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `).run()
+
+    // Supprimer les anciens codes de cet utilisateur
+    await c.env.DB.prepare(
+      'DELETE FROM reset_codes WHERE user_id = ?'
+    ).bind(user.id).run()
+
+    // Insérer le nouveau code
+    await c.env.DB.prepare(
+      'INSERT INTO reset_codes (user_id, code, expires_at) VALUES (?, ?, ?)'
+    ).bind(user.id, resetCode, expiresAt).run()
+
+    // POUR LE DEV : Afficher le code dans les logs (console F12)
+    console.log('🔐 CODE DE RÉINITIALISATION POUR', email, ':', resetCode)
+
+    return c.json({ 
+      success: true, 
+      message: 'Code de réinitialisation généré. Consultez la console (F12) pour le récupérer.',
+      // TEMPORAIRE pour le dev - à retirer en production
+      devCode: resetCode
+    })
+  } catch (error: any) {
+    console.error('Forgot password error:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
+// POST /api/auth/reset-password - Réinitialiser le mot de passe
+app.post('/api/auth/reset-password', async (c) => {
+  try {
+    const { email, code, newPassword } = await c.req.json()
+
+    if (!email || !code || !newPassword) {
+      return c.json({ error: 'Email, code et nouveau mot de passe requis' }, 400)
+    }
+
+    // Vérifier l'utilisateur
+    const user = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email).first()
+
+    if (!user) {
+      return c.json({ error: 'Email invalide' }, 400)
+    }
+
+    // Vérifier le code
+    const resetCode = await c.env.DB.prepare(
+      'SELECT id, expires_at, used FROM reset_codes WHERE user_id = ? AND code = ?'
+    ).bind(user.id, code).first()
+
+    if (!resetCode) {
+      return c.json({ error: 'Code invalide' }, 400)
+    }
+
+    if (resetCode.used === 1) {
+      return c.json({ error: 'Ce code a déjà été utilisé' }, 400)
+    }
+
+    // Vérifier l'expiration
+    const now = new Date()
+    const expiresAt = new Date(resetCode.expires_at as string)
+    
+    if (now > expiresAt) {
+      return c.json({ error: 'Ce code a expiré. Demandez un nouveau code.' }, 400)
+    }
+
+    // Hash le nouveau mot de passe
+    const hashedPassword = await hashPassword(newPassword)
+
+    // Mettre à jour le mot de passe
+    await c.env.DB.prepare(
+      'UPDATE users SET password = ? WHERE id = ?'
+    ).bind(hashedPassword, user.id).run()
+
+    // Marquer le code comme utilisé
+    await c.env.DB.prepare(
+      'UPDATE reset_codes SET used = 1 WHERE id = ?'
+    ).bind(resetCode.id).run()
+
+    console.log('✅ Mot de passe réinitialisé pour', email)
+
+    return c.json({ 
+      success: true, 
+      message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.' 
+    })
+  } catch (error: any) {
+    console.error('Reset password error:', error)
+    return c.json({ error: 'Erreur serveur' }, 500)
+  }
+})
+
 // ============================================
 // GMAIL OAUTH ROUTES
 // ============================================
