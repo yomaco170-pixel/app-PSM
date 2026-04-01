@@ -1755,19 +1755,33 @@ app.get('/api/quotes', async (c) => {
     let quotes
     
     if (dealId) {
-      // Filtrer par deal_id si fourni
+      // Filtrer par deal_id si fourni avec JOIN sur clients
       try {
-        quotes = await c.env.DB.prepare(
-          'SELECT * FROM quotes WHERE deal_id = ? ORDER BY created_at DESC'
-        ).bind(dealId).all()
+        quotes = await c.env.DB.prepare(`
+          SELECT 
+            q.*,
+            c.name as client_name,
+            c.company as client_company
+          FROM quotes q
+          LEFT JOIN clients c ON q.client_id = c.id
+          WHERE q.deal_id = ?
+          ORDER BY q.created_at DESC
+        `).bind(dealId).all()
       } catch (e) {
         // Si colonne deal_id n'existe pas, retourner vide
         quotes = { results: [] }
       }
     } else {
-      quotes = await c.env.DB.prepare(
-        'SELECT * FROM quotes ORDER BY created_at DESC'
-      ).all()
+      // Récupérer tous les devis avec JOIN sur clients
+      quotes = await c.env.DB.prepare(`
+        SELECT 
+          q.*,
+          c.name as client_name,
+          c.company as client_company
+        FROM quotes q
+        LEFT JOIN clients c ON q.client_id = c.id
+        ORDER BY q.created_at DESC
+      `).all()
     }
 
     return c.json({ quotes: quotes.results || [] })

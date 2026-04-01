@@ -2346,7 +2346,7 @@ async function renderClients() {
   
   // État de tri (alphabétique par défaut)
   if (!window.clientsSortOrder) {
-    window.clientsSortOrder = 'alpha'; // 'alpha' ou 'date'
+    window.clientsSortOrder = 'alpha'; // 'alpha', 'date-recent', 'date-old'
   }
   
   try {
@@ -2366,11 +2366,19 @@ async function renderClients() {
       const nameB = (b.name || `Client #${b.id}`).toLowerCase();
       return nameA.localeCompare(nameB, 'fr');
     });
-  } else {
+  } else if (window.clientsSortOrder === 'date-recent') {
     // Tri par date (plus récent en premier)
     sortedClients.sort((a, b) => {
       const dateA = new Date(a.created_at || 0);
       const dateB = new Date(b.created_at || 0);
+      return dateB - dateA;
+    });
+  } else {
+    // Tri par date (plus ancien en premier)
+    sortedClients.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateA - dateB;
       return dateB - dateA;
     });
   }
@@ -2412,8 +2420,11 @@ async function renderClients() {
           <button class="btn ${window.clientsSortOrder === 'alpha' ? 'btn-primary' : 'btn-secondary'}" onclick="window.clientsSortOrder = 'alpha'; renderClients();" title="Tri alphabétique">
             <i class="fas fa-sort-alpha-down"></i> A-Z
           </button>
-          <button class="btn ${window.clientsSortOrder === 'date' ? 'btn-primary' : 'btn-secondary'}" onclick="window.clientsSortOrder = 'date'; renderClients();" title="Tri par date">
-            <i class="fas fa-calendar"></i> Date
+          <button class="btn ${window.clientsSortOrder === 'date-recent' ? 'btn-primary' : 'btn-secondary'}" onclick="window.clientsSortOrder = 'date-recent'; renderClients();" title="Plus récent en premier">
+            <i class="fas fa-arrow-down"></i> Récent
+          </button>
+          <button class="btn ${window.clientsSortOrder === 'date-old' ? 'btn-primary' : 'btn-secondary'}" onclick="window.clientsSortOrder = 'date-old'; renderClients();" title="Plus ancien en premier">
+            <i class="fas fa-arrow-up"></i> Ancien
           </button>
           <button class="btn btn-secondary" onclick="api.exportClients()" title="Exporter en CSV">
             <i class="fas fa-download"></i> Exporter
@@ -2439,46 +2450,83 @@ async function renderClients() {
 // QUOTES - Vue tableau professionnelle type Gestion-Com
 
 async function renderQuotes() {
+  // État de tri (plus récent par défaut)
+  if (!window.quotesSortOrder) {
+    window.quotesSortOrder = 'recent'; // 'recent' ou 'old'
+  }
+  
   state.quotes = await api.getQuotes();
   
+  // Trier les devis
+  const sortedQuotes = [...safeArray(state.quotes)];
+  if (window.quotesSortOrder === 'recent') {
+    sortedQuotes.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateB - dateA; // Plus récent en premier
+    });
+  } else {
+    sortedQuotes.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateA - dateB; // Plus ancien en premier
+    });
+  }
+  
   const statusColors = {
-    'brouillon': 'warning',
-    'envoye': 'primary',
-    'accepte': 'success',
-    'refuse': 'danger',
+    'draft': 'warning',
+    'sent': 'primary',
+    'accepted': 'success',
+    'rejected': 'danger',
+    'invoiced': 'success',
   };
   
   const statusLabels = {
-    'brouillon': 'Brouillon',
-    'envoye': 'Envoyé',
-    'accepte': 'Accepté',
-    'refuse': 'Refusé',
+    'draft': 'Brouillon',
+    'sent': 'Envoyé',
+    'accepted': 'Accepté',
+    'rejected': 'Refusé',
+    'invoiced': 'Facturé',
   };
 
-  const quotesHTML = safeArray(state.quotes).map(quote => `
+  const quotesHTML = sortedQuotes.map(quote => {
+    const clientName = quote.client_name || 'Client inconnu';
+    const quoteNumber = quote.number || `#${quote.id}`;
+    const totalTTC = quote.total_ttc || 0;
+    const depositAmount = quote.deposit_amount || 0;
+    const remainingAmount = totalTTC - depositAmount;
+    
+    return `
     <tr class="hover:bg-gray-700 cursor-pointer" onclick="editQuote(${quote.id})">
       <td class="p-3 border-b border-gray-700 text-xs text-gray-400">${formatRelativeTime(quote.created_at)}</td>
       <td class="p-3 border-b border-gray-700">${quote.valid_until ? formatDate(quote.valid_until) : '—'}</td>
-      <td class="p-3 border-b border-gray-700">${quote.first_name} ${quote.last_name}</td>
+      <td class="p-3 border-b border-gray-700">${clientName}</td>
       <td class="p-3 border-b border-gray-700">
-        <div class="font-medium">${quote.number}</div>
-        <div class="text-xs text-gray-400">${quote.deal_type}</div>
+        <div class="font-medium">${quoteNumber}</div>
+        ${quote.notes ? `<div class="text-xs text-gray-400">${quote.notes.substring(0, 30)}...</div>` : ''}
       </td>
-      <td class="p-3 border-b border-gray-700 text-right font-bold">—</td>
-      <td class="p-3 border-b border-gray-700 text-right font-bold">—</td>
+      <td class="p-3 border-b border-gray-700 text-right font-bold">${totalTTC.toFixed(2)} €</td>
+      <td class="p-3 border-b border-gray-700 text-right font-bold">${remainingAmount.toFixed(2)} €</td>
       <td class="p-3 border-b border-gray-700">
-        <span class="badge badge-${statusColors[quote.status]}">${statusLabels[quote.status]}</span>
+        <span class="badge badge-${statusColors[quote.status] || 'secondary'}">${statusLabels[quote.status] || quote.status}</span>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const content = `
     <div class="p-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-2xl font-bold text-white">
-          <i class="fas fa-file-invoice"></i> Devis (${safeArray(state.quotes).length})
+          <i class="fas fa-file-invoice"></i> Devis (${sortedQuotes.length})
         </h2>
         <div class="flex gap-2">
+          <button class="btn ${window.quotesSortOrder === 'recent' ? 'btn-primary' : 'btn-secondary'}" onclick="window.quotesSortOrder = 'recent'; renderQuotes();" title="Plus récent en premier">
+            <i class="fas fa-arrow-down"></i> Récent
+          </button>
+          <button class="btn ${window.quotesSortOrder === 'old' ? 'btn-primary' : 'btn-secondary'}" onclick="window.quotesSortOrder = 'old'; renderQuotes();" title="Plus ancien en premier">
+            <i class="fas fa-arrow-up"></i> Ancien
+          </button>
           <button class="btn btn-secondary" onclick="api.exportQuotes()" title="Exporter en CSV">
             <i class="fas fa-download"></i> Exporter
           </button>
