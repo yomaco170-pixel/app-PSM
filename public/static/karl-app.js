@@ -5166,7 +5166,6 @@ function filterClients(query) {
     `;
   }).join('');
 }
-}
 
 // CREATE QUOTE MODAL (Éditeur de devis complet)
 let quoteLines = [];
