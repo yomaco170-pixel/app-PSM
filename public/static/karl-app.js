@@ -1933,9 +1933,6 @@ function renderLayout(content) {
           <button class="${state.currentView === 'reports' ? 'active' : ''}" onclick="navigate('reports')">
             <i class="fas fa-chart-bar"></i> Rapports
           </button>
-          <button class="${state.currentView === 'mails' ? 'active' : ''}" onclick="navigate('mails')">
-            <i class="fas fa-envelope"></i> Mails
-          </button>
           <button class="${state.currentView === 'trash' ? 'active' : ''}" onclick="console.log('🗑️ Clic sur Corbeille!'); navigate('trash')">
             <i class="fas fa-trash"></i> Corbeille
           </button>
