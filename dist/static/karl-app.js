@@ -519,6 +519,15 @@ function renderDashboard() {
           <div class="dashboard-card-subtitle">À faire</div>
         </div>
         
+        <!-- Mails -->
+        <div onclick="navigate('mails')" class="dashboard-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+          <div class="dashboard-card-icon">
+            <i class="fas fa-envelope" style="font-size: 2rem;"></i>
+          </div>
+          <div class="dashboard-card-title">Mails</div>
+          <div class="dashboard-card-subtitle">Emails reçus</div>
+        </div>
+        
         <!-- Paramètres -->
         <div onclick="navigate('settings')" class="dashboard-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
           <div class="dashboard-card-icon">
@@ -6311,36 +6320,55 @@ async function saveEmailForTriage() {
 
 // Fonction pour afficher la page Mails avec intégration Gmail
 async function renderMails() {
-  // Fonction désactivée - Gmail nécessite une configuration OAuth complexe
-  const appDiv = document.getElementById('app');
-  if (!appDiv) return;
+  console.log('🔵 renderMails() avec Gmail démarré');
   
-  appDiv.innerHTML = renderLayout(`
-    <div class="card-header">
-      <div class="flex items-center gap-3">
-        <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">
-          <i class="fas fa-arrow-left"></i> Retour
-        </button>
-        <h2 class="text-2xl font-bold text-white">
-          <i class="fas fa-envelope"></i> Emails
-        </h2>
+  const appDiv = document.getElementById('app');
+  if (!appDiv) {
+    console.error('❌ #app introuvable');
+    return;
+  }
+  
+  // Vérifier si Gmail est connecté
+  const gmailToken = localStorage.getItem('gmail_access_token');
+  const gmailEmail = localStorage.getItem('gmail_email');
+  const gmailExpiresAt = localStorage.getItem('gmail_expires_at');
+  
+  const isGmailConnected = gmailToken && gmailExpiresAt && Date.now() < parseInt(gmailExpiresAt);
+  
+  if (!isGmailConnected) {
+    // Afficher le bouton de connexion Gmail
+    appDiv.innerHTML = `
+      <div class="card-header">
+        <div class="flex items-center gap-3">
+          <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">
+            <i class="fas fa-arrow-left"></i> Retour
+          </button>
+          <h2 class="text-2xl font-bold text-white">
+            <i class="fas fa-envelope"></i> Mails
+          </h2>
+        </div>
       </div>
-    </div>
-    
-    <div class="card" style="text-align: center; padding: 3rem;">
-      <i class="fas fa-info-circle" style="font-size: 4rem; color: #3b82f6; margin-bottom: 1.5rem;"></i>
-      <h3 class="text-xl font-bold text-white mb-3">Fonctionnalité Email désactivée</h3>
-      <p class="text-gray-400 mb-6">
-        La gestion des emails nécessite une configuration OAuth Google complexe.<br>
-        Pour envoyer un email à un client, utilisez les boutons "Envoyer email" dans les fiches clients.
-      </p>
       
-      <button class="btn btn-primary" onclick="navigate('clients')">
-        <i class="fas fa-users"></i> Voir les clients
-      </button>
-    </div>
-  `);
-}
+      <div class="card" style="text-align: center; padding: 3rem;">
+        <i class="fas fa-envelope" style="font-size: 4rem; color: #3b82f6; margin-bottom: 1.5rem;"></i>
+        <h3 class="text-xl font-bold text-white mb-3">Connectez votre compte Gmail</h3>
+        <p class="text-gray-400 mb-6">Pour accéder à vos emails, connectez votre compte Gmail professionnel</p>
+        
+        <button 
+          class="btn btn-primary" 
+          onclick="window.location.href='/api/auth/gmail'"
+          style="font-size: 1.1rem; padding: 1rem 2rem;"
+        >
+          <i class="fab fa-google"></i> Connecter Gmail
+        </button>
+      </div>
+    `;
+    return;
+  }
+  
+  // Gmail connecté, afficher l'interface
+  appDiv.innerHTML = `
+    <div class="card-header">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">
