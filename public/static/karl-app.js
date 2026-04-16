@@ -9091,6 +9091,9 @@ async function openCreateLeadFromClient(clientId) {
   try {
     const client = await api.getClient(clientId);
     
+    // Stocker le client_id dans state pour le récupérer lors de la soumission
+    state.currentClientId = clientId;
+    
     showModal(`
       <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
@@ -9099,7 +9102,7 @@ async function openCreateLeadFromClient(clientId) {
             <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
           </div>
           <form id="createLeadFromClientForm" class="modal-body">
-            <input type="hidden" name="client_id" value="${clientId}" />
+            <input type="hidden" name="client_id" value="${clientId}" id="hiddenClientId" />
             
             <div class="bg-gray-700 p-3 rounded mb-4">
               <p class="text-sm text-gray-300 mb-1"><i class="fas fa-user"></i> <strong>${client.name || 'Sans nom'}</strong></p>
@@ -9160,18 +9163,29 @@ async function submitCreateLeadFromClient() {
   const formData = new FormData(form);
   const rawData = Object.fromEntries(formData);
   
+  // Récupérer le client_id depuis le formulaire OU depuis state
+  const clientId = rawData.client_id || state.currentClientId;
+  
+  if (!clientId) {
+    alert('❌ Erreur : client_id manquant');
+    return;
+  }
+  
   // Mapper les champs du formulaire vers les champs API
   const data = {
-    client_id: rawData.client_id,
+    client_id: parseInt(clientId, 10),
     title: rawData.type || 'Nouveau projet',
     amount: parseFloat(rawData.estimated_amount) || 0,
     stage: rawData.status || 'lead',
     notes: rawData.notes || ''
   };
   
+  console.log('🔍 Données envoyées à createDeal:', data);
+  
   try {
     // Créer le deal/lead
     const newDeal = await api.createDeal(data);
+    console.log('✅ Lead créé, réponse API:', newDeal);
     
     // Recharger la liste des deals pour avoir le lead enrichi
     state.deals = await api.getDeals();

@@ -1543,14 +1543,18 @@ app.post('/api/deals', async (c) => {
       
       // Récupérer le deal créé avec les infos client enrichies
       const createdDeal = await c.env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(result.meta.last_row_id).first()
+      console.log('📊 Deal récupéré:', { id: createdDeal?.id, client_id: createdDeal?.client_id, title: createdDeal?.title })
       
       let client = null
       if (createdDeal && createdDeal.client_id) {
         try {
           client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(createdDeal.client_id).first()
+          console.log('👤 Client trouvé:', { id: client?.id, name: client?.name, email: client?.email })
         } catch (e) {
           console.error('Erreur récupération client:', e)
         }
+      } else {
+        console.warn('⚠️ client_id manquant dans le deal créé:', createdDeal)
       }
       
       // Retourner le deal enrichi avec les infos client
