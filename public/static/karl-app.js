@@ -2229,8 +2229,8 @@ async function renderPipeline() {
       <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold text-white"><i class="fas fa-columns"></i> Pipeline</h2>
         <div class="flex gap-2">
-          <button class="btn btn-primary" onclick="openImportEmailModal()" title="Créer un lead depuis un email">
-            <i class="fas fa-envelope"></i> 📧 Nouveau Lead depuis Email
+          <button class="btn btn-primary" onclick="openQuickLeadModal()" style="font-size: 1.1rem; padding: 0.75rem 1.5rem;">
+            <i class="fas fa-plus-circle"></i> Nouveau Lead
           </button>
           <button class="btn btn-secondary" onclick="api.exportDeals()" title="Exporter en CSV">
             <i class="fas fa-download"></i>
@@ -9530,6 +9530,198 @@ function openNewLeadModalWithData(data) {
       </div>
     </div>
   `);
+}
+
+// NOUVEAU : Formulaire rapide simplifié (3 champs essentiels)
+function openQuickLeadModal() {
+  showModal(`
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+          <h3><i class="fas fa-plus-circle"></i> Nouveau Lead - Formulaire rapide</h3>
+          <button class="modal-close" onclick="closeModal()" style="color: white;"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="quickLeadForm" class="modal-body">
+          <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-blue-200">
+            <i class="fas fa-info-circle"></i> <strong>Formulaire simplifié :</strong> Remplissez uniquement les 3 champs essentiels ci-dessous (≈30 secondes)
+          </div>
+          
+          <!-- Champ 1 : Nom complet -->
+          <div class="input-group">
+            <label class="input-label" style="font-size: 1.1rem; font-weight: 700;">
+              <i class="fas fa-user"></i> 1. Nom complet *
+            </label>
+            <input 
+              type="text" 
+              name="full_name" 
+              class="input" 
+              placeholder="Ex: Luc Boulé, Mme Moignard, Mr Lacrampe..." 
+              required 
+              style="font-size: 1.1rem; padding: 0.75rem;"
+              autofocus
+            />
+            <p class="text-xs text-gray-400 mt-1">💡 Un seul champ, pas besoin de séparer Prénom/Nom</p>
+          </div>
+          
+          <!-- Champ 2 : Téléphone -->
+          <div class="input-group">
+            <label class="input-label" style="font-size: 1.1rem; font-weight: 700;">
+              <i class="fas fa-phone"></i> 2. Téléphone *
+            </label>
+            <input 
+              type="tel" 
+              name="phone" 
+              class="input" 
+              placeholder="Ex: 06 12 34 56 78, 0689674326..." 
+              required 
+              style="font-size: 1.1rem; padding: 0.75rem;"
+            />
+            <p class="text-xs text-gray-400 mt-1">💡 Format libre (avec ou sans espaces)</p>
+          </div>
+          
+          <!-- Champ 3 : Type de projet -->
+          <div class="input-group">
+            <label class="input-label" style="font-size: 1.1rem; font-weight: 700;">
+              <i class="fas fa-tools"></i> 3. Type de projet *
+            </label>
+            <select 
+              name="type" 
+              class="input" 
+              required 
+              style="font-size: 1.1rem; padding: 0.75rem;"
+            >
+              <option value="">Choisir le type de projet...</option>
+              <option value="Portail coulissant">🚪 Portail coulissant</option>
+              <option value="Portail battant">🚪 Portail battant</option>
+              <option value="Portillon">🚪 Portillon</option>
+              <option value="Clôture">🏗️ Clôture</option>
+              <option value="Motorisation">⚙️ Motorisation</option>
+              <option value="Réparation">🔧 Réparation</option>
+              <option value="Autre">📋 Autre</option>
+            </select>
+          </div>
+          
+          <hr class="my-4" style="border-color: rgba(255,255,255,0.1)">
+          
+          <!-- Champs optionnels (accordéon replié) -->
+          <details style="margin-bottom: 1rem;">
+            <summary style="cursor: pointer; color: #60a5fa; font-weight: 600; padding: 0.5rem; border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px; background: rgba(96, 165, 250, 0.1);">
+              <i class="fas fa-chevron-down"></i> Informations complémentaires (optionnel)
+            </summary>
+            <div style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+              <div class="input-group">
+                <label class="input-label">Email</label>
+                <input type="email" name="email" class="input" placeholder="Ex: contact@example.com" />
+              </div>
+              
+              <div class="input-group">
+                <label class="input-label">Adresse</label>
+                <input type="text" name="address" class="input" placeholder="Ex: Sainte-Luce-sur-Loire" />
+              </div>
+              
+              <div class="input-group">
+                <label class="input-label">Montant estimé (€)</label>
+                <input type="number" name="estimated_amount" class="input" placeholder="Ex: 5000" step="0.01" />
+              </div>
+              
+              <div class="input-group">
+                <label class="input-label">Notes / Contexte</label>
+                <textarea name="notes" class="input" rows="3" placeholder="Ex: Référence voisin, besoin urgent, budget flexible..."></textarea>
+              </div>
+            </div>
+          </details>
+        </form>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button class="btn btn-success" onclick="submitQuickLeadForm()" style="font-size: 1.1rem; padding: 0.75rem 1.5rem;">
+            <i class="fas fa-check-circle"></i> Créer le lead
+          </button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+// Soumettre le formulaire rapide
+async function submitQuickLeadForm() {
+  const form = document.getElementById('quickLeadForm');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData);
+  
+  // Validation
+  if (!data.full_name || !data.phone || !data.type) {
+    alert('❌ Veuillez remplir les 3 champs obligatoires (Nom, Téléphone, Type de projet)');
+    return;
+  }
+  
+  try {
+    // Séparer le nom complet en prénom/nom (simple heuristique)
+    const nameParts = data.full_name.trim().split(/\s+/);
+    let first_name = '';
+    let last_name = '';
+    let civility = '';
+    
+    // Détecter civilité
+    if (nameParts[0].match(/^(M\.|Mr|Monsieur)$/i)) {
+      civility = 'M.';
+      nameParts.shift();
+    } else if (nameParts[0].match(/^(Mme|Madame|Mlle)$/i)) {
+      civility = 'Mme';
+      nameParts.shift();
+    }
+    
+    // Répartir prénom/nom
+    if (nameParts.length === 1) {
+      last_name = nameParts[0];
+    } else if (nameParts.length >= 2) {
+      first_name = nameParts.slice(0, -1).join(' ');
+      last_name = nameParts[nameParts.length - 1];
+    }
+    
+    // 1. Créer le client
+    const clientData = {
+      civility: civility || 'M.',
+      first_name: first_name || '',
+      last_name: last_name || data.full_name,
+      name: data.full_name,
+      phone: data.phone.replace(/\s/g, ''),
+      email: data.email || '',
+      address: data.address || '',
+      notes: data.notes || ''
+    };
+    
+    const clientResponse = await api.createClient(clientData);
+    const clientId = clientResponse.id;
+    
+    // 2. Créer le lead
+    const leadData = {
+      client_id: clientId,
+      title: data.type,
+      type: data.type,
+      amount: parseFloat(data.estimated_amount) || 0,
+      estimated_amount: parseFloat(data.estimated_amount) || 0,
+      stage: 'lead',
+      status: 'lead',
+      notes: data.notes || `Lead créé depuis formulaire rapide. Type: ${data.type}`
+    };
+    
+    await api.createDeal(leadData);
+    
+    // 3. Rafraîchir les données
+    state.clients = await api.getClients();
+    state.deals = await api.getDeals();
+    
+    // 4. Afficher succès
+    showToast(`✅ Lead créé pour ${data.full_name} !`, 'success');
+    closeModal();
+    
+    // 5. Retourner au pipeline
+    navigate('pipeline');
+    
+  } catch (error) {
+    console.error('Erreur création lead:', error);
+    alert('❌ Erreur lors de la création du lead : ' + (error.response?.data?.error || error.message));
+  }
 }
 
 // Créer un nouveau lead (sans client existant)
