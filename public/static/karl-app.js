@@ -9135,9 +9135,9 @@ async function openCreateLeadFromClient(clientId) {
             <div class="input-group">
               <label class="input-label">Statut initial</label>
               <select name="status" class="input">
-                <option value="prospect">🎯 Prospect</option>
-                <option value="contact_pris">📞 Contact pris</option>
+                <option value="lead">🎯 Lead</option>
                 <option value="rdv_planifie">📅 RDV planifié</option>
+                <option value="devis_a_faire">📝 Devis à faire</option>
               </select>
             </div>
           </form>
@@ -9158,7 +9158,16 @@ async function openCreateLeadFromClient(clientId) {
 async function submitCreateLeadFromClient() {
   const form = document.getElementById('createLeadFromClientForm');
   const formData = new FormData(form);
-  const data = Object.fromEntries(formData);
+  const rawData = Object.fromEntries(formData);
+  
+  // Mapper les champs du formulaire vers les champs API
+  const data = {
+    client_id: rawData.client_id,
+    title: rawData.type || 'Nouveau projet',
+    amount: parseFloat(rawData.estimated_amount) || 0,
+    stage: rawData.status || 'lead',
+    notes: rawData.notes || ''
+  };
   
   try {
     // Créer le deal/lead
