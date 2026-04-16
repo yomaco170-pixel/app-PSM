@@ -9105,61 +9105,104 @@ function parseEmailContent(emailText) {
     notes: emailText
   };
   
-  // Extraire l'email
-  const emailMatch = emailText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  if (emailMatch) {
-    result.email = emailMatch[0];
+  // Nettoyer le texte des caractères encodés (Ã©, Ã, etc.)
+  const cleanText = emailText
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã /g, 'à')
+    .replace(/Ã¨/g, 'è')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ã®/g, 'î')
+    .replace(/Ã¢/g, 'â');
+  
+  // Extraire l'email (éviter les faux emails comme "joint@...")
+  const emailMatches = cleanText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+  if (emailMatches) {
+    // Prendre le premier email qui n'est pas un email système
+    result.email = emailMatches.find(e => 
+      !e.includes('mailto:') && 
+      !e.startsWith('joint@') && 
+      !e.startsWith('contact@psm')
+    ) || emailMatches[0];
   }
   
-  // Extraire le téléphone (formats français)
-  const phoneMatch = emailText.match(/(?:0|\+33\s?)[1-9](?:[\s.-]?\d{2}){4}/);
+  // Extraire le téléphone (formats français: 06, 07, 02, etc.)
+  const phoneMatch = cleanText.match(/(?:tel\s*:?\s*)?(?:0|\+33\s?)[1-9](?:[\s.-]?\d{2}){4}/i);
   if (phoneMatch) {
-    result.phone = phoneMatch[0].replace(/[\s.-]/g, '');
+    result.phone = phoneMatch[0]
+      .replace(/tel\s*:?\s*/i, '')
+      .replace(/[\s.-]/g, '')
+      .replace(/^\+33/, '0');
   }
   
-  // Extraire le nom (après "De :" ou avant l'email)
+  // Extraire le nom complet (patterns améliorés)
   const namePatterns = [
-    /(?:De\s*:\s*|EnvoyÃ©\s*par\s*:?\s*)([A-ZÀ-Ü][a-zà-ü]+(?:\s+[A-ZÀ-Ü][a-zà-ü]+)+)/i,
-    /([A-ZÀ-Ü][a-zà-ü]+\s+[A-ZÀ-Ü][A-ZÀ-Üa-zà-ü]+)(?=\s*[,\n]|\s+tel\s*:)/i
+    // Pattern 1: "De : Prénom NOM [mailto:...]"
+    /(?:De\s*:\s*|From\s*:\s*)([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][A-ZÀ-Üa-zà-üé]+)(?=\s*\[mailto:)/i,
+    // Pattern 2: "Cordialement\nPrénom Nom"
+    /(?:Cordialement|Bien cordialement|Cordialement vôtre)[,\s]+([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][a-zà-üé]+)/i,
+    // Pattern 3: "Prénom Nom, tel :"
+    /([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][a-zà-üé]+)(?=\s*[,.]?\s*tel\s*:)/i,
+    // Pattern 4: Ligne avec prénom + NOM en majuscules
+    /([A-ZÀ-Ü][a-zà-üé]{2,})\s+([A-ZÀ-Ü]{2,})/
   ];
   
   for (const pattern of namePatterns) {
-    const match = emailText.match(pattern);
-    if (match) {
-      const fullName = match[1].trim();
-      const parts = fullName.split(/\s+/);
-      if (parts.length >= 2) {
-        result.first_name = parts[0];
-        result.last_name = parts.slice(1).join(' ');
-        
-        // Détecter la civilité
-        if (fullName.match(/\b(M\.|Monsieur|Mr)\b/i)) {
-          result.civility = 'M.';
-        } else if (fullName.match(/\b(Mme|Madame|Mlle|Mademoiselle)\b/i)) {
-          result.civility = 'Mme';
-        }
+    const match = cleanText.match(pattern);
+    if (match && match[1] && match[2]) {
+      // Exclure les mots-clés communs qui ne sont pas des noms
+      const excludeWords = ['envoyé', 'bonjour', 'cordialement', 'merci', 'madame', 'monsieur'];
+      const firstName = match[1].trim();
+      const lastName = match[2].trim();
+      
+      if (!excludeWords.includes(firstName.toLowerCase()) && 
+          !excludeWords.includes(lastName.toLowerCase())) {
+        result.first_name = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+        result.last_name = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+        break;
       }
-      break;
     }
   }
   
-  // Extraire l'adresse / ville
-  const addressMatch = emailText.match(/(?:à|a)\s+([A-ZÀ-Ü][a-zà-ü\s-]+(?:sur|sous|les|en)?[A-ZÀ-Ü][a-zà-ü\s-]*)/i);
-  if (addressMatch) {
-    result.address = addressMatch[1].trim();
+  // Détecter la civilité dans le texte
+  if (cleanText.match(/\b(M\.|Monsieur|Mr)\b/i)) {
+    result.civility = 'M.';
+  } else if (cleanText.match(/\b(Mme|Madame)\b/i)) {
+    result.civility = 'Mme';
   }
   
-  // Détecter le type de projet
+  // Extraire l'adresse / ville (patterns améliorés)
+  const addressPatterns = [
+    // Pattern 1: "à [Ville]"
+    /(?:à|a)\s+([A-ZÀ-Ü][a-zà-üé\s-]+(?:sur|sous|les|en|de|la|le)?(?:\s+[A-ZÀ-Ü][a-zà-üé\s-]+)?)/i,
+    // Pattern 2: Code postal + ville
+    /(\d{5}\s+[A-ZÀ-Ü][a-zà-üé\s-]+)/,
+    // Pattern 3: Ville seule en début de mot
+    /\b([A-ZÀ-Ü][a-zà-üé]+(?:\s+(?:sur|sous|les|en)\s+[A-ZÀ-Ü][a-zà-üé]+)?)\b/
+  ];
+  
+  for (const pattern of addressPatterns) {
+    const match = cleanText.match(pattern);
+    if (match) {
+      const addr = match[1].trim();
+      // Exclure les faux positifs
+      if (addr.length > 3 && !addr.match(/^(Bonjour|Merci|Cordialement)/i)) {
+        result.address = addr;
+        break;
+      }
+    }
+  }
+  
+  // Détecter le type de projet (insensible à la casse et aux accents)
   const projectTypes = [
     { keywords: ['portail coulissant', 'coulissant'], value: 'Portail coulissant' },
     { keywords: ['portail battant', 'battant', 'battans'], value: 'Portail battant' },
     { keywords: ['portillon'], value: 'Portillon' },
     { keywords: ['clôture', 'cloture'], value: 'Clôture' },
-    { keywords: ['motorisation', 'moteur'], value: 'Motorisation' },
-    { keywords: ['réparation', 'reparation', 'réparer'], value: 'Réparation' }
+    { keywords: ['motorisation', 'moteur', 'motoriser'], value: 'Motorisation' },
+    { keywords: ['réparation', 'reparation', 'réparer', 'reparer'], value: 'Réparation' }
   ];
   
-  const lowerText = emailText.toLowerCase();
+  const lowerText = cleanText.toLowerCase();
   for (const type of projectTypes) {
     if (type.keywords.some(kw => lowerText.includes(kw))) {
       result.type = type.value;
