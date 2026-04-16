@@ -131,8 +131,37 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
 ## 🌐 URLs
 
 - **Production** : https://karl-crm.pages.dev
-- **Dernier déploiement** : https://a94160bd.karl-crm.pages.dev
+- **Dernier déploiement** : https://6cfeca01.karl-crm.pages.dev
 - **GitHub** : https://github.com/yomaco170-pixel/app-PSM
+
+---
+
+## 🚀 Nouveautés (v2.1)
+
+### 📧 Parser email amélioré (Solocal, PagesJaunes, formulaires web)
+- ✅ **Détection multiformat** - Support de tous les formats de formulaires (Solocal, site web PSM)
+- ✅ **Extraction robuste** - Patterns multiples pour `Nom :`, `E-mail :`, `Téléphone :`, `Message :`
+- ✅ **Filtres anti-spam** - Ignore les emails système (mailer@, contact@, noreply@)
+- ✅ **Message complet** - Extraction automatique du contenu descriptif du projet
+- ✅ **Nettoyage automatique** - Suppression des lignes de signature et mentions légales
+
+**Formats reconnus :**
+```
+Solocal/PagesJaunes:
+Nom :
+MARQUER
+E-mail :
+chihuahuadm@yahoo.fr
+Téléphone :
+0630859280
+Message :
+[Description du projet]
+
+Site web PSM:
+Nom* : Luc BOULÉ
+E-mail* : luc.boule@wanadoo.fr
+Téléphone : 0689674326
+```
 
 ---
 
