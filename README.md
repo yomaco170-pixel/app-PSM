@@ -1,19 +1,31 @@
 # KARL CRM
 
-**CRM intelligent avec intégration Gmail et D1 Database**
+**CRM simplifié pour PSM Portails - Gestion clients, devis et pipeline**
 
-## 🚀 Fonctionnalités
+## ✨ Interface simplifiée (Version 2.0)
 
-- ✅ **Gmail OAuth** - Connexion et lecture des emails
+**Navigation réduite : 5 onglets essentiels**
+- 📊 **Pipeline** - Gestion des leads (6 statuts : Lead → RDV → Devis → Envoyé → Relance → Signé)
+- 👥 **Clients** - Gestion complète avec recherche et tri
+- 📄 **Devis** - Création et édition avec catalogue PSM
+- 📅 **Calendrier** - Vue des rendez-vous
+- ⚙️ **Paramètres** - Configuration + accès rapide (Tâches, Priorité, Rapports, Corbeille)
+
+**Workflow ultra-simplifié :**
+```
+📧 Email reçu → 📝 Créer lead (3 champs, 30s) → 📅 Planifier RDV → 📝 Créer devis → ✅ Marquer signé → 👤 Client
+```
+
+## 🚀 Fonctionnalités principales
+
+- ✅ **Formulaire rapide** - 3 champs essentiels : Nom, Téléphone, Type de projet (≈30 secondes)
+- ✅ **Bouton principal intelligent** - Un seul bouton selon le statut du lead
 - ✅ **D1 Database** - Base de données SQLite globale (Cloudflare)
 - ✅ **PWA** - Application Web Progressive
-- ✅ **Dashboard** - Vue d'ensemble clients, deals, devis, tâches
-- ✅ **Pipeline** - Gestion des deals par étapes
-- ✅ **Clients** - Gestion complète des clients
-- ✅ **Devis** - Création et suivi des devis
-- ✅ **Tâches** - To-do list intégrée
-- ✅ **Calendrier** - Événements et rendez-vous
-- ✅ **Mails** - Intégration Gmail (lecture)
+- ✅ **Pipeline** - 6 statuts avec workflow linéaire
+- ✅ **Clients** - Gestion complète avec archivage
+- ✅ **Devis** - Édition avec calculs automatiques (HT/TVA/TTC)
+- ✅ **Calendrier** - Rendez-vous avec export iCal
 
 ---
 
@@ -119,6 +131,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
 ## 🌐 URLs
 
 - **Production** : https://karl-crm.pages.dev
+- **Dernier déploiement** : https://a94160bd.karl-crm.pages.dev
 - **GitHub** : https://github.com/yomaco170-pixel/app-PSM
 
 ---
