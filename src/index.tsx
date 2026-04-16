@@ -778,6 +778,62 @@ app.get('/api/emails', async (c) => {
   }
 })
 
+// GET /api/emails/:id - Récupérer le corps COMPLET d'un email
+app.get('/api/emails/:id', async (c) => {
+  try {
+    const accessToken = c.req.query('access_token')
+    const emailId = c.req.param('id')
+
+    if (!accessToken) return c.json({ error: 'Token manquant' }, 401)
+
+    const response = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}?format=full`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+
+    if (!response.ok) return c.json({ error: 'Gmail API error' }, response.status)
+
+    const message: any = await response.json()
+
+    // Décodage base64url → UTF-8 correct
+    const decode = (str: string): string => {
+      try {
+        const b64 = str.replace(/-/g, '+').replace(/_/g, '/')
+        const pad = b64 + '=='.slice(0, (4 - b64.length % 4) % 4)
+        const binary = atob(pad)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        return new TextDecoder('utf-8').decode(bytes)
+      } catch { return '' }
+    }
+
+    // Extraction récursive text/plain prioritaire
+    const extract = (payload: any): string => {
+      if (!payload) return ''
+      if (payload.mimeType === 'text/plain' && payload.body?.data) return decode(payload.body.data)
+      if (payload.parts) {
+        let plain = '', html = ''
+        for (const p of payload.parts) {
+          if (p.mimeType === 'text/plain' && p.body?.data) plain += decode(p.body.data)
+          else if (p.mimeType === 'text/html' && p.body?.data) html += decode(p.body.data)
+          else if (p.parts) plain += extract(p)
+        }
+        if (plain) return plain
+        // Convertir HTML en texte si pas de plain
+        return html.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, '\n').trim()
+      }
+      if (payload.body?.data) return decode(payload.body.data)
+      return ''
+    }
+
+    const body = extract(message.payload) || message.snippet || ''
+
+    return c.json({ id: emailId, body, snippet: message.snippet || '' })
+  } catch (error) {
+    return c.json({ error: String(error) }, 500)
+  }
+})
+
 // GET /api/emails/thread/:threadId - Récupérer le fil complet d'une conversation
 app.get('/api/emails/thread/:threadId', async (c) => {
   try {
