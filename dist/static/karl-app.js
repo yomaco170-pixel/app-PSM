@@ -7200,8 +7200,8 @@ async function createLeadFromEmail(emailId, index = -1) {
             
             <div class="grid grid-cols-2 gap-3">
               <div class="input-group">
-                <label class="input-label">Civilité *</label>
-                <select name="civility" class="input" required>
+                <label class="input-label">Civilité</label>
+                <select name="civility" class="input">
                   <option value="">Choisir...</option>
                   <option value="M." ${mergedData.civility === 'M.' ? 'selected' : ''}>M.</option>
                   <option value="Mme" ${mergedData.civility === 'Mme' ? 'selected' : ''}>Mme</option>
@@ -7210,25 +7210,25 @@ async function createLeadFromEmail(emailId, index = -1) {
               </div>
               
               <div class="input-group">
-                <label class="input-label">Prénom *</label>
-                <input type="text" name="first_name" class="input" placeholder="Ex: Jean" value="${mergedData.first_name}" required />
+                <label class="input-label">Prénom</label>
+                <input type="text" name="first_name" class="input" placeholder="Ex: Jean" value="${mergedData.first_name}" />
               </div>
             </div>
             
             <div class="input-group">
-              <label class="input-label">Nom *</label>
-              <input type="text" name="last_name" class="input" placeholder="Ex: Dupont" value="${mergedData.last_name}" required />
+              <label class="input-label">Nom</label>
+              <input type="text" name="last_name" class="input" placeholder="Ex: Dupont" value="${mergedData.last_name}" />
             </div>
             
             <div class="grid grid-cols-2 gap-3">
               <div class="input-group">
-                <label class="input-label">Téléphone *</label>
-                <input type="tel" name="phone" class="input" placeholder="Ex: 06 12 34 56 78" value="${mergedData.phone}" required />
+                <label class="input-label">Téléphone</label>
+                <input type="tel" name="phone" class="input" placeholder="Ex: 06 12 34 56 78" value="${mergedData.phone}" />
               </div>
               
               <div class="input-group">
-                <label class="input-label">Email *</label>
-                <input type="email" name="email" class="input" placeholder="Ex: contact@example.com" value="${mergedData.email}" required />
+                <label class="input-label">Email</label>
+                <input type="email" name="email" class="input" placeholder="Ex: contact@example.com" value="${mergedData.email}" />
               </div>
             </div>
             
@@ -7247,8 +7247,8 @@ async function createLeadFromEmail(emailId, index = -1) {
             <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-bullseye"></i> Besoin / Projet</h4>
             
             <div class="input-group">
-              <label class="input-label">Type de projet *</label>
-              <select name="type" class="input" required>
+              <label class="input-label">Type de projet</label>
+              <select name="type" class="input">
                 <option value="">Choisir...</option>
                 <option value="Portail coulissant" ${mergedData.type === 'Portail coulissant' ? 'selected' : ''}>Portail coulissant</option>
                 <option value="Portail battant" ${mergedData.type === 'Portail battant' ? 'selected' : ''}>Portail battant</option>
@@ -9703,9 +9703,9 @@ async function submitEmailLeadForm() {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData);
   
-  // Validation
-  if (!data.first_name || !data.last_name || !data.phone || !data.email || !data.type) {
-    alert('❌ Veuillez remplir tous les champs obligatoires');
+  // Validation minimale (au moins un identifiant : nom ou email ou téléphone)
+  if (!data.first_name && !data.last_name && !data.email && !data.phone) {
+    alert('❌ Veuillez renseigner au moins un identifiant (nom, email ou téléphone)');
     return;
   }
   
