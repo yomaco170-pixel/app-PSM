@@ -7159,6 +7159,13 @@ async function createLeadFromEmail(emailId, index = -1) {
     
     // ÉTAPE 2 : Parser le contenu avec la fonction dédiée
     console.log('🔍 CONTENU ENVOYÉ AU PARSER:', fullEmailBody);
+    console.log('🔍 LONGUEUR DU CONTENU:', fullEmailBody.length, 'caractères');
+    
+    // DEBUG : Afficher le contenu dans une alerte si vide
+    if (fullEmailBody.length < 50) {
+      alert('⚠️ DEBUG: Le contenu de l\'email est trop court (' + fullEmailBody.length + ' caractères). Vérifiez la console (F12).');
+    }
+    
     const extractedData = parseEmailContent(fullEmailBody);
     
     console.log('📊 DONNÉES EXTRAITES PAR LE PARSER:', extractedData);
@@ -7167,6 +7174,13 @@ async function createLeadFromEmail(emailId, index = -1) {
     console.log('  - Email:', extractedData.email);
     console.log('  - Téléphone:', extractedData.phone);
     console.log('  - Type:', extractedData.type);
+    
+    // DEBUG : Si rien n'est extrait, afficher une alerte
+    if (!extractedData.last_name && !extractedData.email && !extractedData.phone) {
+      console.error('❌ AUCUNE DONNÉE EXTRAITE !');
+      console.error('Le parser n\'a trouvé ni nom, ni email, ni téléphone dans le contenu suivant:');
+      console.error(fullEmailBody);
+    }
     
     // Extraire aussi l'email et le nom depuis le champ "De:" SEULEMENT si parser n'a rien trouvé
     const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || '';
@@ -9208,8 +9222,19 @@ function parseEmailContent(emailText) {
     notes: emailText
   };
   
+  // Si le contenu est du HTML, le convertir en texte brut
+  let cleanText = emailText;
+  if (emailText.includes('<html') || emailText.includes('<body') || emailText.includes('<div')) {
+    console.log('⚠️ Contenu HTML détecté - Conversion en texte brut...');
+    // Créer un élément temporaire pour extraire le texte
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = emailText;
+    cleanText = tempDiv.innerText || tempDiv.textContent || emailText;
+    console.log('✅ Texte brut extrait:', cleanText.substring(0, 200) + '...');
+  }
+  
   // Nettoyer le texte des caractères encodés
-  let cleanText = emailText
+  cleanText = cleanText
     .replace(/Ã©/g, 'é')
     .replace(/Ã /g, 'à')
     .replace(/Ã¨/g, 'è')
