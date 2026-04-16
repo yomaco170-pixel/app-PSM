@@ -4263,7 +4263,7 @@ async function viewDealModal(dealId) {
           <div class="modal-body">
             <!-- Actions rapides -->
             <div class="mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem;">
-              <button class="btn btn-warning btn-sm" onclick="openEditLeadModal(${deal.id})" title="Modifier les informations du lead">
+              <button class="btn btn-warning btn-sm" onclick="openEditLeadModal(${deal.id})">
                 <i class="fas fa-edit"></i> Modifier le lead
               </button>
               <button class="btn btn-primary btn-sm" onclick="openScheduleRdvModal(${deal.id})" title="Planifier ou modifier le RDV">
@@ -8661,7 +8661,7 @@ function openEditLeadModal(dealId) {
         <i class="fas fa-edit"></i> Modifier le lead #${dealId}
       </h2>
       
-      <form id="editLeadForm">
+      <form id="editLeadForm" onsubmit="event.preventDefault(); submitEditLead(${dealId})">
         <div class="input-group">
           <label class="text-white font-semibold">Civilité *</label>
           <select name="civility" class="input" required>
