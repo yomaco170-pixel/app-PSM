@@ -1221,7 +1221,7 @@ async function viewReport(reportId) {
     
     const topDealsHTML = report.top_deals?.length > 0 ? report.top_deals.map(deal => `
       <tr>
-        <td class="p-3 border-b border-gray-700">${deal.company || `${deal.first_name || ''} ${deal.last_name || ''}`.trim()}</td>
+        <td class="p-3 border-b border-gray-700">${deal.name || deal.company || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || 'Sans nom'}</td>
         <td class="p-3 border-b border-gray-700">${deal.type || 'N/A'}</td>
         <td class="p-3 border-b border-gray-700">${deal.status || 'N/A'}</td>
         <td class="p-3 border-b border-gray-700 text-right font-bold">${(deal.estimated_amount || 0).toLocaleString('fr-FR')} €</td>
@@ -1366,7 +1366,7 @@ async function renderPriority() {
         ${deals.length > 0 ? `
           <div style="display: grid; gap: 1rem;">
             ${deals.map((deal, index) => {
-              const fullName = `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || 'Sans nom';
+              const fullName = deal.name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || 'Sans nom';
               const company = deal.company ? ` - ${deal.company}` : '';
               const amount = deal.estimated_amount ? `${deal.estimated_amount.toLocaleString('fr-FR')} €` : 'Montant non renseigné';
               const statusLabels = {
@@ -2270,7 +2270,9 @@ async function renderPipelineKanban(filterStatus = null) {
   const columns = displayStatuses.map(status => {
     const deals = safeArray(state.deals).filter(d => (d.status || d.stage) === status.key);
     const cardsHTML = safeArray(deals).map(deal => {
-      const dealName = deal.client_name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || deal.title || 'Sans nom';
+      // Priorité : nom du contact (name) > first_name+last_name > title > client_name
+      const contactName = deal.name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim();
+      const dealName = contactName || deal.title || deal.client_name || 'Sans nom';
       const dealType = deal.type || deal.title || 'Dossier';
       const dealAmount = deal.estimated_amount || deal.amount || 0;
       return `
@@ -4238,7 +4240,7 @@ async function viewDealModal(dealId) {
     console.log('✅ Photos récupérées:', safeArray(state.photos).length);
   
     // Compatibilité ancien/nouveau format
-    const dealName = deal.client_name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || deal.title || 'Sans nom';
+    const dealName = deal.name || `${deal.first_name || ''} ${deal.last_name || ''}`.trim() || deal.title || deal.client_name || 'Sans nom';
     const dealStatus = deal.status || deal.stage || 'lead';
     const dealType = deal.type || deal.title || 'Dossier';
     const dealAmount = deal.estimated_amount || deal.amount || 0;
