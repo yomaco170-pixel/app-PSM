@@ -6736,8 +6736,8 @@ async function renderMails() {
                         <div class="text-sm text-gray-300 mb-3">
                           <strong>Contenu :</strong>
                         </div>
-                        <div class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
-                          ${email.snippet || 'Aucun contenu disponible'}
+                        <div id="email-content-${index}" class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
+                          ${email.snippet || 'Cliquez pour charger le contenu...'}
                         </div>
                         
                         <!-- Actions -->
@@ -6851,18 +6851,41 @@ document.addEventListener('click', function(event) {
 });
 
 // Fonction pour développer/réduire un email
-function toggleEmailDetails(index) {
+async function toggleEmailDetails(index) {
   const detailsDiv = document.getElementById(`email-details-${index}`);
   const arrowIcon = document.getElementById(`email-arrow-${index}`);
-  
-  if (detailsDiv) {
-    if (detailsDiv.style.display === 'none') {
-      detailsDiv.style.display = 'block';
-      if (arrowIcon) arrowIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-    } else {
-      detailsDiv.style.display = 'none';
-      if (arrowIcon) arrowIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+  const contentDiv = document.getElementById(`email-content-${index}`);
+
+  if (!detailsDiv) return;
+
+  if (detailsDiv.style.display === 'none') {
+    detailsDiv.style.display = 'block';
+    if (arrowIcon) arrowIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+
+    // Charger le contenu complet si pas encore fait
+    const email = window.currentEmails[index];
+    if (email && !email._bodyLoaded && contentDiv) {
+      contentDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+      try {
+        const gmailToken = localStorage.getItem('gmail_access_token');
+        if (gmailToken && email.id) {
+          const res = await fetch(`/api/emails/${email.id}?access_token=${encodeURIComponent(gmailToken)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const body = data.body || data.snippet || email.snippet || '';
+            email._body = body;
+            email._bodyLoaded = true;
+            contentDiv.style.whiteSpace = 'pre-wrap';
+            contentDiv.textContent = body;
+          }
+        }
+      } catch (e) {
+        contentDiv.textContent = email.snippet || 'Contenu non disponible';
+      }
     }
+  } else {
+    detailsDiv.style.display = 'none';
+    if (arrowIcon) arrowIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
   }
 }
 
@@ -7142,7 +7165,8 @@ async function createLeadFromEmail(emailId, index = -1) {
     
     // ÉTAPE 1 : Récupérer le contenu COMPLET de l'email
     const gmailToken = localStorage.getItem('gmail_access_token');
-    let fullEmailBody = email.snippet || email.body || '';
+    // Si déjà chargé via toggleEmailDetails, on réutilise
+    let fullEmailBody = email._body || email.snippet || email.body || '';
     
     if (gmailToken && email.id) {
       try {

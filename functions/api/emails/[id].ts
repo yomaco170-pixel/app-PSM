@@ -6,91 +6,125 @@ export async function onRequestGet(context: { request: Request; params: { id: st
     const url = new URL(context.request.url)
     const accessToken = url.searchParams.get('access_token')
     const emailId = context.params.id
-    
+
     if (!accessToken) {
       return new Response(JSON.stringify({ error: 'Token manquant' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       })
     }
-    
+
     // Récupérer le message COMPLET depuis Gmail API
     const response = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}?format=full`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     )
-    
+
     if (!response.ok) {
       throw new Error(`Gmail API error: ${response.status}`)
     }
-    
+
     const message = await response.json() as any
-    
-    // Fonction pour décoder le contenu base64url
-    const decodeBase64 = (str: string): string => {
+
+    // Décoder base64url → texte UTF-8 (compatible Cloudflare Workers)
+    const decodeBase64url = (str: string): string => {
       try {
-        // Remplacer les caractères base64url par base64 standard
-        const base64 = str.replace(/-/g, '+').replace(/_/g, '/')
-        // Décoder en UTF-8
-        return decodeURIComponent(escape(atob(base64)))
-      } catch (e) {
-        return str
-      }
-    }
-    
-    // Fonction récursive pour extraire le texte de la structure MIME
-    const extractText = (payload: any): string => {
-      if (!payload) return ''
-      
-      // Si c'est un texte brut directement
-      if (payload.body && payload.body.data) {
-        return decodeBase64(payload.body.data)
-      }
-      
-      // Si c'est multipart, chercher la partie text/plain ou text/html
-      if (payload.parts && Array.isArray(payload.parts)) {
-        let textContent = ''
-        let htmlContent = ''
-        
-        for (const part of payload.parts) {
-          if (part.mimeType === 'text/plain' && part.body?.data) {
-            textContent = decodeBase64(part.body.data)
-          } else if (part.mimeType === 'text/html' && part.body?.data) {
-            htmlContent = decodeBase64(part.body.data)
-          } else if (part.parts) {
-            // Récursif pour les structures imbriquées
-            const nested = extractText(part)
-            if (nested) textContent += '\n' + nested
-          }
+        // base64url → base64 standard
+        const b64 = str.replace(/-/g, '+').replace(/_/g, '/')
+        // Padding si nécessaire
+        const padded = b64 + '=='.slice(0, (4 - b64.length % 4) % 4)
+        // Décoder en bytes puis convertir en UTF-8
+        const binary = atob(padded)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i)
         }
-        
-        // Préférer le texte brut, sinon HTML
-        return textContent || htmlContent
+        return new TextDecoder('utf-8').decode(bytes)
+      } catch (e) {
+        return ''
       }
-      
-      return ''
     }
-    
-    const body = extractText(message.payload)
-    const snippet = message.snippet || ''
-    
-    return new Response(JSON.stringify({ 
+
+    // Extraire récursivement le texte plain/html depuis la structure MIME
+    const extractParts = (payload: any): { plain: string; html: string } => {
+      let plain = ''
+      let html = ''
+
+      if (!payload) return { plain, html }
+
+      const mime = payload.mimeType || ''
+
+      // Cas simple : text/plain ou text/html directement dans body
+      if (mime === 'text/plain' && payload.body?.data) {
+        plain = decodeBase64url(payload.body.data)
+        return { plain, html }
+      }
+      if (mime === 'text/html' && payload.body?.data) {
+        html = decodeBase64url(payload.body.data)
+        return { plain, html }
+      }
+
+      // Cas multipart : parcourir toutes les parties
+      if (payload.parts && Array.isArray(payload.parts)) {
+        for (const part of payload.parts) {
+          const sub = extractParts(part)
+          if (sub.plain) plain += (plain ? '\n' : '') + sub.plain
+          if (sub.html) html += (html ? '\n' : '') + sub.html
+        }
+      }
+
+      return { plain, html }
+    }
+
+    const { plain, html } = extractParts(message.payload)
+
+    // Convertir HTML en texte brut si nécessaire
+    const htmlToText = (htmlStr: string): string => {
+      return htmlStr
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<\/tr>/gi, '\n')
+        .replace(/<\/td>/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+    }
+
+    // Priorité : texte brut > HTML converti > snippet
+    let body = ''
+    if (plain && plain.length > 50) {
+      body = plain
+    } else if (html && html.length > 50) {
+      body = htmlToText(html)
+    } else {
+      body = message.snippet || ''
+    }
+
+    return new Response(JSON.stringify({
       id: emailId,
-      body: body || snippet,
-      snippet: snippet
+      body,
+      snippet: message.snippet || ''
     }), {
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
     })
+
   } catch (error) {
     console.error('Gmail get email error:', error)
-    return new Response(JSON.stringify({ 
-      error: 'Erreur serveur', 
-      details: String(error) 
+    return new Response(JSON.stringify({
+      error: 'Erreur serveur',
+      details: String(error)
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
