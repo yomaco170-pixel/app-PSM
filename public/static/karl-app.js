@@ -7134,186 +7134,159 @@ async function createLeadFromEmail(emailId, index = -1) {
       return;
     }
     
-    console.log('🔄 Création du lead depuis email...', { 
+    console.log('🔄 Extraction des infos depuis email...', { 
       from: email.from, 
       subject: email.subject,
       emailId: email.id 
     });
     
-    // ÉTAPE 1 : Extraire les infos de base depuis l'email
+    // ÉTAPE 1 : Récupérer le contenu COMPLET de l'email
+    const gmailToken = localStorage.getItem('gmail_access_token');
+    let fullEmailBody = email.snippet || email.body || '';
+    
+    if (gmailToken && email.id) {
+      try {
+        const fullEmailResponse = await fetch(`/api/emails/${email.id}?access_token=${encodeURIComponent(gmailToken)}`);
+        if (fullEmailResponse.ok) {
+          const fullEmailData = await fullEmailResponse.json();
+          fullEmailBody = fullEmailData.body || fullEmailData.snippet || fullEmailBody;
+          console.log('✅ Contenu complet récupéré:', fullEmailBody.substring(0, 200) + '...');
+        }
+      } catch (error) {
+        console.warn('⚠️ Impossible de récupérer le contenu complet:', error);
+      }
+    }
+    
+    // ÉTAPE 2 : Parser le contenu avec la fonction dédiée
+    const extractedData = parseEmailContent(fullEmailBody);
+    
+    console.log('📊 Données extraites:', extractedData);
+    
+    // Extraire aussi l'email et le nom depuis le champ "De:"
     const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
     const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
     
-    console.log('📧 Infos extraites:', { fromName, fromEmail });
+    // Fusionner les données
+    const mergedData = {
+      civility: extractedData.civility || 'M.',
+      first_name: extractedData.first_name || '',
+      last_name: extractedData.last_name || fromName,
+      phone: extractedData.phone || '',
+      email: extractedData.email || fromEmail,
+      company: extractedData.company || '',
+      address: extractedData.address || '',
+      type: extractedData.type || '',
+      notes: fullEmailBody,
+      email_subject: email.subject || 'Demande depuis email',
+      email_date: email.date || new Date().toISOString()
+    };
     
-    // ÉTAPE 2 : Recherche client existant
-    console.log('🔄 Recherche client existant...', { email: fromEmail });
+    console.log('✅ Données fusionnées:', mergedData);
     
-    let client = null;
-    const clientsResponse = await fetch('/api/clients', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (clientsResponse.ok) {
-      const clientsData = await clientsResponse.json().catch(() => ({}));
-      const clients = Array.isArray(clientsData.clients) ? clientsData.clients : [];
-      client = clients.find((item) => (item.email || '').toLowerCase() === fromEmail.toLowerCase()) || null;
-      
-      if (client) {
-        console.log('✅ Client existant réutilisé:', client);
-      }
-    }
-
-    // ÉTAPE 3 : Créer le client si nécessaire
-    if (!client) {
-      console.log('🔄 Création du client...', { name: fromName, email: fromEmail });
-
-      const clientResponse = await fetch('/api/clients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: fromName,
-          email: fromEmail,
-          phone: '',
-          company: '',
-          status: 'lead'
-        })
-      });
-
-      if (!clientResponse.ok) {
-        const errorData = await clientResponse.json().catch(() => ({}));
-        console.error('❌ Erreur création client:', errorData);
-
-        // Vérifier spécifiquement l'erreur UNIQUE constraint
-        if (errorData.details && errorData.details.includes('UNIQUE constraint failed: clients.email')) {
-          console.warn('⚠️ Client existe déjà avec cet email');
-          console.log('💡 On va créer le deal sans client_id (le backend gérera)');
-          
-          // Créer un objet client factice pour que le code continue
-          client = { 
-            id: null, 
-            name: fromName, 
-            email: fromEmail,
-            _skipClientCreation: true 
-          };
-        } else {
-          throw new Error(errorData.error || 'Erreur création client');
-        }
-      } else {
-        client = await clientResponse.json();
-        console.log('✅ Client créé:', client);
-      }
-    }
-    
-    // ÉTAPE 4 : Créer le deal
-    console.log('🔄 Création du deal...');
-    
-    const dealResponse = await fetch('/api/deals', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        client_id: client.id,
-        title: email.subject || 'Demande depuis email',
-        amount: 0,
-        stage: 'lead',
-        probability: 30,
-        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `📧 Email reçu le ${new Date(email.date).toLocaleDateString('fr-FR')}
-
-De: ${email.from}
-
-Contenu:
-${email.snippet || email.body || ''}
-
-🎯 ACTION: Appeler pour caler le RDV`
-      })
-    });
-    
-    if (!dealResponse.ok) {
-      let errorData;
-      try {
-        errorData = await dealResponse.json(); // Try to parse as JSON
-      } catch (jsonError) {
-        // If JSON parsing fails, read as plain text
-        errorData = await dealResponse.text();
-        console.warn('⚠️ Server response for error was not JSON:', errorData);
-      }
-      console.error('❌ Erreur création deal:', errorData);
-      // You might want to adjust the error message based on whether it was JSON or plain text
-      throw new Error(typeof errorData === 'object' && errorData.error ? errorData.error : `Erreur création deal: ${errorData}`);
-    }
-    
-    const deal = await dealResponse.json();
-    console.log('✅ Deal créé:', deal);
-    
-    // ÉTAPE 5 : Afficher confirmation
-    const confirmHTML = `
-      <div class="modal-backdrop" id="lead-confirm-modal">
-        <div class="modal-content" style="max-width: 500px;">
-          <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <h3><i class="fas fa-check-circle"></i> Lead créé !</h3>
+    // ÉTAPE 3 : Afficher le formulaire pré-rempli
+    showModal(`
+      <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 700px;">
+          <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+            <h3><i class="fas fa-envelope"></i> Créer un lead depuis l'email</h3>
+            <button class="modal-close" onclick="closeModal()" style="color: white;"><i class="fas fa-times"></i></button>
           </div>
-          
-          <div class="modal-body">
-            <div style="padding: 2rem;">
-              <div style="text-align: center; margin-bottom: 2rem;">
-                <i class="fas fa-check-circle text-green-500" style="font-size: 4rem;"></i>
-                <h4 class="text-white mt-4 mb-2">Lead créé avec succès !</h4>
-                <p class="text-gray-400">
-                  <strong>${client.name}</strong> a été ajouté au Pipeline
-                </p>
+          <form id="emailLeadForm" class="modal-body">
+            <div class="bg-green-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-green-200">
+              <i class="fas fa-check-circle"></i> <strong>Informations extraites automatiquement !</strong> Vérifiez et complétez si nécessaire.
+            </div>
+            
+            <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-user"></i> Informations du contact</h4>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div class="input-group">
+                <label class="input-label">Civilité *</label>
+                <select name="civility" class="input" required>
+                  <option value="">Choisir...</option>
+                  <option value="M." ${mergedData.civility === 'M.' ? 'selected' : ''}>M.</option>
+                  <option value="Mme" ${mergedData.civility === 'Mme' ? 'selected' : ''}>Mme</option>
+                  <option value="M. et Mme" ${mergedData.civility === 'M. et Mme' ? 'selected' : ''}>M. et Mme</option>
+                </select>
               </div>
               
-              <div class="card mb-4" style="background: #1f2937; padding: 1rem;">
-                <h5 class="text-white mb-3"><i class="fas fa-user"></i> Informations</h5>
-                <div class="text-sm text-gray-300 mb-2">
-                  <strong>Nom :</strong> ${client.name}
-                </div>
-                <div class="text-sm text-gray-300 mb-2">
-                  <strong>Email :</strong> ${client.email}
-                </div>
-                <div class="text-sm text-gray-300 mb-2">
-                  <strong>Sujet :</strong> ${email.subject || 'Sans objet'}
-                </div>
-                <div class="text-sm text-gray-300">
-                  <strong>Stage :</strong> <span class="badge badge-info">LEAD</span>
-                </div>
-              </div>
-              
-              <div class="p-3" style="background: #374151; border-radius: 8px; border-left: 4px solid #10b981;">
-                <div class="text-sm text-white">
-                  <strong><i class="fas fa-phone"></i> Prochaine action :</strong><br>
-                  Appeler pour caler le RDV !
-                </div>
+              <div class="input-group">
+                <label class="input-label">Prénom *</label>
+                <input type="text" name="first_name" class="input" placeholder="Ex: Jean" value="${mergedData.first_name}" required />
               </div>
             </div>
-          </div>
-          
+            
+            <div class="input-group">
+              <label class="input-label">Nom *</label>
+              <input type="text" name="last_name" class="input" placeholder="Ex: Dupont" value="${mergedData.last_name}" required />
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div class="input-group">
+                <label class="input-label">Téléphone *</label>
+                <input type="tel" name="phone" class="input" placeholder="Ex: 06 12 34 56 78" value="${mergedData.phone}" required />
+              </div>
+              
+              <div class="input-group">
+                <label class="input-label">Email *</label>
+                <input type="email" name="email" class="input" placeholder="Ex: contact@example.com" value="${mergedData.email}" required />
+              </div>
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Société</label>
+              <input type="text" name="company" class="input" placeholder="Ex: Dupont Menuiserie" value="${mergedData.company}" />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Adresse</label>
+              <input type="text" name="address" class="input" placeholder="Ex: 12 rue de la Paix, 44000 Nantes" value="${mergedData.address}" />
+            </div>
+            
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.1)">
+            
+            <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-bullseye"></i> Besoin / Projet</h4>
+            
+            <div class="input-group">
+              <label class="input-label">Type de projet *</label>
+              <select name="type" class="input" required>
+                <option value="">Choisir...</option>
+                <option value="Portail coulissant" ${mergedData.type === 'Portail coulissant' ? 'selected' : ''}>Portail coulissant</option>
+                <option value="Portail battant" ${mergedData.type === 'Portail battant' ? 'selected' : ''}>Portail battant</option>
+                <option value="Portillon" ${mergedData.type === 'Portillon' ? 'selected' : ''}>Portillon</option>
+                <option value="Clôture" ${mergedData.type === 'Clôture' ? 'selected' : ''}>Clôture</option>
+                <option value="Motorisation" ${mergedData.type === 'Motorisation' ? 'selected' : ''}>Motorisation</option>
+                <option value="Réparation" ${mergedData.type === 'Réparation' ? 'selected' : ''}>Réparation</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Montant estimé (€)</label>
+              <input type="number" name="estimated_amount" class="input" placeholder="Ex: 5000" step="0.01" />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Notes / Contexte</label>
+              <textarea name="notes" class="input" rows="4" placeholder="Décrivez le besoin, la référence, le contexte...">${mergedData.notes}</textarea>
+            </div>
+            
+            <!-- Champs cachés -->
+            <input type="hidden" name="email_subject" value="${mergedData.email_subject}" />
+            <input type="hidden" name="email_id" value="${email.id}" />
+          </form>
           <div class="modal-footer">
-            <button onclick="window.closeLeadConfirmModal(); window.navigate('pipeline')" class="btn btn-primary">
-              <i class="fas fa-chart-line"></i> Voir dans Pipeline
-            </button>
-            <button onclick="window.closeLeadConfirmModal()" class="btn btn-secondary">
-              Fermer
+            <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <button class="btn btn-success" onclick="submitEmailLeadForm()" style="font-size: 1.1rem; padding: 0.75rem 1.5rem;">
+              <i class="fas fa-check-circle"></i> Créer le lead
             </button>
           </div>
         </div>
       </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', confirmHTML);
+    `);
     
   } catch (error) {
-    console.error('❌ Erreur création lead:', error);
-    alert('Erreur lors de la création du lead : ' + error.message);
+    console.error('❌ Erreur:', error);
+    alert('❌ Erreur lors de l\'extraction : ' + error.message);
   }
 }
 
@@ -9721,6 +9694,147 @@ async function submitQuickLeadForm() {
   } catch (error) {
     console.error('Erreur création lead:', error);
     alert('❌ Erreur lors de la création du lead : ' + (error.response?.data?.error || error.message));
+  }
+}
+
+// Soumettre le formulaire de lead depuis email
+async function submitEmailLeadForm() {
+  const form = document.getElementById('emailLeadForm');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData);
+  
+  // Validation
+  if (!data.first_name || !data.last_name || !data.phone || !data.email || !data.type) {
+    alert('❌ Veuillez remplir tous les champs obligatoires');
+    return;
+  }
+  
+  try {
+    const token = storage.get('token');
+    if (!token) {
+      alert('❌ Vous devez être connecté');
+      return;
+    }
+    
+    // 1. Rechercher ou créer le client
+    let client = null;
+    const clientsResponse = await fetch('/api/clients', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (clientsResponse.ok) {
+      const clientsData = await clientsResponse.json().catch(() => ({}));
+      const clients = Array.isArray(clientsData.clients) ? clientsData.clients : [];
+      client = clients.find((item) => (item.email || '').toLowerCase() === data.email.toLowerCase()) || null;
+    }
+    
+    // Créer le client si nécessaire
+    if (!client) {
+      const clientData = {
+        civility: data.civility || 'M.',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        name: `${data.first_name} ${data.last_name}`.trim(),
+        phone: data.phone.replace(/\s/g, ''),
+        email: data.email || '',
+        company: data.company || '',
+        address: data.address || '',
+        notes: `Lead créé depuis email: ${data.email_subject}`
+      };
+      
+      const clientResponse = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(clientData)
+      });
+      
+      if (!clientResponse.ok) {
+        const errorData = await clientResponse.json().catch(() => ({}));
+        console.error('❌ Erreur création client:', errorData);
+        
+        // Si erreur UNIQUE constraint, essayer de récupérer le client existant
+        if (errorData.details && errorData.details.includes('UNIQUE constraint')) {
+          const retryResponse = await fetch('/api/clients', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            const retryClients = Array.isArray(retryData.clients) ? retryData.clients : [];
+            client = retryClients.find((item) => (item.email || '').toLowerCase() === data.email.toLowerCase());
+          }
+        }
+        
+        if (!client) {
+          throw new Error(errorData.error || 'Erreur création client');
+        }
+      } else {
+        client = await clientResponse.json();
+      }
+    }
+    
+    // 2. Créer le lead
+    const leadData = {
+      client_id: client.id,
+      title: data.type,
+      type: data.type,
+      amount: parseFloat(data.estimated_amount) || 0,
+      estimated_amount: parseFloat(data.estimated_amount) || 0,
+      stage: 'lead',
+      status: 'lead',
+      notes: data.notes || `📧 Email reçu: ${data.email_subject}\n\n${data.notes}`
+    };
+    
+    const dealResponse = await fetch('/api/deals', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(leadData)
+    });
+    
+    if (!dealResponse.ok) {
+      const errorData = await dealResponse.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Erreur création lead');
+    }
+    
+    // 3. Rafraîchir les données
+    state.clients = await api.getClients();
+    state.deals = await api.getDeals();
+    
+    // 4. Afficher succès
+    showToast(`✅ Lead créé pour ${data.first_name} ${data.last_name} !`, 'success');
+    closeModal();
+    
+    // 5. Marquer l'email comme traité (optionnel)
+    if (data.email_id) {
+      try {
+        await fetch(`/api/emails/${data.email_id}/archive`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            access_token: localStorage.getItem('gmail_access_token') 
+          })
+        });
+      } catch (archiveError) {
+        console.warn('⚠️ Erreur archivage email:', archiveError);
+      }
+    }
+    
+    // 6. Retourner au pipeline
+    navigate('pipeline');
+    
+  } catch (error) {
+    console.error('❌ Erreur création lead:', error);
+    alert('❌ Erreur lors de la création du lead : ' + error.message);
   }
 }
 
