@@ -7158,21 +7158,30 @@ async function createLeadFromEmail(emailId, index = -1) {
     }
     
     // ÉTAPE 2 : Parser le contenu avec la fonction dédiée
+    console.log('🔍 CONTENU ENVOYÉ AU PARSER:', fullEmailBody);
     const extractedData = parseEmailContent(fullEmailBody);
     
-    console.log('📊 Données extraites:', extractedData);
+    console.log('📊 DONNÉES EXTRAITES PAR LE PARSER:', extractedData);
+    console.log('  - Nom:', extractedData.last_name);
+    console.log('  - Prénom:', extractedData.first_name);
+    console.log('  - Email:', extractedData.email);
+    console.log('  - Téléphone:', extractedData.phone);
+    console.log('  - Type:', extractedData.type);
     
-    // Extraire aussi l'email et le nom depuis le champ "De:"
-    const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || email.from;
-    const fromName = email.from.replace(/<.*>/, '').trim() || fromEmail.split('@')[0];
+    // Extraire aussi l'email et le nom depuis le champ "De:" SEULEMENT si parser n'a rien trouvé
+    const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || '';
+    const fromName = email.from.replace(/<.*>/, '').trim().replace(fromEmail, '').trim();
     
-    // Fusionner les données
+    // ⚠️ NE PAS utiliser fromName/fromEmail comme fallback pour les emails Solocal
+    // Car ils contiennent "Contact PSM" et "mailer@multiscreensite.com"
+    
+    // Fusionner les données SANS fallback sur les mauvaises infos
     const mergedData = {
       civility: extractedData.civility || 'M.',
       first_name: extractedData.first_name || '',
-      last_name: extractedData.last_name || fromName,
+      last_name: extractedData.last_name || '',  // PAS de fallback
       phone: extractedData.phone || '',
-      email: extractedData.email || fromEmail,
+      email: extractedData.email || '',           // PAS de fallback
       company: extractedData.company || '',
       address: extractedData.address || '',
       type: extractedData.type || '',
@@ -7181,7 +7190,7 @@ async function createLeadFromEmail(emailId, index = -1) {
       email_date: email.date || new Date().toISOString()
     };
     
-    console.log('✅ Données fusionnées:', mergedData);
+    console.log('✅ Données fusionnées (SANS fallback défectueux):', mergedData);
     
     // ÉTAPE 3 : Afficher le formulaire pré-rempli
     showModal(`
