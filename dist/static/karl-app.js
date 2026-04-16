@@ -2240,9 +2240,14 @@ async function renderPipeline() {
     <div class="card-header">
       <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold text-white"><i class="fas fa-columns"></i> Pipeline</h2>
-        <button class="btn btn-secondary" onclick="api.exportDeals()" title="Exporter en CSV">
-          <i class="fas fa-download"></i> Exporter
-        </button>
+        <div class="flex gap-2">
+          <button class="btn btn-primary" onclick="openNewLeadModal()" title="Créer un nouveau lead">
+            <i class="fas fa-plus"></i> Nouveau Lead
+          </button>
+          <button class="btn btn-secondary" onclick="api.exportDeals()" title="Exporter en CSV">
+            <i class="fas fa-download"></i> Exporter
+          </button>
+        </div>
       </div>
     </div>
     ${statusRows}
@@ -9082,6 +9087,157 @@ async function submitEditClient(clientId) {
       viewDealModal(state.currentDeal.id);
     }
   } catch (error) {
+    alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
+  }
+}
+
+// Créer un nouveau lead (sans client existant)
+async function openNewLeadModal() {
+  showModal(`
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3><i class="fas fa-plus-circle"></i> Nouveau Lead</h3>
+          <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="newLeadForm" class="modal-body">
+          <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-blue-200">
+            <i class="fas fa-info-circle"></i> Créez un lead directement. Le contact sera automatiquement ajouté à vos clients.
+          </div>
+          
+          <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-user"></i> Informations du contact</h4>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="input-group">
+              <label class="input-label">Civilité *</label>
+              <select name="civility" class="input" required>
+                <option value="">Choisir...</option>
+                <option value="M.">M.</option>
+                <option value="Mme">Mme</option>
+                <option value="M. et Mme">M. et Mme</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Prénom *</label>
+              <input type="text" name="first_name" class="input" placeholder="Ex: Jean" required />
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Nom *</label>
+            <input type="text" name="last_name" class="input" placeholder="Ex: Dupont" required />
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="input-group">
+              <label class="input-label">Téléphone *</label>
+              <input type="tel" name="phone" class="input" placeholder="Ex: 06 12 34 56 78" required />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Email</label>
+              <input type="email" name="email" class="input" placeholder="Ex: contact@example.com" />
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Société</label>
+            <input type="text" name="company" class="input" placeholder="Ex: Dupont Menuiserie" />
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Adresse</label>
+            <input type="text" name="address" class="input" placeholder="Ex: 12 rue de la Paix, 44000 Nantes" />
+          </div>
+          
+          <hr class="my-4" style="border-color: rgba(255,255,255,0.1)">
+          
+          <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-bullseye"></i> Besoin / Projet</h4>
+          
+          <div class="input-group">
+            <label class="input-label">Type de projet *</label>
+            <select name="type" class="input" required>
+              <option value="">Choisir...</option>
+              <option value="Portail coulissant">Portail coulissant</option>
+              <option value="Portail battant">Portail battant</option>
+              <option value="Portillon">Portillon</option>
+              <option value="Clôture">Clôture</option>
+              <option value="Motorisation">Motorisation</option>
+              <option value="Réparation">Réparation</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Montant estimé (€)</label>
+            <input type="number" name="estimated_amount" class="input" placeholder="Ex: 5000" step="0.01" />
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Notes / Contexte</label>
+            <textarea name="notes" class="input" rows="4" placeholder="Décrivez le besoin, la référence, le contexte..."></textarea>
+          </div>
+        </form>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button class="btn btn-success" onclick="submitNewLeadForm()">
+            <i class="fas fa-check"></i> Créer le lead
+          </button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+async function submitNewLeadForm() {
+  const form = document.getElementById('newLeadForm');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData);
+  
+  try {
+    // 1. Créer le client d'abord
+    const clientData = {
+      civility: data.civility,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      name: `${data.first_name} ${data.last_name}`.trim(),
+      phone: data.phone,
+      email: data.email || null,
+      company: data.company || null,
+      address: data.address || null
+    };
+    
+    console.log('📝 Création client:', clientData);
+    const clientResult = await api.createClient(clientData);
+    const clientId = clientResult.client?.id || clientResult.id;
+    console.log('✅ Client créé, ID:', clientId);
+    
+    // 2. Créer le lead associé
+    const dealData = {
+      client_id: parseInt(clientId, 10),
+      title: data.type || 'Nouveau projet',
+      amount: parseFloat(data.estimated_amount) || 0,
+      stage: 'lead',
+      notes: data.notes || ''
+    };
+    
+    console.log('📝 Création lead:', dealData);
+    const dealResult = await api.createDeal(dealData);
+    console.log('✅ Lead créé:', dealResult);
+    
+    // 3. Recharger les données
+    state.clients = await api.getClients();
+    state.deals = await api.getDeals();
+    
+    alert('✅ Lead créé avec succès !');
+    closeModal();
+    
+    // 4. Naviguer vers le pipeline
+    navigate('pipeline');
+    
+  } catch (error) {
+    console.error('❌ Erreur création lead:', error);
     alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
   }
 }
