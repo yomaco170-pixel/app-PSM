@@ -1912,9 +1912,6 @@ function renderLayout(content) {
           </div>
         </div>
         <nav>
-          <button class="${state.currentView === 'dashboard' ? 'active' : ''}" onclick="navigate('dashboard')">
-            <i class="fas fa-home"></i> Accueil
-          </button>
           <button class="${state.currentView === 'pipeline' ? 'active' : ''}" onclick="navigate('pipeline')">
             <i class="fas fa-columns"></i> Pipeline
           </button>
@@ -1924,20 +1921,8 @@ function renderLayout(content) {
           <button class="${state.currentView === 'quotes' ? 'active' : ''}" onclick="navigate('quotes')">
             <i class="fas fa-file-invoice"></i> Devis
           </button>
-          <button class="${state.currentView === 'tasks' ? 'active' : ''}" onclick="navigate('tasks')">
-            <i class="fas fa-tasks"></i> Tâches
-          </button>
           <button class="${state.currentView === 'calendar' ? 'active' : ''}" onclick="navigate('calendar')">
             <i class="fas fa-calendar-alt"></i> Calendrier
-          </button>
-          <button class="${state.currentView === 'priority' ? 'active' : ''}" onclick="navigate('priority')">
-            <i class="fas fa-fire"></i> Priorité
-          </button>
-          <button class="${state.currentView === 'reports' ? 'active' : ''}" onclick="navigate('reports')">
-            <i class="fas fa-chart-bar"></i> Rapports
-          </button>
-          <button class="${state.currentView === 'trash' ? 'active' : ''}" onclick="console.log('🗑️ Clic sur Corbeille!'); navigate('trash')">
-            <i class="fas fa-trash"></i> Corbeille
           </button>
           <button class="${state.currentView === 'settings' ? 'active' : ''}" onclick="navigate('settings')">
             <i class="fas fa-cog"></i> Paramètres
@@ -1971,10 +1956,6 @@ function renderLayout(content) {
         ${content}
       </main>
       <div class="mobile-tabs">
-        <button class="${state.currentView === 'dashboard' ? 'active' : ''}" onclick="navigate('dashboard')">
-          <i class="fas fa-home"></i>
-          <span>Accueil</span>
-        </button>
         <button class="${state.currentView === 'pipeline' ? 'active' : ''}" onclick="navigate('pipeline')">
           <i class="fas fa-columns"></i>
           <span>Pipeline</span>
@@ -1986,6 +1967,10 @@ function renderLayout(content) {
         <button class="${state.currentView === 'quotes' ? 'active' : ''}" onclick="navigate('quotes')">
           <i class="fas fa-file-invoice"></i>
           <span>Devis</span>
+        </button>
+        <button class="${state.currentView === 'calendar' ? 'active' : ''}" onclick="navigate('calendar')">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Calendrier</span>
         </button>
         <button onclick="navigate('settings')">
           <i class="fas fa-cog"></i>
@@ -2244,11 +2229,11 @@ async function renderPipeline() {
       <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold text-white"><i class="fas fa-columns"></i> Pipeline</h2>
         <div class="flex gap-2">
-          <button class="btn btn-primary" onclick="openNewLeadModal()" title="Créer un nouveau lead">
-            <i class="fas fa-plus"></i> Nouveau Lead
+          <button class="btn btn-primary" onclick="openImportEmailModal()" title="Créer un lead depuis un email">
+            <i class="fas fa-envelope"></i> 📧 Nouveau Lead depuis Email
           </button>
           <button class="btn btn-secondary" onclick="api.exportDeals()" title="Exporter en CSV">
-            <i class="fas fa-download"></i> Exporter
+            <i class="fas fa-download"></i>
           </button>
         </div>
       </div>
@@ -3736,6 +3721,29 @@ function renderSettings() {
       <h2 class="text-2xl font-bold text-white"><i class="fas fa-cog"></i> Paramètres</h2>
     </div>
     
+    <!-- Navigation rapide vers pages avancées -->
+    <div class="card mb-4">
+      <h3 class="font-bold text-white mb-3"><i class="fas fa-th"></i> Accès rapide</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">
+        <button class="btn btn-secondary" onclick="navigate('tasks')" style="padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-tasks" style="font-size: 1.5rem;"></i>
+          <span>Tâches</span>
+        </button>
+        <button class="btn btn-secondary" onclick="navigate('priority')" style="padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-fire" style="font-size: 1.5rem;"></i>
+          <span>Priorité</span>
+        </button>
+        <button class="btn btn-secondary" onclick="navigate('reports')" style="padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-chart-bar" style="font-size: 1.5rem;"></i>
+          <span>Rapports</span>
+        </button>
+        <button class="btn btn-secondary" onclick="navigate('trash')" style="padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-trash" style="font-size: 1.5rem;"></i>
+          <span>Corbeille</span>
+        </button>
+      </div>
+    </div>
+    
     <div class="card mb-4">
       <h3 class="font-bold text-white mb-3"><i class="fas fa-building"></i> Personnalisation</h3>
       <div class="input-group">
@@ -4264,23 +4272,28 @@ async function viewDealModal(dealId) {
             <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
           </div>
           <div class="modal-body">
-            <!-- Actions rapides -->
-            <div class="mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem;">
-              <button class="btn btn-warning btn-sm" onclick="openEditLeadModal(${deal.id})">
-                <i class="fas fa-edit"></i> Modifier le lead
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="openScheduleRdvModal(${deal.id})" title="Planifier ou modifier le RDV">
-                <i class="fas fa-calendar-plus"></i> ${deal.rdv_date ? 'Modifier RDV' : 'Planifier RDV'}
-              </button>
-              <button class="btn btn-secondary btn-sm" onclick="openChangeStatusModal(${deal.id}, '${dealStatus}')" title="Faire avancer dans le pipeline">
-                <i class="fas fa-arrow-right"></i> Changer statut
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="openCreateQuoteModal(${deal.id})" title="Créer un devis">
-                <i class="fas fa-file-invoice"></i> Créer devis
-              </button>
-              <button class="btn btn-sm" onclick="confirmArchiveDeal(${deal.id})" title="Archiver ce dossier" style="background: #ef4444; color: white;">
-                <i class="fas fa-archive"></i> Archiver
-              </button>
+            <!-- Actions principales -->
+            <div class="mb-4">
+              <!-- Bouton principal selon statut -->
+              ${getPrimaryActionButton(deal.id, dealStatus, deal.rdv_date)}
+              
+              <!-- Menu actions secondaires -->
+              <div class="mt-2" style="position: relative; display: inline-block;">
+                <button class="btn btn-secondary btn-sm" onclick="toggleDealActionsMenu(${deal.id})" id="dealActionsBtn_${deal.id}">
+                  <i class="fas fa-ellipsis-v"></i> Autres actions
+                </button>
+                <div id="dealActionsMenu_${deal.id}" style="display: none; position: absolute; top: 100%; left: 0; background: #1f2937; border: 1px solid #374151; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); min-width: 200px; margin-top: 0.25rem; z-index: 1000;">
+                  <button class="btn btn-sm" onclick="openEditLeadModal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151;">
+                    <i class="fas fa-edit"></i> Modifier le lead
+                  </button>
+                  <button class="btn btn-sm" onclick="openChangeStatusModal(${deal.id}, '${dealStatus}'); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151;">
+                    <i class="fas fa-arrow-right"></i> Changer statut
+                  </button>
+                  <button class="btn btn-sm" onclick="confirmArchiveDeal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; color: #ef4444;">
+                    <i class="fas fa-archive"></i> Archiver
+                  </button>
+                </div>
+              </div>
             </div>
             
             <div class="mb-4">
@@ -4395,6 +4408,111 @@ async function viewDealModal(dealId) {
 }
 
 // CONFIRM ARCHIVE DEAL (double confirmation)
+
+// Helper: Toggle menu actions secondaires
+function toggleDealActionsMenu(dealId) {
+  const menu = document.getElementById(`dealActionsMenu_${dealId}`);
+  if (!menu) return;
+  
+  if (menu.style.display === 'none') {
+    menu.style.display = 'block';
+    // Fermer le menu si on clique ailleurs
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu(e) {
+        if (!e.target.closest(`#dealActionsBtn_${dealId}`) && !e.target.closest(`#dealActionsMenu_${dealId}`)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', closeMenu);
+        }
+      });
+    }, 100);
+  } else {
+    menu.style.display = 'none';
+  }
+}
+
+// Helper: Bouton principal selon statut
+function getPrimaryActionButton(dealId, status, rdvDate) {
+  // lead → Planifier RDV (vert)
+  if (status === 'lead') {
+    return `
+      <button class="btn btn-primary" onclick="openScheduleRdvModal(${dealId})" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #10b981;">
+        <i class="fas fa-calendar-plus"></i> 📅 Planifier le RDV
+      </button>
+    `;
+  }
+  
+  // rdv_planifie → Créer le devis (vert)
+  if (status === 'rdv_planifie') {
+    return `
+      <button class="btn btn-primary" onclick="openCreateQuoteModal(${dealId})" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #10b981;">
+        <i class="fas fa-file-invoice"></i> 📝 Créer le devis
+      </button>
+    `;
+  }
+  
+  // devis_a_faire → Créer le devis (orange)
+  if (status === 'devis_a_faire') {
+    return `
+      <button class="btn btn-primary" onclick="openCreateQuoteModal(${dealId})" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #f59e0b;">
+        <i class="fas fa-file-invoice"></i> 📝 Créer le devis
+      </button>
+    `;
+  }
+  
+  // devis_envoye → Marquer comme signé (vert)
+  if (status === 'devis_envoye') {
+    return `
+      <button class="btn btn-primary" onclick="markAsSigned(${dealId})" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #10b981;">
+        <i class="fas fa-check-circle"></i> ✅ Marquer comme signé
+      </button>
+    `;
+  }
+  
+  // relance → Créer devis ou contacter (bleu)
+  if (status === 'relance') {
+    return `
+      <button class="btn btn-primary" onclick="openCreateQuoteModal(${dealId})" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #3b82f6;">
+        <i class="fas fa-phone"></i> 📞 Relancer le client
+      </button>
+    `;
+  }
+  
+  // signe → Voir le devis (vert foncé)
+  if (status === 'signe') {
+    return `
+      <button class="btn btn-primary" onclick="openCreateQuoteModal(${dealId})" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #22c55e;">
+        <i class="fas fa-check-double"></i> ✅ Devis signé - Voir le dossier
+      </button>
+    `;
+  }
+  
+  // Défaut : actions principales combinées
+  return `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+      <button class="btn btn-primary" onclick="openScheduleRdvModal(${dealId})" style="padding: 1rem;">
+        <i class="fas fa-calendar-plus"></i> ${rdvDate ? 'Modifier RDV' : 'Planifier RDV'}
+      </button>
+      <button class="btn btn-primary" onclick="openCreateQuoteModal(${dealId})" style="padding: 1rem;">
+        <i class="fas fa-file-invoice"></i> Créer devis
+      </button>
+    </div>
+  `;
+}
+
+// Helper: Marquer comme signé
+async function markAsSigned(dealId) {
+  if (!confirm('Marquer ce devis comme signé ?')) return;
+  
+  try {
+    await api.updateDeal(dealId, { stage: 'signe', status: 'signe' });
+    showToast('✅ Devis marqué comme signé !', 'success');
+    closeModal();
+    navigate('pipeline');
+  } catch (error) {
+    console.error('Erreur:', error);
+    showToast('❌ Erreur lors de la mise à jour', 'danger');
+  }
+}
 
 async function loadDealQuotes(dealId) {
   try {
@@ -9245,6 +9363,11 @@ function openImportEmailModal() {
           <button class="btn btn-primary" onclick="processImportEmail()">
             <i class="fas fa-magic"></i> Extraire les infos
           </button>
+        </div>
+        <div class="text-center mt-3">
+          <a href="javascript:void(0)" onclick="closeModal(); setTimeout(() => openNewLeadModal(), 300)" class="text-sm text-gray-400 hover:text-blue-400">
+            ou créer un lead manuellement
+          </a>
         </div>
       </div>
     </div>
