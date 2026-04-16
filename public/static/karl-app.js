@@ -8629,6 +8629,9 @@ async function openEditClientModal(clientId) {
             </div>
           </form>
           <div class="modal-footer">
+            <button class="btn btn-success" onclick="closeModal(); openCreateLeadFromClient(${clientId})">
+              <i class="fas fa-plus-circle"></i> Créer un lead
+            </button>
             <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
             <button class="btn btn-primary" onclick="submitEditClient(${clientId})">
               <i class="fas fa-save"></i> Enregistrer
@@ -9078,6 +9081,94 @@ async function submitEditClient(clientId) {
     if (state.currentDeal && state.currentDeal.client_id === clientId) {
       viewDealModal(state.currentDeal.id);
     }
+  } catch (error) {
+    alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
+  }
+}
+
+// Créer un lead depuis un client existant
+async function openCreateLeadFromClient(clientId) {
+  try {
+    const client = await api.getClient(clientId);
+    
+    showModal(`
+      <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+          <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Créer un lead pour ${client.name || 'ce client'}</h3>
+            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <form id="createLeadFromClientForm" class="modal-body">
+            <input type="hidden" name="client_id" value="${clientId}" />
+            
+            <div class="bg-gray-700 p-3 rounded mb-4">
+              <p class="text-sm text-gray-300 mb-1"><i class="fas fa-user"></i> <strong>${client.name || 'Sans nom'}</strong></p>
+              ${client.company ? `<p class="text-sm text-gray-400 mb-1"><i class="fas fa-building"></i> ${client.company}</p>` : ''}
+              ${client.phone ? `<p class="text-sm text-gray-400 mb-1"><i class="fas fa-phone"></i> ${client.phone}</p>` : ''}
+              ${client.email ? `<p class="text-sm text-gray-400"><i class="fas fa-envelope"></i> ${client.email}</p>` : ''}
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Type de projet *</label>
+              <select name="type" class="input" required>
+                <option value="">Choisir...</option>
+                <option value="Portail coulissant">Portail coulissant</option>
+                <option value="Portail battant">Portail battant</option>
+                <option value="Portillon">Portillon</option>
+                <option value="Clôture">Clôture</option>
+                <option value="Motorisation">Motorisation</option>
+                <option value="Réparation">Réparation</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Montant estimé (€)</label>
+              <input type="number" name="estimated_amount" class="input" placeholder="Ex: 5000" step="0.01" />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Notes / Contexte</label>
+              <textarea name="notes" class="input" rows="4" placeholder="Décrivez le besoin du client, le contexte de la demande..."></textarea>
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Statut initial</label>
+              <select name="status" class="input">
+                <option value="prospect">🎯 Prospect</option>
+                <option value="contact_pris">📞 Contact pris</option>
+                <option value="rdv_planifie">📅 RDV planifié</option>
+              </select>
+            </div>
+          </form>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <button class="btn btn-success" onclick="submitCreateLeadFromClient()">
+              <i class="fas fa-check"></i> Créer le lead
+            </button>
+          </div>
+        </div>
+      </div>
+    `);
+  } catch (error) {
+    alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
+  }
+}
+
+async function submitCreateLeadFromClient() {
+  const form = document.getElementById('createLeadFromClientForm');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData);
+  
+  try {
+    // Créer le deal/lead
+    const newDeal = await api.createDeal(data);
+    
+    alert('✅ Lead créé avec succès !');
+    closeModal();
+    
+    // Naviguer vers le pipeline
+    navigate('pipeline');
   } catch (error) {
     alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
   }
