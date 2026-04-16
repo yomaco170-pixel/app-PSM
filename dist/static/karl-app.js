@@ -6539,6 +6539,32 @@ async function renderMails() {
     
     let emails = data.emails || [];
     
+    // ===== ÉTAPE 1 : Charger le corps COMPLET de chaque email =====
+    console.log('📥 Chargement du contenu complet des emails...');
+    const emailsContainer0 = document.getElementById('emails-container');
+    if (emailsContainer0) {
+      emailsContainer0.innerHTML = `
+        <div class="card" style="text-align: center; padding: 2rem;">
+          <i class="fas fa-download fa-spin text-blue-500" style="font-size: 2rem;"></i>
+          <p class="text-gray-400 mt-3">Chargement du contenu des emails...</p>
+        </div>`;
+    }
+    
+    await Promise.all(emails.map(async (email) => {
+      try {
+        const res = await fetch(`/api/emails/${email.id}?access_token=${encodeURIComponent(gmailToken)}`);
+        if (res.ok) {
+          const d = await res.json();
+          email._body = d.body || d.snippet || email.snippet || '';
+          email._bodyLoaded = true;
+        }
+      } catch (e) {
+        email._body = email.snippet || '';
+      }
+    }));
+    
+    console.log('✅ Corps complets chargés pour', emails.length, 'emails');
+    
     // Classifier les emails avec l'IA
     console.log('🤖 Classification IA des emails...');
     const emailsContainer = document.getElementById('emails-container');
@@ -6553,10 +6579,15 @@ async function renderMails() {
     }
     
     try {
+      // Préparer les emails avec le corps complet pour la classification
+      const emailsForClassify = emails.map(e => ({
+        ...e,
+        snippet: (e._body || e.snippet || '').substring(0, 800)
+      }));
       const classifyResponse = await fetch('/api/emails/classify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails })
+        body: JSON.stringify({ emails: emailsForClassify })
       });
       
       if (classifyResponse.ok) {
@@ -6737,7 +6768,7 @@ async function renderMails() {
                           <strong>Contenu :</strong>
                         </div>
                         <div id="email-content-${index}" class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
-                          ${email.snippet || 'Cliquez pour charger le contenu...'}
+                          ${email._body || email.snippet || 'Contenu non disponible'}
                         </div>
                         
                         <!-- Actions -->
