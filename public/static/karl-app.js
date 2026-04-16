@@ -6721,7 +6721,7 @@ async function renderMails() {
           <div class="card">
             <div class="emails-list">
               ${filteredEmails.map((email, index) => `
-                <div class="email-item" style="padding: 1rem; border-bottom: 1px solid #374151; cursor: pointer;" onclick="toggleEmailDetails(${index})">
+                <div class="email-item" style="padding: 1rem; border-bottom: 1px solid #374151; cursor: pointer;" onclick="toggleEmailDetails('${email.id}')">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-1">
@@ -6741,7 +6741,7 @@ async function renderMails() {
                       <div class="text-xs text-gray-400">${email.snippet || ''}</div>
                       
                       <!-- Détails de l'email (masqués par défaut) -->
-                      <div id="email-details-${index}" style="display: none; margin-top: 1rem; padding: 1rem; background: #1f2937; border-radius: 0.5rem;">
+                      <div id="email-details-${email.id}" style="display: none; margin-top: 1rem; padding: 1rem; background: #1f2937; border-radius: 0.5rem;">
                         <div class="text-sm text-gray-300 mb-2">
                           <strong>De :</strong> ${email.from || 'Inconnu'}
                         </div>
@@ -6767,14 +6767,14 @@ async function renderMails() {
                         <div class="text-sm text-gray-300 mb-3">
                           <strong>Contenu :</strong>
                         </div>
-                        <div id="email-content-${index}" class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
-                          ${email._body || email.snippet || 'Contenu non disponible'}
+                        <div id="email-content-${email.id}" class="text-sm text-gray-400" style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
+                          <i class="fas fa-spinner fa-spin"></i> Chargement...
                         </div>
                         
                         <!-- Actions -->
                         <div class="flex gap-2 mt-4">
                           ${email.category === 'prospect' ? `
-                          <button class="btn btn-success btn-sm" onclick="createLeadFromEmail('${email.id}', ${index})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                          <button class="btn btn-success btn-sm" onclick="createLeadFromEmail('${email.id}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">    
                             <i class="fas fa-plus-circle"></i> Créer Lead
                           </button>
                           ` : ''}
@@ -6882,41 +6882,37 @@ document.addEventListener('click', function(event) {
 });
 
 // Fonction pour développer/réduire un email
-async function toggleEmailDetails(index) {
-  const detailsDiv = document.getElementById(`email-details-${index}`);
-  const arrowIcon = document.getElementById(`email-arrow-${index}`);
-  const contentDiv = document.getElementById(`email-content-${index}`);
+async function toggleEmailDetails(emailId) {
+  const detailsDiv = document.getElementById(`email-details-${emailId}`);
+  const contentDiv = document.getElementById(`email-content-${emailId}`);
 
   if (!detailsDiv) return;
 
   if (detailsDiv.style.display === 'none') {
     detailsDiv.style.display = 'block';
-    if (arrowIcon) arrowIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
 
-    // Charger le contenu complet si pas encore fait
-    const email = window.currentEmails[index];
-    if (email && !email._bodyLoaded && contentDiv) {
+    // Toujours charger le corps complet depuis l'API
+    const email = window.currentEmails.find(e => e.id === emailId);
+    if (email && contentDiv) {
       contentDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
       try {
         const gmailToken = localStorage.getItem('gmail_access_token');
-        if (gmailToken && email.id) {
-          const res = await fetch(`/api/emails/${email.id}?access_token=${encodeURIComponent(gmailToken)}`);
-          if (res.ok) {
-            const data = await res.json();
-            const body = data.body || data.snippet || email.snippet || '';
-            email._body = body;
-            email._bodyLoaded = true;
-            contentDiv.style.whiteSpace = 'pre-wrap';
-            contentDiv.textContent = body;
-          }
+        const res = await fetch(`/api/emails/${emailId}?access_token=${encodeURIComponent(gmailToken)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const body = data.body || data.snippet || email.snippet || '';
+          email._body = body;
+          contentDiv.style.whiteSpace = 'pre-wrap';
+          contentDiv.textContent = body;
+        } else {
+          contentDiv.textContent = email.snippet || 'Erreur chargement';
         }
       } catch (e) {
-        contentDiv.textContent = email.snippet || 'Contenu non disponible';
+        contentDiv.textContent = email.snippet || 'Erreur chargement';
       }
     }
   } else {
     detailsDiv.style.display = 'none';
-    if (arrowIcon) arrowIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
   }
 }
 
@@ -7173,8 +7169,8 @@ function replyToThreadFromModal(threadId, emailId) {
 }
 
 // Fonction pour créer un Lead à partir d'un email (VERSION SIMPLE SANS IA)
-async function createLeadFromEmail(emailId, index = -1) {
-  const email = window.currentEmails.find((item) => item.id === emailId) || window.currentEmails[index];
+async function createLeadFromEmail(emailId) {
+  const email = window.currentEmails.find((item) => item.id === emailId);
   
   if (!email) {
     alert('Email introuvable');
@@ -7194,22 +7190,20 @@ async function createLeadFromEmail(emailId, index = -1) {
       emailId: email.id 
     });
     
-    // ÉTAPE 1 : Récupérer le contenu COMPLET de l'email
+    // ÉTAPE 1 : Récupérer le contenu COMPLET depuis l'API Gmail
     const gmailToken = localStorage.getItem('gmail_access_token');
-    // Si déjà chargé via toggleEmailDetails, on réutilise
-    let fullEmailBody = email._body || email.snippet || email.body || '';
-    
-    if (gmailToken && email.id) {
-      try {
-        const fullEmailResponse = await fetch(`/api/emails/${email.id}?access_token=${encodeURIComponent(gmailToken)}`);
-        if (fullEmailResponse.ok) {
-          const fullEmailData = await fullEmailResponse.json();
-          fullEmailBody = fullEmailData.body || fullEmailData.snippet || fullEmailBody;
-          console.log('✅ Contenu complet récupéré:', fullEmailBody.substring(0, 200) + '...');
-        }
-      } catch (error) {
-        console.warn('⚠️ Impossible de récupérer le contenu complet:', error);
+    let fullEmailBody = '';
+
+    try {
+      const res = await fetch(`/api/emails/${email.id}?access_token=${encodeURIComponent(gmailToken)}`);
+      if (res.ok) {
+        const d = await res.json();
+        fullEmailBody = d.body || d.snippet || email.snippet || '';
+        console.log('✅ Corps email récupéré (' + fullEmailBody.length + ' chars):', fullEmailBody.substring(0, 300));
       }
+    } catch (err) {
+      console.warn('⚠️ Erreur récupération corps email:', err);
+      fullEmailBody = email._body || email.snippet || '';
     }
     
     // ÉTAPE 2 : Parser le contenu avec la fonction dédiée
