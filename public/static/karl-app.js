@@ -9208,51 +9208,151 @@ function parseEmailContent(emailText) {
     .replace(/Ã®/g, 'î')
     .replace(/Ã¢/g, 'â');
   
-  // Extraire l'email (éviter les faux emails comme "joint@...")
+  // Extraire l'email (éviter les faux emails système)
   const emailMatches = cleanText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
   if (emailMatches) {
-    // Prendre le premier email qui n'est pas un email système
-    result.email = emailMatches.find(e => 
-      !e.includes('mailto:') && 
-      !e.startsWith('joint@') && 
-      !e.startsWith('contact@psm')
-    ) || emailMatches[0];
+    // Filtrer les emails système (Solocal, PSM, mailer, etc.)
+    const systemEmails = [
+      'multiscreensite.com',
+      'psm-portails.fr',
+      'solocal.com',
+      'pagesjaunes.fr'
+    ];
+    
+    // Prendre le premier email qui n'est PAS un email système
+    result.email = emailMatches.find(e => {
+      const domain = e.split('@')[1];
+      return !e.includes('mailto:') && 
+             !e.startsWith('joint@') && 
+             !e.startsWith('contact@') && 
+             !e.startsWith('mailer@') &&
+             !e.startsWith('noreply@') &&
+             !systemEmails.some(sys => domain && domain.includes(sys));
+    }) || emailMatches[0];
   }
   
-  // Extraire le téléphone (formats français: 06, 07, 02, etc.)
-  const phoneMatch = cleanText.match(/(?:tel\s*:?\s*)?(?:0|\+33\s?)[1-9](?:[\s.-]?\d{2}){4}/i);
-  if (phoneMatch) {
-    result.phone = phoneMatch[0]
-      .replace(/tel\s*:?\s*/i, '')
-      .replace(/[\s.-]/g, '')
-      .replace(/^\+33/, '0');
-  }
+  // PRIORITÉ 1 : Détecter les champs de formulaire (Solocal, formulaires site web)
+  // Patterns multiples pour tous les formats de formulaires
   
-  // Extraire le nom complet (patterns améliorés)
-  const namePatterns = [
-    // Pattern 1: "De : Prénom NOM [mailto:...]"
-    /(?:De\s*:\s*|From\s*:\s*)([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][A-ZÀ-Üa-zà-üé]+)(?=\s*\[mailto:)/i,
-    // Pattern 2: "Cordialement\nPrénom Nom"
-    /(?:Cordialement|Bien cordialement|Cordialement vôtre)[,\s]+([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][a-zà-üé]+)/i,
-    // Pattern 3: "Prénom Nom, tel :"
-    /([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][a-zà-üé]+)(?=\s*[,.]?\s*tel\s*:)/i,
-    // Pattern 4: Ligne avec prénom + NOM en majuscules
-    /([A-ZÀ-Ü][a-zà-üé]{2,})\s+([A-ZÀ-Ü]{2,})/
+  // ===== EXTRACTION NOM =====
+  const formNamePatterns = [
+    // Pattern Solocal/PagesJaunes: "Nom :\nMARQUER"
+    /Nom\s*[:：]?\s*\n\s*([A-ZÀ-Ü][A-ZÀ-Üa-zà-üé\s-]+)(?=\s*\n)/i,
+    // Pattern standard: "Nom* : VALUE"
+    /(?:Nom|Name)\*?\s*[:：]\s*([^\n\r]+)/i,
+    // Pattern "Prénom NOM" sur une ligne
+    /(?:Nom|Name)\s*[:：]?\s*\n?\s*([A-ZÀ-Ü][a-zà-üé]+(?:\s+[A-ZÀ-Ü][A-ZÀ-Üa-zà-üé]+)?)/i
   ];
   
-  for (const pattern of namePatterns) {
+  for (const pattern of formNamePatterns) {
     const match = cleanText.match(pattern);
-    if (match && match[1] && match[2]) {
-      // Exclure les mots-clés communs qui ne sont pas des noms
-      const excludeWords = ['envoyé', 'bonjour', 'cordialement', 'merci', 'madame', 'monsieur'];
-      const firstName = match[1].trim();
-      const lastName = match[2].trim();
-      
-      if (!excludeWords.includes(firstName.toLowerCase()) && 
-          !excludeWords.includes(lastName.toLowerCase())) {
-        result.first_name = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
-        result.last_name = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+    if (match && match[1]) {
+      const fullName = match[1].trim();
+      // Exclure les valeurs par défaut ou système
+      if (!fullName.match(/^(Contact|Prospect|Client|PSM|Solocal)/i)) {
+        // Si c'est un nom composé (avec espace), séparer prénom/nom
+        const nameParts = fullName.split(/\s+/);
+        if (nameParts.length >= 2) {
+          result.first_name = nameParts.slice(0, -1).join(' ');
+          result.last_name = nameParts[nameParts.length - 1];
+        } else {
+          result.last_name = fullName;
+        }
+        console.log('✅ Nom extrait du formulaire:', fullName);
         break;
+      }
+    }
+  }
+  
+  // ===== EXTRACTION EMAIL =====
+  const formEmailPatterns = [
+    // Pattern Solocal: "E-mail :\nchihuahuadm@yahoo.fr"
+    /E-?mail\s*[:：]?\s*\n\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+    // Pattern standard: "E-mail* : VALUE"
+    /(?:E-?mail|Email)\*?\s*[:：]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i
+  ];
+  
+  for (const pattern of formEmailPatterns) {
+    const match = cleanText.match(pattern);
+    if (match && match[1]) {
+      const email = match[1].trim();
+      // Ignorer les emails système
+      if (!email.includes('multiscreensite.com') && 
+          !email.includes('psm-portails.fr') && 
+          !email.includes('solocal.com') &&
+          !email.includes('pagesjaunes.fr') &&
+          !email.startsWith('mailer@') &&
+          !email.startsWith('contact@') &&
+          !email.startsWith('noreply@')) {
+        result.email = email;
+        console.log('✅ Email extrait du formulaire:', email);
+        break;
+      }
+    }
+  }
+  
+  // ===== EXTRACTION TÉLÉPHONE =====
+  const formPhonePatterns = [
+    // Pattern Solocal: "Téléphone :\n0630859280"
+    /Téléphone\s*[:：]?\s*\n\s*([0-9\s\.\-\+]+)/i,
+    // Pattern standard: "Téléphone* : VALUE"
+    /(?:Téléphone|Telephone|Tel|Phone)\*?\s*[:：]\s*([0-9\s\.\-\+]+)/i
+  ];
+  
+  for (const pattern of formPhonePatterns) {
+    const match = cleanText.match(pattern);
+    if (match && match[1]) {
+      const phone = match[1].trim()
+        .replace(/[\s.-]/g, '')
+        .replace(/^\+33/, '0');
+      if (phone.match(/^0[1-9]\d{8}$/)) {
+        result.phone = phone;
+        console.log('✅ Téléphone extrait du formulaire:', phone);
+        break;
+      }
+    }
+  }
+  
+  // SI pas de résultat des formulaires, utiliser les méthodes classiques
+  
+  // Extraire le téléphone (formats français: 06, 07, 02, etc.)
+  if (!result.phone) {
+    const phoneMatch = cleanText.match(/(?:tel\s*:?\s*)?(?:0|\+33\s?)[1-9](?:[\s.-]?\d{2}){4}/i);
+    if (phoneMatch) {
+      result.phone = phoneMatch[0]
+        .replace(/tel\s*:?\s*/i, '')
+        .replace(/[\s.-]/g, '')
+        .replace(/^\+33/, '0');
+    }
+  }
+  
+  // Extraire le nom complet (patterns améliorés) - SEULEMENT si pas déjà extrait du formulaire
+  if (!result.first_name && !result.last_name) {
+    const namePatterns = [
+      // Pattern 1: "De : Prénom NOM [mailto:...]"
+      /(?:De\s*:\s*|From\s*:\s*)([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][A-ZÀ-Üa-zà-üé]+)(?=\s*\[mailto:)/i,
+      // Pattern 2: "Cordialement\nPrénom Nom"
+      /(?:Cordialement|Bien cordialement|Cordialement vôtre)[,\s]+([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][a-zà-üé]+)/i,
+      // Pattern 3: "Prénom Nom, tel :"
+      /([A-ZÀ-Ü][a-zà-üé]+)\s+([A-ZÀ-Ü][a-zà-üé]+)(?=\s*[,.]?\s*tel\s*:)/i,
+      // Pattern 4: Ligne avec prénom + NOM en majuscules
+      /([A-ZÀ-Ü][a-zà-üé]{2,})\s+([A-ZÀ-Ü]{2,})/
+    ];
+    
+    for (const pattern of namePatterns) {
+      const match = cleanText.match(pattern);
+      if (match && match[1] && match[2]) {
+        // Exclure les mots-clés communs qui ne sont pas des noms
+        const excludeWords = ['envoyé', 'bonjour', 'cordialement', 'merci', 'madame', 'monsieur', 'contact', 'solocal'];
+        const firstName = match[1].trim();
+        const lastName = match[2].trim();
+        
+        if (!excludeWords.includes(firstName.toLowerCase()) && 
+            !excludeWords.includes(lastName.toLowerCase())) {
+          result.first_name = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+          result.last_name = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+          break;
+        }
       }
     }
   }
@@ -9301,6 +9401,42 @@ function parseEmailContent(emailText) {
     if (type.keywords.some(kw => lowerText.includes(kw))) {
       result.type = type.value;
       break;
+    }
+  }
+  
+  // Extraire le message/description du projet
+  // Pattern : "Message :\n[contenu]" ou ligne après le téléphone
+  const messagePatterns = [
+    // Pattern Solocal: "Message :\nContenu du message..."
+    /Message\s*[:：]?\s*\n([\s\S]+?)(?=\n\n|\n[A-Z][a-z]+\s*[:：]|$)/i,
+    // Pattern générique: tout texte après les coordonnées
+    /(?:Téléphone|Phone|E-?mail)[\s\S]{0,100}\n+([^\n]{20,}[\s\S]*?)(?=\n\n|Cordialement|Bien cordialement|$)/i
+  ];
+  
+  for (const pattern of messagePatterns) {
+    const match = cleanText.match(pattern);
+    if (match && match[1]) {
+      let message = match[1].trim();
+      // Nettoyer le message : supprimer les lignes de signature/footer
+      message = message
+        .split('\n')
+        .filter(line => {
+          const lower = line.toLowerCase();
+          return !lower.includes('cordialement') &&
+                 !lower.includes('solocal') &&
+                 !lower.includes('pagesjaunes') &&
+                 !lower.includes('mentions légales') &&
+                 !lower.includes('se désabonner') &&
+                 line.length > 5;
+        })
+        .join('\n')
+        .trim();
+      
+      if (message.length > 10) {
+        result.notes = message;
+        console.log('✅ Message extrait:', message.substring(0, 50) + '...');
+        break;
+      }
     }
   }
   
