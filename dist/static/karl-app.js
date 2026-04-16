@@ -460,6 +460,9 @@ const api = {
   
   // Advanced Stats
   getAdvancedStats: (period = '30') => axios.get(`${API_URL}/api/stats/advanced?period=${period}`).then(r => r.data),
+  
+  // Email Parsing with AI
+  parseEmail: (emailText) => axios.post(`${API_URL}/api/parse-email`, { emailText }).then(r => r.data),
 };
 
 // ==================== RENDER FUNCTIONS ====================
@@ -9249,7 +9252,7 @@ function openImportEmailModal() {
 }
 
 // Traiter l'import email
-function processImportEmail() {
+async function processImportEmail() {
   const emailContent = document.getElementById('emailContent').value.trim();
   
   if (!emailContent) {
@@ -9257,18 +9260,54 @@ function processImportEmail() {
     return;
   }
   
-  // Parser l'email
-  const parsed = parseEmailContent(emailContent);
+  // Désactiver le bouton pendant le traitement
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Extraction en cours...';
   
-  console.log('📧 Email parsé:', parsed);
-  
-  // Fermer la modale d'import
-  closeModal();
-  
-  // Ouvrir le formulaire "Nouveau Lead" pré-rempli
-  setTimeout(() => {
-    openNewLeadModalWithData(parsed);
-  }, 300);
+  try {
+    // Appeler l'API backend pour parser avec GPT
+    console.log('📧 Envoi email à GPT pour parsing...');
+    const response = await api.parseEmail(emailContent);
+    
+    console.log('✅ Réponse GPT:', response);
+    
+    if (!response.success || !response.data) {
+      throw new Error('Parsing failed');
+    }
+    
+    const parsed = response.data;
+    
+    // Mapper les champs GPT vers notre format
+    const mappedData = {
+      civility: parsed.civility || '',
+      first_name: parsed.first_name || '',
+      last_name: parsed.last_name || '',
+      phone: parsed.phone || '',
+      email: parsed.email || '',
+      company: parsed.company || '',
+      address: parsed.address || '',
+      type: parsed.project_type || '',
+      notes: parsed.notes || emailContent
+    };
+    
+    console.log('📋 Données mappées:', mappedData);
+    
+    // Fermer la modale d'import
+    closeModal();
+    
+    // Ouvrir le formulaire "Nouveau Lead" pré-rempli
+    setTimeout(() => {
+      openNewLeadModalWithData(mappedData);
+    }, 300);
+    
+  } catch (error) {
+    console.error('❌ Erreur parsing email:', error);
+    alert('❌ Erreur lors de l\'extraction : ' + (error.message || 'Erreur inconnue'));
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 // Ouvrir le formulaire Nouveau Lead avec données pré-remplies

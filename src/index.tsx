@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 import { sha256 } from 'hono/utils/crypto'
+import OpenAI from 'openai'
 
 type Bindings = {
   DB: D1Database
@@ -2532,6 +2533,91 @@ app.post('/api/documents/note', async (c) => {
   } catch (error) {
     console.error('Note error:', error)
     return c.json({ error: 'Erreur note' }, 500)
+  }
+})
+
+// POST /api/parse-email - Parser un email avec GPT pour extraire les infos contact
+app.post('/api/parse-email', async (c) => {
+  try {
+    const { emailText } = await c.req.json()
+    
+    if (!emailText || emailText.trim().length < 10) {
+      return c.json({ error: 'Email text trop court' }, 400)
+    }
+    
+    // Initialiser le client OpenAI avec les credentials GenSpark
+    const openai = new OpenAI({
+      apiKey: c.env.OPENAI_API_KEY || 'dummy-key',
+      baseURL: c.env.OPENAI_BASE_URL || 'https://www.genspark.ai/api/llm_proxy/v1'
+    })
+    
+    // Prompt système pour l'extraction structurée
+    const systemPrompt = `Tu es un assistant spécialisé dans l'extraction d'informations de contact depuis des emails.
+
+Extrais les informations suivantes au format JSON strict :
+{
+  "civility": "M." | "Mme" | "M. et Mme" | "",
+  "first_name": "",
+  "last_name": "",
+  "phone": "",
+  "email": "",
+  "company": "",
+  "address": "",
+  "project_type": "Portail coulissant" | "Portail battant" | "Portillon" | "Clôture" | "Motorisation" | "Réparation" | "Autre" | "",
+  "notes": ""
+}
+
+Règles strictes :
+1. phone : format français uniquement (06, 07, 02, etc.), nettoyer les espaces
+2. email : ignorer les emails @psm-portails.fr, prendre uniquement l'email du client
+3. first_name / last_name : séparer correctement prénom et nom
+4. civility : détecter M., Mme, M. et Mme
+5. project_type : analyser le besoin et choisir le type approprié
+6. notes : résumer brièvement le besoin du client (max 100 mots)
+7. Si une info n'est pas trouvée, laisser champ vide ""
+
+Retourne UNIQUEMENT le JSON, sans texte avant ou après.`
+
+    // Appel à GPT-5
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Voici l'email à analyser :\n\n${emailText}` }
+      ],
+      temperature: 0.1, // Faible température pour plus de précision
+      max_tokens: 500
+    })
+    
+    const responseText = completion.choices[0]?.message?.content?.trim() || '{}'
+    console.log('🤖 GPT response:', responseText)
+    
+    // Parser la réponse JSON
+    let parsed
+    try {
+      // Nettoyer la réponse si elle contient des balises markdown
+      const cleanedResponse = responseText
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim()
+      
+      parsed = JSON.parse(cleanedResponse)
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError)
+      return c.json({ error: 'Erreur parsing GPT response', details: responseText }, 500)
+    }
+    
+    return c.json({
+      success: true,
+      data: parsed
+    })
+    
+  } catch (error) {
+    console.error('Parse email error:', error)
+    return c.json({ 
+      error: 'Erreur parsing email',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
   }
 })
 
