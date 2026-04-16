@@ -9200,13 +9200,46 @@ function parseEmailContent(emailText) {
   };
   
   // Nettoyer le texte des caractères encodés (Ã©, Ã, etc.)
-  const cleanText = emailText
+  let cleanText = emailText
     .replace(/Ã©/g, 'é')
     .replace(/Ã /g, 'à')
     .replace(/Ã¨/g, 'è')
     .replace(/Ã´/g, 'ô')
     .replace(/Ã®/g, 'î')
     .replace(/Ã¢/g, 'â');
+  
+  // ⚠️ IMPORTANT : Supprimer le header de l'email (métadonnées système)
+  // Les emails Solocal contiennent "Contact PSM" et "mailer@multiscreensite.com" dans le header
+  // Il faut chercher les vraies infos APRÈS la ligne "De la part de Votre site Solocal Envoyé"
+  const soLocalMarker = cleanText.indexOf('De la part de Votre site Solocal Envoyé');
+  if (soLocalMarker > 0) {
+    // Si on trouve le marqueur Solocal, ne garder que le texte APRÈS
+    cleanText = cleanText.substring(soLocalMarker);
+    console.log('🔍 Email Solocal détecté - Suppression du header système');
+  } else {
+    // Sinon, chercher d'autres marqueurs communs (Objet:, Subject:, etc.)
+    const lines = cleanText.split('\n');
+    let contentStartIndex = 0;
+    
+    // Chercher la ligne "Objet:" ou ligne vide (fin du header)
+    for (let i = 0; i < Math.min(lines.length, 50); i++) {
+      const line = lines[i].toLowerCase();
+      if (line.includes('objet :') || line.includes('subject:')) {
+        contentStartIndex = i + 1;
+        break;
+      }
+      // Si on trouve une ligne vide après plusieurs lignes, c'est la fin du header
+      if (i > 5 && line.trim() === '') {
+        contentStartIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (contentStartIndex > 0) {
+      cleanText = lines.slice(contentStartIndex).join('\n');
+      console.log('🔍 Header email supprimé - Début du contenu à la ligne', contentStartIndex);
+    }
+  }
   
   // Extraire l'email (éviter les faux emails système)
   const emailMatches = cleanText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
@@ -9248,8 +9281,10 @@ function parseEmailContent(emailText) {
     const match = cleanText.match(pattern);
     if (match && match[1]) {
       const fullName = match[1].trim();
-      // Exclure les valeurs par défaut ou système
-      if (!fullName.match(/^(Contact|Prospect|Client|PSM|Solocal)/i)) {
+      // Exclure les valeurs par défaut ou système (STRICTEMENT)
+      if (!fullName.match(/^(Contact|Prospect|Client|PSM|Solocal|Page|Jaune)/i) &&
+          fullName !== 'Contact PSM' &&
+          fullName.length > 2) {
         // Si c'est un nom composé (avec espace), séparer prénom/nom
         const nameParts = fullName.split(/\s+/);
         if (nameParts.length >= 2) {
@@ -9260,6 +9295,8 @@ function parseEmailContent(emailText) {
         }
         console.log('✅ Nom extrait du formulaire:', fullName);
         break;
+      } else {
+        console.log('⚠️ Nom système ignoré:', fullName);
       }
     }
   }
