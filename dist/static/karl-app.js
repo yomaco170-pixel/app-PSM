@@ -9091,6 +9091,242 @@ async function submitEditClient(clientId) {
   }
 }
 
+// Parser un email pour extraire les infos contact
+function parseEmailContent(emailText) {
+  const result = {
+    civility: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    company: '',
+    address: '',
+    type: '',
+    notes: emailText
+  };
+  
+  // Extraire l'email
+  const emailMatch = emailText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  if (emailMatch) {
+    result.email = emailMatch[0];
+  }
+  
+  // Extraire le téléphone (formats français)
+  const phoneMatch = emailText.match(/(?:0|\+33\s?)[1-9](?:[\s.-]?\d{2}){4}/);
+  if (phoneMatch) {
+    result.phone = phoneMatch[0].replace(/[\s.-]/g, '');
+  }
+  
+  // Extraire le nom (après "De :" ou avant l'email)
+  const namePatterns = [
+    /(?:De\s*:\s*|EnvoyÃ©\s*par\s*:?\s*)([A-ZÀ-Ü][a-zà-ü]+(?:\s+[A-ZÀ-Ü][a-zà-ü]+)+)/i,
+    /([A-ZÀ-Ü][a-zà-ü]+\s+[A-ZÀ-Ü][A-ZÀ-Üa-zà-ü]+)(?=\s*[,\n]|\s+tel\s*:)/i
+  ];
+  
+  for (const pattern of namePatterns) {
+    const match = emailText.match(pattern);
+    if (match) {
+      const fullName = match[1].trim();
+      const parts = fullName.split(/\s+/);
+      if (parts.length >= 2) {
+        result.first_name = parts[0];
+        result.last_name = parts.slice(1).join(' ');
+        
+        // Détecter la civilité
+        if (fullName.match(/\b(M\.|Monsieur|Mr)\b/i)) {
+          result.civility = 'M.';
+        } else if (fullName.match(/\b(Mme|Madame|Mlle|Mademoiselle)\b/i)) {
+          result.civility = 'Mme';
+        }
+      }
+      break;
+    }
+  }
+  
+  // Extraire l'adresse / ville
+  const addressMatch = emailText.match(/(?:à|a)\s+([A-ZÀ-Ü][a-zà-ü\s-]+(?:sur|sous|les|en)?[A-ZÀ-Ü][a-zà-ü\s-]*)/i);
+  if (addressMatch) {
+    result.address = addressMatch[1].trim();
+  }
+  
+  // Détecter le type de projet
+  const projectTypes = [
+    { keywords: ['portail coulissant', 'coulissant'], value: 'Portail coulissant' },
+    { keywords: ['portail battant', 'battant', 'battans'], value: 'Portail battant' },
+    { keywords: ['portillon'], value: 'Portillon' },
+    { keywords: ['clôture', 'cloture'], value: 'Clôture' },
+    { keywords: ['motorisation', 'moteur'], value: 'Motorisation' },
+    { keywords: ['réparation', 'reparation', 'réparer'], value: 'Réparation' }
+  ];
+  
+  const lowerText = emailText.toLowerCase();
+  for (const type of projectTypes) {
+    if (type.keywords.some(kw => lowerText.includes(kw))) {
+      result.type = type.value;
+      break;
+    }
+  }
+  
+  return result;
+}
+
+// Modal d'import depuis email
+function openImportEmailModal() {
+  showModal(`
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+        <div class="modal-header">
+          <h3><i class="fas fa-envelope"></i> Importer depuis un email</h3>
+          <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-blue-200">
+            <i class="fas fa-info-circle"></i> Copiez-collez le contenu complet de l'email ci-dessous. 
+            L'IA extraira automatiquement le nom, téléphone, email, adresse et type de projet.
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Contenu de l'email *</label>
+            <textarea id="emailContent" class="input" rows="12" placeholder="Collez ici le texte complet de l'email (Ctrl+A puis Ctrl+C dans votre boîte mail)"></textarea>
+          </div>
+          
+          <div class="text-xs text-gray-400 mt-2">
+            💡 Astuce : Ouvrez l'email, sélectionnez tout (Ctrl+A), copiez (Ctrl+C), puis collez ici (Ctrl+V)
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button class="btn btn-primary" onclick="processImportEmail()">
+            <i class="fas fa-magic"></i> Extraire les infos
+          </button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+// Traiter l'import email
+function processImportEmail() {
+  const emailContent = document.getElementById('emailContent').value.trim();
+  
+  if (!emailContent) {
+    alert('⚠️ Veuillez coller le contenu de l\'email');
+    return;
+  }
+  
+  // Parser l'email
+  const parsed = parseEmailContent(emailContent);
+  
+  console.log('📧 Email parsé:', parsed);
+  
+  // Fermer la modale d'import
+  closeModal();
+  
+  // Ouvrir le formulaire "Nouveau Lead" pré-rempli
+  setTimeout(() => {
+    openNewLeadModalWithData(parsed);
+  }, 300);
+}
+
+// Ouvrir le formulaire Nouveau Lead avec données pré-remplies
+function openNewLeadModalWithData(data) {
+  showModal(`
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3><i class="fas fa-plus-circle"></i> Nouveau Lead</h3>
+          <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="newLeadForm" class="modal-body">
+          <div class="bg-green-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-green-200">
+            <i class="fas fa-check-circle"></i> Informations extraites de l'email ! Vérifiez et complétez si nécessaire.
+          </div>
+          
+          <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-user"></i> Informations du contact</h4>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="input-group">
+              <label class="input-label">Civilité *</label>
+              <select name="civility" class="input" required>
+                <option value="">Choisir...</option>
+                <option value="M." ${data.civility === 'M.' ? 'selected' : ''}>M.</option>
+                <option value="Mme" ${data.civility === 'Mme' ? 'selected' : ''}>Mme</option>
+                <option value="M. et Mme" ${data.civility === 'M. et Mme' ? 'selected' : ''}>M. et Mme</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Prénom *</label>
+              <input type="text" name="first_name" class="input" placeholder="Ex: Jean" value="${data.first_name || ''}" required />
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Nom *</label>
+            <input type="text" name="last_name" class="input" placeholder="Ex: Dupont" value="${data.last_name || ''}" required />
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="input-group">
+              <label class="input-label">Téléphone *</label>
+              <input type="tel" name="phone" class="input" placeholder="Ex: 06 12 34 56 78" value="${data.phone || ''}" required />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">Email</label>
+              <input type="email" name="email" class="input" placeholder="Ex: contact@example.com" value="${data.email || ''}" />
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Société</label>
+            <input type="text" name="company" class="input" placeholder="Ex: Dupont Menuiserie" value="${data.company || ''}" />
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Adresse</label>
+            <input type="text" name="address" class="input" placeholder="Ex: 12 rue de la Paix, 44000 Nantes" value="${data.address || ''}" />
+          </div>
+          
+          <hr class="my-4" style="border-color: rgba(255,255,255,0.1)">
+          
+          <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-bullseye"></i> Besoin / Projet</h4>
+          
+          <div class="input-group">
+            <label class="input-label">Type de projet *</label>
+            <select name="type" class="input" required>
+              <option value="">Choisir...</option>
+              <option value="Portail coulissant" ${data.type === 'Portail coulissant' ? 'selected' : ''}>Portail coulissant</option>
+              <option value="Portail battant" ${data.type === 'Portail battant' ? 'selected' : ''}>Portail battant</option>
+              <option value="Portillon" ${data.type === 'Portillon' ? 'selected' : ''}>Portillon</option>
+              <option value="Clôture" ${data.type === 'Clôture' ? 'selected' : ''}>Clôture</option>
+              <option value="Motorisation" ${data.type === 'Motorisation' ? 'selected' : ''}>Motorisation</option>
+              <option value="Réparation" ${data.type === 'Réparation' ? 'selected' : ''}>Réparation</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Montant estimé (€)</label>
+            <input type="number" name="estimated_amount" class="input" placeholder="Ex: 5000" step="0.01" />
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Notes / Contexte</label>
+            <textarea name="notes" class="input" rows="4" placeholder="Décrivez le besoin, la référence, le contexte...">${data.notes || ''}</textarea>
+          </div>
+        </form>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button class="btn btn-success" onclick="submitNewLeadForm()">
+            <i class="fas fa-check"></i> Créer le lead
+          </button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
 // Créer un nouveau lead (sans client existant)
 async function openNewLeadModal() {
   showModal(`
@@ -9101,6 +9337,12 @@ async function openNewLeadModal() {
           <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
         </div>
         <form id="newLeadForm" class="modal-body">
+          <div class="mb-4">
+            <button type="button" class="btn btn-secondary w-full" onclick="openImportEmailModal()">
+              <i class="fas fa-envelope"></i> 📧 Importer depuis un email
+            </button>
+          </div>
+          
           <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-blue-200">
             <i class="fas fa-info-circle"></i> Créez un lead directement. Le contact sera automatiquement ajouté à vos clients.
           </div>
