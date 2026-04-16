@@ -1956,11 +1956,15 @@ function renderLayout(content) {
         ${content}
       </main>
       <div class="mobile-tabs">
+        <button class="${state.currentView === 'dashboard' ? 'active' : ''}" onclick="navigate('dashboard')">
+          <i class="fas fa-home"></i>
+          <span>Accueil</span>
+        </button>
         <button class="${state.currentView === 'pipeline' ? 'active' : ''}" onclick="navigate('pipeline')">
           <i class="fas fa-columns"></i>
           <span>Pipeline</span>
         </button>
-        <button class="${state.currentView === 'clients' ? 'active' : ''}" onclick="console.log('🔴 Clic sur Clients!'); navigate('clients')">
+        <button class="${state.currentView === 'clients' ? 'active' : ''}" onclick="navigate('clients')">
           <i class="fas fa-users"></i>
           <span>Clients</span>
         </button>
@@ -1968,11 +1972,7 @@ function renderLayout(content) {
           <i class="fas fa-file-invoice"></i>
           <span>Devis</span>
         </button>
-        <button class="${state.currentView === 'calendar' ? 'active' : ''}" onclick="navigate('calendar')">
-          <i class="fas fa-calendar-alt"></i>
-          <span>Calendrier</span>
-        </button>
-        <button onclick="navigate('settings')">
+        <button class="${state.currentView === 'settings' ? 'active' : ''}" onclick="navigate('settings')">
           <i class="fas fa-cog"></i>
           <span>Plus</span>
         </button>
