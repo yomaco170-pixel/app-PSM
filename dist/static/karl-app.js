@@ -9164,6 +9164,9 @@ async function submitCreateLeadFromClient() {
     // Créer le deal/lead
     const newDeal = await api.createDeal(data);
     
+    // Recharger la liste des deals pour avoir le lead enrichi
+    state.deals = await api.getDeals();
+    
     alert('✅ Lead créé avec succès !');
     closeModal();
     

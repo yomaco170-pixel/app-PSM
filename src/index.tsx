@@ -1540,7 +1540,36 @@ app.post('/api/deals', async (c) => {
       ).run()
 
       console.log('✅ Deal créé, id:', result.meta.last_row_id)
-      return c.json({ id: result.meta.last_row_id, ...data }, 201)
+      
+      // Récupérer le deal créé avec les infos client enrichies
+      const createdDeal = await c.env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(result.meta.last_row_id).first()
+      
+      let client = null
+      if (createdDeal && createdDeal.client_id) {
+        try {
+          client = await c.env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(createdDeal.client_id).first()
+        } catch (e) {
+          console.error('Erreur récupération client:', e)
+        }
+      }
+      
+      // Retourner le deal enrichi avec les infos client
+      const enrichedDeal = {
+        ...createdDeal,
+        name: client?.name || '',
+        status: createdDeal.stage || 'lead',
+        first_name: client?.name?.split(' ')[0] || '',
+        last_name: client?.name?.split(' ').slice(1).join(' ') || '',
+        email: client?.email || '',
+        phone: client?.phone || '',
+        company: client?.company || '',
+        address: client?.address || '',
+        client_name: client?.name || '',
+        estimated_amount: createdDeal.amount || 0,
+        type: createdDeal.title || 'Dossier',
+      }
+      
+      return c.json(enrichedDeal, 201)
     } catch (insertError) {
       const errMsg = insertError instanceof Error ? insertError.message : String(insertError)
       console.error('❌ Erreur INSERT deal:', errMsg)
