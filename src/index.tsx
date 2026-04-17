@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 import { sha256 } from 'hono/utils/crypto'
 import OpenAI from 'openai'
+import { parseEmailRobust } from './lib/email-parser'
 
 type Bindings = {
   DB: D1Database
@@ -2270,6 +2271,7 @@ app.get('/', (c) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <link href="/static/theme.css" rel="stylesheet">
     </head>
     <body class="bg-gray-50">
         <div id="app"></div>
@@ -2324,6 +2326,7 @@ app.get('/*', (c) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <link href="/static/theme.css" rel="stylesheet">
     </head>
     <body class="bg-gray-50">
         <div id="app"></div>
@@ -2592,25 +2595,71 @@ app.post('/api/documents/note', async (c) => {
   }
 })
 
-// POST /api/parse-email - Parser un email avec GPT pour extraire les infos contact
+// =============================================================================
+// POST /api/parse-email — Parser un email (regex robuste + IA si besoin)
+// =============================================================================
+// Stratégie hybride :
+//  1. Parser regex robuste (gratuit, instantané, fiable à 100% sur formulaires)
+//  2. Si confiance < 75% → appel IA GPT pour compléter les champs manquants
+//  3. Merge : l'IA ne peut qu'AMÉLIORER, jamais casser un champ déjà trouvé
+// =============================================================================
 app.post('/api/parse-email', async (c) => {
   try {
-    const { emailText } = await c.req.json()
-    
+    const body = await c.req.json()
+    // Compat : ancienne signature { emailText } OU nouvelle { from, subject, body }
+    const emailText = body.emailText || body.body || ''
+    const from = body.from || ''
+    const subject = body.subject || ''
+
     if (!emailText || emailText.trim().length < 10) {
       return c.json({ error: 'Email text trop court' }, 400)
     }
-    
-    // Initialiser le client OpenAI avec les credentials GenSpark
-    const openai = new OpenAI({
-      apiKey: c.env.OPENAI_API_KEY || 'dummy-key',
-      baseURL: c.env.OPENAI_BASE_URL || 'https://www.genspark.ai/api/llm_proxy/v1'
-    })
-    
-    // Prompt système pour l'extraction structurée
-    const systemPrompt = `Tu es un assistant spécialisé dans l'extraction d'informations de contact depuis des emails.
 
-Extrais les informations suivantes au format JSON strict :
+    // ÉTAPE 1 : Parser regex robuste
+    const regexResult = parseEmailRobust({ from, subject, body: emailText })
+    console.log('📝 Regex parser result:', JSON.stringify(regexResult))
+
+    // Si c'est manifestement du spam, on ne va pas plus loin
+    if (regexResult.isLikelyNotALead) {
+      return c.json({
+        success: true,
+        source: 'regex',
+        confidence: 0,
+        data: { ...regexResult, project_type: regexResult.type }
+      })
+    }
+
+    // ÉTAPE 2 : Si la confiance est élevée (≥ 75%), on renvoie direct
+    if (regexResult.confidence >= 0.75) {
+      return c.json({
+        success: true,
+        source: 'regex',
+        confidence: regexResult.confidence,
+        data: { ...regexResult, project_type: regexResult.type }
+      })
+    }
+
+    // ÉTAPE 3 : Confiance moyenne → appel IA pour compléter
+    const apiKey = c.env.OPENAI_API_KEY
+    if (!apiKey) {
+      // Pas d'IA configurée → on renvoie quand même le regex
+      return c.json({
+        success: true,
+        source: 'regex-only',
+        confidence: regexResult.confidence,
+        data: { ...regexResult, project_type: regexResult.type }
+      })
+    }
+
+    try {
+      const openai = new OpenAI({
+        apiKey,
+        baseURL: c.env.OPENAI_BASE_URL || 'https://www.genspark.ai/api/llm_proxy/v1'
+      })
+
+      const systemPrompt = `Tu es un assistant qui extrait des informations de contact depuis un email français pour un CRM dans le domaine des portails et clôtures.
+
+Réponds UNIQUEMENT avec un JSON strict de cette forme :
 {
   "civility": "M." | "Mme" | "M. et Mme" | "",
   "first_name": "",
@@ -2624,54 +2673,154 @@ Extrais les informations suivantes au format JSON strict :
 }
 
 Règles strictes :
-1. phone : format français uniquement (06, 07, 02, etc.), nettoyer les espaces
-2. email : ignorer les emails @psm-portails.fr, prendre uniquement l'email du client
-3. first_name / last_name : séparer correctement prénom et nom
-4. civility : détecter M., Mme, M. et Mme
-5. project_type : analyser le besoin et choisir le type approprié
-6. notes : résumer brièvement le besoin du client (max 100 mots)
-7. Si une info n'est pas trouvée, laisser champ vide ""
+- phone : format français 10 chiffres commençant par 0 (ex: 0612345678), priorité aux mobiles (06/07)
+- email : IGNORER les emails @psm-portails.fr, @multiscreensite.com, mailer@*, noreply@*, commercial.pinoit.psm@gmail.com (c'est NOUS). Extraire l'email du CLIENT.
+- last_name : toujours en MAJUSCULES si possible
+- project_type : déduire du besoin exprimé. Si le client parle de panne/cassé/réparer → "Réparation" PRIORITAIRE
+- notes : résumer le besoin du client en 1-2 phrases max
+- Si une info est introuvable, laisser ""`
 
-Retourne UNIQUEMENT le JSON, sans texte avant ou après.`
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',  // rapide + fiable + pas cher
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `De : ${from}\nSujet : ${subject}\n\n${emailText.substring(0, 4000)}` }
+        ],
+        temperature: 0.1,
+        max_tokens: 400,
+        response_format: { type: 'json_object' }
+      })
 
-    // Appel à GPT-5
+      const aiText = completion.choices[0]?.message?.content?.trim() || '{}'
+      const aiParsed = JSON.parse(aiText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
+
+      // MERGE : regex en priorité, l'IA comble les trous
+      const merged = {
+        civility: regexResult.civility || aiParsed.civility || '',
+        first_name: regexResult.first_name || aiParsed.first_name || '',
+        last_name: regexResult.last_name || aiParsed.last_name || '',
+        phone: regexResult.phone || aiParsed.phone || '',
+        email: regexResult.email || aiParsed.email || '',
+        company: regexResult.company || aiParsed.company || '',
+        address: regexResult.address || aiParsed.address || '',
+        type: regexResult.type || aiParsed.project_type || '',
+        project_type: regexResult.type || aiParsed.project_type || '',
+        notes: aiParsed.notes || regexResult.notes || '',
+        isLikelyNotALead: false,
+        confidence: regexResult.confidence
+      }
+
+      return c.json({
+        success: true,
+        source: 'regex+ai',
+        confidence: merged.confidence,
+        data: merged
+      })
+    } catch (aiError) {
+      console.error('IA fallback error:', aiError)
+      // IA échoue → on renvoie quand même le regex
+      return c.json({
+        success: true,
+        source: 'regex-ai-failed',
+        confidence: regexResult.confidence,
+        data: { ...regexResult, project_type: regexResult.type }
+      })
+    }
+  } catch (error) {
+    console.error('Parse email error:', error)
+    return c.json({
+      error: 'Erreur parsing email',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// =============================================================================
+// POST /api/ocr-notes — OCR de notes manuscrites via GPT-4 Vision
+// =============================================================================
+// Reçoit une image (base64 data URL) de notes manuscrites,
+// et renvoie les infos structurées pour créer un lead (nom, tél, mesures, etc.)
+// =============================================================================
+app.post('/api/ocr-notes', async (c) => {
+  try {
+    const { image } = await c.req.json()
+
+    if (!image || !image.startsWith('data:image/')) {
+      return c.json({ error: 'Image manquante ou format invalide (data:image/... attendu)' }, 400)
+    }
+
+    const apiKey = c.env.OPENAI_API_KEY
+    if (!apiKey) {
+      return c.json({ error: 'OCR indisponible : clé IA non configurée' }, 503)
+    }
+
+    const openai = new OpenAI({
+      apiKey,
+      baseURL: c.env.OPENAI_BASE_URL || 'https://www.genspark.ai/api/llm_proxy/v1'
+    })
+
+    const systemPrompt = `Tu es un assistant OCR spécialisé dans la lecture de NOTES MANUSCRITES prises par un commercial de portails et clôtures.
+
+Analyse l'image et extrais TOUTES les informations utiles au format JSON STRICT :
+{
+  "civility": "M." | "Mme" | "M. et Mme" | "",
+  "first_name": "",
+  "last_name": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "project_type": "Portail coulissant" | "Portail battant" | "Portillon" | "Clôture" | "Motorisation" | "Réparation" | "Autre" | "",
+  "width_cm": null,
+  "height_cm": null,
+  "color": "",
+  "material": "",
+  "estimated_amount": null,
+  "motorized": false,
+  "notes": "",
+  "raw_text": ""
+}
+
+Règles :
+- phone : 10 chiffres français, sans espaces (ex: 0612345678)
+- last_name : en MAJUSCULES
+- width_cm / height_cm : dimensions en CENTIMÈTRES (convertir si tu vois 4m → 400)
+- color : RAL + nom (ex: "RAL 7016 gris anthracite")
+- material : "Aluminium", "Acier", "PVC", etc.
+- motorized : true si tu vois "moteur", "motorisé", "automatique"
+- raw_text : texte complet que tu lis sur la feuille (pour debug)
+- notes : résumé du besoin
+- Si un champ est illisible, laisse vide "" ou null
+
+Réponds UNIQUEMENT avec le JSON.`
+
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5',
+      model: 'gpt-4o',  // gpt-4o supporte la vision
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Voici l'email à analyser :\n\n${emailText}` }
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Voici mes notes manuscrites du RDV. Extrais toutes les infos utiles :' },
+            { type: 'image_url', image_url: { url: image, detail: 'high' } }
+          ] as any
+        }
       ],
-      temperature: 0.1, // Faible température pour plus de précision
-      max_tokens: 500
+      temperature: 0.1,
+      max_tokens: 800,
+      response_format: { type: 'json_object' }
     })
-    
-    const responseText = completion.choices[0]?.message?.content?.trim() || '{}'
-    console.log('🤖 GPT response:', responseText)
-    
-    // Parser la réponse JSON
-    let parsed
-    try {
-      // Nettoyer la réponse si elle contient des balises markdown
-      const cleanedResponse = responseText
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim()
-      
-      parsed = JSON.parse(cleanedResponse)
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError)
-      return c.json({ error: 'Erreur parsing GPT response', details: responseText }, 500)
-    }
-    
+
+    const text = completion.choices[0]?.message?.content?.trim() || '{}'
+    const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
+
     return c.json({
       success: true,
       data: parsed
     })
-    
   } catch (error) {
-    console.error('Parse email error:', error)
-    return c.json({ 
-      error: 'Erreur parsing email',
+    console.error('OCR notes error:', error)
+    return c.json({
+      error: 'Erreur OCR',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
