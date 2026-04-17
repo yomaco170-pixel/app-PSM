@@ -409,6 +409,92 @@ select:focus {
 }
 
 /* =============================================================================
+   TOAST NOTIFICATIONS
+   ============================================================================= */
+
+.toast-container {
+  position: fixed;
+  bottom: 90px; /* au-dessus de la tab bar mobile */
+  right: 1rem;
+  left: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .toast-container {
+    left: auto;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    max-width: 400px;
+  }
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: var(--k-surface);
+  color: var(--k-text);
+  border-radius: var(--k-radius);
+  box-shadow: var(--k-shadow-lg);
+  border-left: 4px solid var(--k-primary);
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  transition: opacity var(--k-tx), transform var(--k-tx);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.toast-leaving {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.96);
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--k-text-faint);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  transition: color var(--k-tx-fast);
+}
+.toast-close:hover { color: var(--k-text); }
+
+.toast-success {
+  border-left-color: var(--k-success);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), var(--k-surface) 30%);
+}
+.toast-danger {
+  border-left-color: var(--k-danger);
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), var(--k-surface) 30%);
+}
+.toast-warning {
+  border-left-color: var(--k-warning);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), var(--k-surface) 30%);
+}
+.toast-info {
+  border-left-color: var(--k-info);
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), var(--k-surface) 30%);
+}
+
+/* =============================================================================
    ACCESSIBILITÉ
    ============================================================================= */
 
