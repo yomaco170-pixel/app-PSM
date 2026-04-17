@@ -49,6 +49,68 @@ const formatCurrency = (amount) => {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
 };
 
+// ==================== TOAST NOTIFICATIONS ====================
+// Affiche une notification temporaire en bas à droite de l'écran
+// Types : 'success' (vert), 'danger' (rouge), 'warning' (orange), 'info' (bleu)
+function showToast(message, type = 'info', duration = 3500) {
+  // Créer le container s'il n'existe pas
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <div class="toast-content">${message}</div>
+    <button class="toast-close" aria-label="Fermer">&times;</button>
+  `;
+
+  const close = () => {
+    toast.classList.add('toast-leaving');
+    setTimeout(() => toast.remove(), 250);
+  };
+
+  toast.querySelector('.toast-close').addEventListener('click', close);
+  container.appendChild(toast);
+
+  // Animation d'entrée
+  requestAnimationFrame(() => toast.classList.add('toast-visible'));
+
+  // Auto-fermeture
+  if (duration > 0) {
+    setTimeout(close, duration);
+  }
+}
+
+// Rendre showToast global (pour les onclick HTML et modules qui l'appellent)
+if (typeof window !== 'undefined') {
+  window.showToast = showToast;
+}
+
+// Helper safe qui ne plante JAMAIS même si showToast n'est pas dans le scope
+// (problème connu sur Safari iOS avec les functions appelées depuis onclick inline)
+function safeToast(message, type = 'info', duration = 3500) {
+  try {
+    if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
+      return window.showToast(message, type, duration);
+    }
+    if (typeof showToast === 'function') {
+      return showToast(message, type, duration);
+    }
+  } catch (e) {
+    console.warn('Toast fallback:', e);
+  }
+  // Fallback ultime : console + pas de plantage
+  console.log('[TOAST]', type, message);
+}
+if (typeof window !== 'undefined') {
+  window.safeToast = safeToast;
+}
+
 // Horloge temps réel - Met à jour la date et l'heure dans le header
 function updateHeaderClock() {
   const now = new Date();
@@ -4510,12 +4572,12 @@ async function markAsSigned(dealId) {
   
   try {
     await api.updateDeal(dealId, { stage: 'signe', status: 'signe' });
-    showToast('✅ Devis marqué comme signé !', 'success');
+    safeToast('✅ Devis marqué comme signé !', 'success');
     closeModal();
     navigate('pipeline');
   } catch (error) {
     console.error('Erreur:', error);
-    showToast('❌ Erreur lors de la mise à jour', 'danger');
+    safeToast('❌ Erreur lors de la mise à jour', 'danger');
   }
 }
 
@@ -9931,7 +9993,7 @@ async function submitQuickLeadForm() {
     state.deals = await api.getDeals();
     
     // 4. Afficher succès
-    showToast(`✅ Lead créé pour ${data.full_name} !`, 'success');
+    safeToast(`✅ Lead créé pour ${data.full_name} !`, 'success');
     closeModal();
     
     // 5. Retourner au pipeline
@@ -10054,7 +10116,7 @@ async function submitEmailLeadForm() {
     state.deals = await api.getDeals();
     
     // 4. Afficher succès
-    showToast(`✅ Lead créé pour ${data.first_name} ${data.last_name} !`, 'success');
+    safeToast(`✅ Lead créé pour ${data.first_name} ${data.last_name} !`, 'success');
     closeModal();
     
     // 5. Marquer l'email comme traité (optionnel)
