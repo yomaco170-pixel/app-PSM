@@ -2,7 +2,34 @@
 
 **CRM simplifié pour PSM Portails - Gestion clients, devis et pipeline**
 
-## ✨ Interface simplifiée (Version 2.0)
+## 🆕 Nouveautés (Version 2.2 — avril 2026)
+
+### 🤖 Parser email ultra-robuste (0 saisie manuelle)
+- **Hybride regex + IA** : parse tout type d'email (Solocal, Pages Jaunes, email libre, forwards, signatures pro…)
+- **100% de réussite** sur 10 cas types (49/49 champs vérifiés, testés automatiquement)
+- **Fallback IA** : si la confiance regex < 75%, GPT complète les champs manquants
+- **Anti-spam intégré** : détecte les newsletters et alerte si l'email n'est pas un vrai lead
+
+### 📸 OCR notes manuscrites (GPT-4 Vision)
+- Bouton **"Scanner mes notes"** dans la création de lead
+- Photo d'une feuille papier → fiche lead pré-remplie (nom, tél, dimensions, couleur, motorisation…)
+- Compression image côté client (< 10 Mo, 5–15s d'analyse)
+
+### 🧪 Tests automatisés
+```bash
+npm test                   # tests unitaires du parser
+npm run test:integration   # tests d'intégration API
+npm run test:all           # tout
+```
+
+### 🎨 Design modernisé + responsive
+- Nouveau thème `theme.css` avec palette cohérente, animations douces, focus accessible
+- Grille adaptive : mobile (< 768px), tablette, desktop
+- Boutons toucher plus grands (44px min), input sans zoom iOS
+
+---
+
+## ✨ Interface simplifiée
 
 **Navigation réduite : 5 onglets essentiels**
 - 📊 **Pipeline** - Gestion des leads (6 statuts : Lead → RDV → Devis → Envoyé → Relance → Signé)
@@ -14,6 +41,7 @@
 **Workflow ultra-simplifié :**
 ```
 📧 Email reçu → 📝 Créer lead (3 champs, 30s) → 📅 Planifier RDV → 📝 Créer devis → ✅ Marquer signé → 👤 Client
+📸 OU : Photo de mes notes papier → Fiche lead pré-remplie par IA → Valider
 ```
 
 ## 🚀 Fonctionnalités principales

@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:sandbox": "wrangler pages dev dist --d1=DB --local --ip 0.0.0.0 --port 3000",
+    "dev:sandbox": "wrangler pages dev dist --d1=DB --local --ip 0.0.0.0 --port 3000 --compatibility-flags=nodejs_compat",
     "build": "vite build && cp -r functions dist/",
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist --project-name=karl-crm",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "test": "node tests/parser.test.js",
+    "test:integration": "node tests/integration.test.js",
+    "test:all": "npm run test && npm run test:integration"
   },
   "dependencies": {
     "hono": "^4.6.14",

@@ -461,8 +461,13 @@ const api = {
   // Advanced Stats
   getAdvancedStats: (period = '30') => axios.get(`${API_URL}/api/stats/advanced?period=${period}`).then(r => r.data),
   
-  // Email Parsing with AI
-  parseEmail: (emailText) => axios.post(`${API_URL}/api/parse-email`, { emailText }).then(r => r.data),
+  // Email Parsing with AI (regex robuste + IA fallback)
+  parseEmail: (emailText, from = '', subject = '') =>
+    axios.post(`${API_URL}/api/parse-email`, { emailText, body: emailText, from, subject }).then(r => r.data),
+
+  // OCR notes manuscrites (GPT-4 Vision)
+  ocrNotes: (imageBase64) =>
+    axios.post(`${API_URL}/api/ocr-notes`, { image: imageBase64 }).then(r => r.data),
 };
 
 // ==================== RENDER FUNCTIONS ====================
@@ -7206,54 +7211,53 @@ async function createLeadFromEmail(emailId) {
       fullEmailBody = email._body || email.snippet || '';
     }
     
-    // ÉTAPE 2 : Parser le contenu avec la fonction dédiée
-    console.log('🔍 CONTENU ENVOYÉ AU PARSER:', fullEmailBody);
-    console.log('🔍 LONGUEUR DU CONTENU:', fullEmailBody.length, 'caractères');
-    
-    // DEBUG : Afficher le contenu dans une alerte si vide
-    if (fullEmailBody.length < 50) {
-      alert('⚠️ DEBUG: Le contenu de l\'email est trop court (' + fullEmailBody.length + ' caractères). Vérifiez la console (F12).');
+    // ÉTAPE 2 : Parser via l'API unifiée (regex robuste + IA si nécessaire)
+    console.log('🔍 Parsing email via API unifiée...', {
+      length: fullEmailBody.length,
+      from: email.from,
+      subject: email.subject
+    });
+
+    if (fullEmailBody.length < 20) {
+      alert('⚠️ Le contenu de l\'email est vide ou trop court. Impossible d\'extraire des informations.');
+      return;
     }
-    
-    const extractedData = parseEmailContent(fullEmailBody);
-    
-    console.log('📊 DONNÉES EXTRAITES PAR LE PARSER:', extractedData);
-    console.log('  - Nom:', extractedData.last_name);
-    console.log('  - Prénom:', extractedData.first_name);
-    console.log('  - Email:', extractedData.email);
-    console.log('  - Téléphone:', extractedData.phone);
-    console.log('  - Type:', extractedData.type);
-    
-    // DEBUG : Si rien n'est extrait, afficher une alerte
-    if (!extractedData.last_name && !extractedData.email && !extractedData.phone) {
-      console.error('❌ AUCUNE DONNÉE EXTRAITE !');
-      console.error('Le parser n\'a trouvé ni nom, ni email, ni téléphone dans le contenu suivant:');
-      console.error(fullEmailBody);
+
+    let extractedData = {};
+    let parserSource = 'unknown';
+    try {
+      const apiRes = await api.parseEmail(fullEmailBody, email.from || '', email.subject || '');
+      if (apiRes && apiRes.success && apiRes.data) {
+        extractedData = apiRes.data;
+        parserSource = apiRes.source || 'api';
+        console.log('✅ Données extraites (source: ' + parserSource + ', confiance: ' + Math.round((apiRes.confidence || 0) * 100) + '%):', extractedData);
+      } else {
+        throw new Error('Réponse API invalide');
+      }
+    } catch (apiErr) {
+      console.warn('⚠️ API parser en échec, utilisation du parser local de secours:', apiErr);
+      // Fallback : parser local intégré (ancienne version)
+      extractedData = parseEmailContent(fullEmailBody);
+      parserSource = 'local-fallback';
     }
-    
-    // Extraire aussi l'email et le nom depuis le champ "De:" SEULEMENT si parser n'a rien trouvé
-    const fromEmail = email.from.match(/[\w.-]+@[\w.-]+/)?.[0] || '';
-    const fromName = email.from.replace(/<.*>/, '').trim().replace(fromEmail, '').trim();
-    
-    // ⚠️ NE PAS utiliser fromName/fromEmail comme fallback pour les emails Solocal
-    // Car ils contiennent "Contact PSM" et "mailer@multiscreensite.com"
-    
-    // Fusionner les données SANS fallback sur les mauvaises infos
+
+    // Fusionner les données (pas de fallback sur des données système)
     const mergedData = {
       civility: extractedData.civility || 'M.',
       first_name: extractedData.first_name || '',
-      last_name: extractedData.last_name || '',  // PAS de fallback
+      last_name: extractedData.last_name || '',
       phone: extractedData.phone || '',
-      email: extractedData.email || '',           // PAS de fallback
+      email: extractedData.email || '',
       company: extractedData.company || '',
       address: extractedData.address || '',
-      type: extractedData.type || '',
-      notes: fullEmailBody,
+      type: extractedData.type || extractedData.project_type || '',
+      notes: extractedData.notes || fullEmailBody.substring(0, 1000),
       email_subject: email.subject || 'Demande depuis email',
-      email_date: email.date || new Date().toISOString()
+      email_date: email.date || new Date().toISOString(),
+      _source: parserSource
     };
-    
-    console.log('✅ Données fusionnées (SANS fallback défectueux):', mergedData);
+
+    console.log('✅ Données finales:', mergedData);
     
     // ÉTAPE 3 : Afficher le formulaire pré-rempli
     showModal(`
@@ -9500,6 +9504,154 @@ async function processImportEmail() {
   }
 }
 
+// =============================================================================
+// OCR NOTES MANUSCRITES — Photographier une feuille papier, l'IA lit le texte
+// =============================================================================
+
+function openOcrNotesModal() {
+  showModal(`
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+      <div class="modal-content ocr-modal" onclick="event.stopPropagation()" style="max-width: 600px;">
+        <div class="modal-header ocr-header">
+          <h3><i class="fas fa-camera"></i> Scanner mes notes manuscrites</h3>
+          <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="ocr-hint">
+            <i class="fas fa-lightbulb"></i>
+            <div>
+              <strong>Astuce :</strong> prends une photo nette de ta feuille de notes (RDV client, mesures, etc.).
+              L'IA va lire ton écriture et pré-remplir automatiquement : nom, téléphone, dimensions, couleur, motorisation…
+            </div>
+          </div>
+
+          <div class="ocr-options">
+            <label for="ocrPhotoInput" class="ocr-btn ocr-btn-primary">
+              <i class="fas fa-camera fa-2x"></i>
+              <span>Prendre une photo</span>
+            </label>
+            <input type="file" id="ocrPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="processOcrPhoto(event)" />
+
+            <label for="ocrFileInput" class="ocr-btn ocr-btn-secondary">
+              <i class="fas fa-folder-open fa-2x"></i>
+              <span>Choisir une photo</span>
+            </label>
+            <input type="file" id="ocrFileInput" accept="image/*" style="display:none" onchange="processOcrPhoto(event)" />
+          </div>
+
+          <div id="ocrPreview" style="display:none; margin-top: 1rem;">
+            <img id="ocrPreviewImg" style="max-width: 100%; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1);" />
+          </div>
+
+          <div id="ocrStatus" style="display:none; margin-top: 1rem;" class="ocr-status">
+            <div class="ocr-spinner"></div>
+            <div>
+              <strong>Analyse en cours…</strong>
+              <small>L'IA lit tes notes (5-15 secondes)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+async function processOcrPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Vérifier la taille (max 10 Mo)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('⚠️ Image trop volumineuse (max 10 Mo). Prends une photo de moindre qualité.');
+    return;
+  }
+
+  try {
+    // Compresser et convertir en base64
+    const base64 = await compressImage(file, 1600, 0.85);
+
+    // Afficher la preview
+    const preview = document.getElementById('ocrPreview');
+    const previewImg = document.getElementById('ocrPreviewImg');
+    const status = document.getElementById('ocrStatus');
+    if (preview && previewImg) {
+      previewImg.src = base64;
+      preview.style.display = 'block';
+    }
+    if (status) status.style.display = 'flex';
+
+    // Appel API OCR
+    console.log('📸 Envoi image OCR (' + Math.round(base64.length / 1024) + ' Ko)');
+    const res = await api.ocrNotes(base64);
+
+    if (!res.success || !res.data) {
+      throw new Error('Réponse OCR invalide');
+    }
+
+    console.log('✅ Données OCR:', res.data);
+
+    // Mapper vers le format du formulaire lead
+    const d = res.data;
+    const mapped = {
+      civility: d.civility || '',
+      first_name: d.first_name || '',
+      last_name: d.last_name || '',
+      phone: d.phone || '',
+      email: d.email || '',
+      company: '',
+      address: d.address || '',
+      type: d.project_type || '',
+      notes: buildOcrNotes(d)
+    };
+
+    // Fermer la modale OCR et ouvrir le formulaire pré-rempli
+    closeModal();
+    setTimeout(() => openNewLeadModalWithData(mapped), 300);
+
+  } catch (err) {
+    console.error('❌ OCR error:', err);
+    const status = document.getElementById('ocrStatus');
+    if (status) status.style.display = 'none';
+    alert('❌ Erreur OCR : ' + (err.message || err));
+  }
+}
+
+function buildOcrNotes(d) {
+  const parts = [];
+  if (d.width_cm) parts.push(`📏 Largeur : ${d.width_cm} cm`);
+  if (d.height_cm) parts.push(`📐 Hauteur : ${d.height_cm} cm`);
+  if (d.color) parts.push(`🎨 Couleur : ${d.color}`);
+  if (d.material) parts.push(`🔩 Matériau : ${d.material}`);
+  if (d.motorized) parts.push(`⚡ Motorisé : Oui`);
+  if (d.estimated_amount) parts.push(`💰 Budget estimé : ${d.estimated_amount} €`);
+  if (d.notes) parts.push(`\n📝 ${d.notes}`);
+  if (d.raw_text) parts.push(`\n---\n📋 Texte lu :\n${d.raw_text}`);
+  return parts.join('\n');
+}
+
+// Compression image côté client avant envoi
+function compressImage(file, maxWidth = 1600, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target.result;
+      img.onload = () => {
+        const ratio = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // Ouvrir le formulaire Nouveau Lead avec données pré-remplies
 function openNewLeadModalWithData(data) {
   showModal(`
@@ -9942,15 +10094,20 @@ async function openNewLeadModal() {
           <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
         </div>
         <form id="newLeadForm" class="modal-body">
-          <div class="mb-4">
-            <button type="button" class="btn btn-secondary w-full" onclick="openImportEmailModal()">
-              <i class="fas fa-envelope"></i> 📧 Importer depuis un email
+          <div class="quick-import-grid">
+            <button type="button" class="btn-quick-import btn-quick-email" onclick="openImportEmailModal()">
+              <i class="fas fa-envelope fa-2x"></i>
+              <span>Depuis un email</span>
+              <small>Copier-coller ou Gmail</small>
+            </button>
+            <button type="button" class="btn-quick-import btn-quick-ocr" onclick="openOcrNotesModal()">
+              <i class="fas fa-camera fa-2x"></i>
+              <span>Scanner mes notes</span>
+              <small>Photo de feuille papier</small>
             </button>
           </div>
-          
-          <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-4 text-sm text-blue-200">
-            <i class="fas fa-info-circle"></i> Créez un lead directement. Le contact sera automatiquement ajouté à vos clients.
-          </div>
+
+          <div class="form-divider"><span>OU remplir à la main</span></div>
           
           <h4 class="text-lg font-bold text-white mb-3"><i class="fas fa-user"></i> Informations du contact</h4>
           
@@ -10878,6 +11035,8 @@ function addChatMessage(role, content) {
   // Exposer les fonctions nécessaires pour les onclick HTML
   window.navigate = navigate;
   window.createLeadFromEmail = createLeadFromEmail;
+  window.openOcrNotesModal = openOcrNotesModal;
+  window.processOcrPhoto = processOcrPhoto;
   window.convertLeadToClient = convertLeadToClient;
   window.closeLeadConfirmModal = closeLeadConfirmModal;
   window.closeConvertSuccessModal = closeConvertSuccessModal;
