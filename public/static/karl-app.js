@@ -4356,8 +4356,11 @@ async function viewDealModal(dealId) {
                   <button class="btn btn-sm" onclick="openChangeStatusModal(${deal.id}, '${dealStatus}'); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151;">
                     <i class="fas fa-arrow-right"></i> Changer statut
                   </button>
-                  <button class="btn btn-sm" onclick="confirmArchiveDeal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; color: #ef4444;">
-                    <i class="fas fa-archive"></i> Archiver
+                  <button class="btn btn-sm" onclick="confirmArchiveDeal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151; color: #f59e0b;">
+                    <i class="fas fa-archive"></i> Archiver (corbeille)
+                  </button>
+                  <button class="btn btn-sm" onclick="deleteDealFromModal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; color: #ef4444; font-weight: 600;">
+                    <i class="fas fa-trash"></i> Supprimer définitivement
                   </button>
                 </div>
               </div>
@@ -6195,6 +6198,12 @@ window.openSelectClientForQuote = openSelectClientForQuote;
 window.filterClientsForQuote = filterClientsForQuote;
 window.openSelectDealForQuote = openSelectDealForQuote;
 window.filterDealsForQuote = filterDealsForQuote;
+
+// Exports pour suppression/archivage dossier (fix Safari iOS — scope onclick inline)
+if (typeof confirmArchiveDeal === 'function') window.confirmArchiveDeal = confirmArchiveDeal;
+if (typeof confirmDeleteDeal === 'function') window.confirmDeleteDeal = confirmDeleteDeal;
+if (typeof deleteDealFromModal === 'function') window.deleteDealFromModal = deleteDealFromModal;
+if (typeof toggleDealActionsMenu === 'function') window.toggleDealActionsMenu = toggleDealActionsMenu;
 
 // Start app - DÉSACTIVÉ : on utilise maintenant initApp() en fin de fichier
 // init(); // ❌ ANCIENNE INITIALISATION - redirige vers Pipeline
@@ -8233,11 +8242,41 @@ async function confirmArchiveDeal(dealId) {
   
   try {
     await api.archiveDeal(dealId);
-    alert('✅ Dossier déplacé dans la corbeille !');
+    safeToast('✅ Dossier déplacé dans la corbeille', 'success');
     closeModal();
+    // Rafraîchir les données avant de retourner au pipeline
+    try { state.deals = await api.getDeals(); } catch(e) {}
     navigate('pipeline'); // Retour au pipeline
   } catch (error) {
-    alert('❌ Erreur : ' + (error.response?.data?.error || error.message));
+    safeToast('❌ Erreur : ' + (error.response?.data?.error || error.message), 'danger', 5000);
+  }
+}
+
+// Supprimer DÉFINITIVEMENT un dossier depuis la modale (non réversible)
+async function deleteDealFromModal(dealId) {
+  const deal = state.currentDeal || {};
+  const firstName = deal.first_name?.trim() || '';
+  const lastName = deal.last_name?.trim() || '';
+  const clientName = (firstName || lastName)
+    ? `${firstName} ${lastName}`.trim()
+    : `Dossier #${dealId}`;
+
+  // Double confirmation pour éviter toute suppression accidentelle
+  if (!confirm(`⚠️ SUPPRIMER DÉFINITIVEMENT "${clientName}" ?\n\n❌ Cette action est IRRÉVERSIBLE !\n❌ RDV, devis et photos seront perdus.\n\n💡 Astuce : préférez "Archiver" pour pouvoir restaurer.`)) {
+    return;
+  }
+  if (!confirm(`🚨 DERNIÈRE CONFIRMATION\n\nSupprimer "${clientName}" pour de bon ?\nCette action ne peut PAS être annulée.`)) {
+    return;
+  }
+
+  try {
+    await api.deleteDeal(dealId);
+    safeToast(`🗑️ "${clientName}" supprimé définitivement`, 'success');
+    closeModal();
+    try { state.deals = await api.getDeals(); } catch(e) {}
+    navigate('pipeline');
+  } catch (error) {
+    safeToast('❌ Erreur suppression : ' + (error.response?.data?.error || error.message), 'danger', 5000);
   }
 }
 

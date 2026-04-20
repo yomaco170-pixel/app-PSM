@@ -1814,7 +1814,7 @@ app.put('/api/deals/:id', async (c) => {
   }
 })
 
-// DELETE /api/deals/:id - Supprimer un deal
+// DELETE /api/deals/:id - Supprimer un deal + données liées (devis, photos)
 app.delete('/api/deals/:id', async (c) => {
   try {
     const authHeader = c.req.header('Authorization')
@@ -1823,11 +1823,35 @@ app.delete('/api/deals/:id', async (c) => {
     }
 
     const dealId = c.req.param('id')
+
+    // Vérifier que le dossier existe
+    const existing = await c.env.DB.prepare('SELECT id FROM deals WHERE id = ?').bind(dealId).first()
+    if (!existing) {
+      return c.json({ error: 'Dossier introuvable' }, 404)
+    }
+
+    // Cascade : supprimer les données liées dans l'ordre (ignore les tables inexistantes)
+    const safeExec = async (sql: string, ...params: any[]) => {
+      try {
+        await c.env.DB.prepare(sql).bind(...params).run()
+      } catch (e) {
+        // Ignore si la table n'existe pas (ex: quote_lines peut ne pas exister)
+        console.log('Cascade delete skipped:', sql, (e as Error).message)
+      }
+    }
+
+    await safeExec('DELETE FROM quote_lines WHERE quote_id IN (SELECT id FROM quotes WHERE deal_id = ?)', dealId)
+    await safeExec('DELETE FROM quotes WHERE deal_id = ?', dealId)
+    await safeExec('DELETE FROM photos WHERE deal_id = ?', dealId)
+    await safeExec('DELETE FROM tasks WHERE deal_id = ?', dealId)
+    await safeExec('DELETE FROM calendar_events WHERE deal_id = ?', dealId)
+    // Supprimer le deal lui-même
     await c.env.DB.prepare('DELETE FROM deals WHERE id = ?').bind(dealId).run()
-    return c.json({ success: true })
+
+    return c.json({ success: true, message: 'Dossier et données liées supprimés' })
   } catch (error) {
     console.error('Error deleting deal:', error)
-    return c.json({ error: 'Erreur serveur' }, 500)
+    return c.json({ error: (error as Error).message || 'Erreur serveur' }, 500)
   }
 })
 
