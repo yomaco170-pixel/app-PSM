@@ -1979,10 +1979,13 @@ function renderLayout(content) {
           </div>
         </div>
         <nav>
+          <button class="${state.currentView === 'dashboard' ? 'active' : ''}" onclick="navigate('dashboard')">
+            <i class="fas fa-home"></i> Accueil
+          </button>
           <button class="${state.currentView === 'pipeline' ? 'active' : ''}" onclick="navigate('pipeline')">
             <i class="fas fa-columns"></i> Pipeline
           </button>
-          <button class="${state.currentView === 'clients' ? 'active' : ''}" onclick="console.log('🔴 Clic Desktop Clients!'); navigate('clients')">
+          <button class="${state.currentView === 'clients' ? 'active' : ''}" onclick="navigate('clients')">
             <i class="fas fa-users"></i> Clients
           </button>
           <button class="${state.currentView === 'quotes' ? 'active' : ''}" onclick="navigate('quotes')">
@@ -1990,6 +1993,12 @@ function renderLayout(content) {
           </button>
           <button class="${state.currentView === 'calendar' ? 'active' : ''}" onclick="navigate('calendar')">
             <i class="fas fa-calendar-alt"></i> Calendrier
+          </button>
+          <button class="${state.currentView === 'mails' ? 'active' : ''}" onclick="navigate('mails')">
+            <i class="fas fa-envelope"></i> Emails
+          </button>
+          <button class="${state.currentView === 'tasks' ? 'active' : ''}" onclick="navigate('tasks')">
+            <i class="fas fa-tasks"></i> Tâches
           </button>
           <button class="${state.currentView === 'settings' ? 'active' : ''}" onclick="navigate('settings')">
             <i class="fas fa-cog"></i> Paramètres
