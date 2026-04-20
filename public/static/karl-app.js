@@ -4343,26 +4343,21 @@ async function viewDealModal(dealId) {
             <div class="mb-4">
               <!-- Bouton principal selon statut -->
               ${getPrimaryActionButton(deal.id, dealStatus, deal.rdv_date)}
-              
-              <!-- Menu actions secondaires -->
-              <div class="mt-2" style="position: relative; display: inline-block;">
-                <button class="btn btn-secondary btn-sm" onclick="toggleDealActionsMenu(${deal.id})" id="dealActionsBtn_${deal.id}">
-                  <i class="fas fa-ellipsis-v"></i> Autres actions
+
+              <!-- Actions secondaires : visibles directement (fiable sur mobile) -->
+              <div class="deal-actions-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem;">
+                <button class="btn btn-secondary btn-sm" onclick="openEditLeadModal(${deal.id})" style="width: 100%;">
+                  <i class="fas fa-edit"></i> Modifier
                 </button>
-                <div id="dealActionsMenu_${deal.id}" style="display: none; position: absolute; top: 100%; left: 0; background: #1f2937; border: 1px solid #374151; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); min-width: 200px; margin-top: 0.25rem; z-index: 1000;">
-                  <button class="btn btn-sm" onclick="openEditLeadModal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151;">
-                    <i class="fas fa-edit"></i> Modifier le lead
-                  </button>
-                  <button class="btn btn-sm" onclick="openChangeStatusModal(${deal.id}, '${dealStatus}'); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151;">
-                    <i class="fas fa-arrow-right"></i> Changer statut
-                  </button>
-                  <button class="btn btn-sm" onclick="confirmArchiveDeal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; border-bottom: 1px solid #374151; color: #f59e0b;">
-                    <i class="fas fa-archive"></i> Archiver (corbeille)
-                  </button>
-                  <button class="btn btn-sm" onclick="deleteDealFromModal(${deal.id}); toggleDealActionsMenu(${deal.id})" style="width: 100%; text-align: left; border-radius: 0; color: #ef4444; font-weight: 600;">
-                    <i class="fas fa-trash"></i> Supprimer définitivement
-                  </button>
-                </div>
+                <button class="btn btn-secondary btn-sm" onclick="openChangeStatusModal(${deal.id}, '${dealStatus}')" style="width: 100%;">
+                  <i class="fas fa-arrow-right"></i> Changer statut
+                </button>
+                <button class="btn btn-sm" onclick="confirmArchiveDeal(${deal.id})" style="width: 100%; background: #f59e0b; color: white; border: none;">
+                  <i class="fas fa-archive"></i> Archiver
+                </button>
+                <button class="btn btn-sm" onclick="deleteDealFromModal(${deal.id})" style="width: 100%; background: #dc2626; color: white; border: none; font-weight: 600;">
+                  <i class="fas fa-trash"></i> Supprimer
+                </button>
               </div>
             </div>
             
