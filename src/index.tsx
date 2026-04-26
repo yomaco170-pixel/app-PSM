@@ -1913,15 +1913,25 @@ app.post('/api/quotes', async (c) => {
       return c.json({ error: 'Non autorisé' }, 401)
     }
 
+    // Décoder le token pour récupérer user_id (requis NOT NULL en production)
+    const token = authHeader.replace('Bearer ', '')
+    let decoded: any = { id: 1 }
+    try {
+      decoded = JSON.parse(atob(token))
+    } catch (e) {
+      // token non-base64 ou invalide, on garde id=1 par défaut
+    }
+    const userId = decoded.id || decoded.user_id || 1
+
     const data = await c.req.json()
 
     // Générer le numéro de devis (format: DEV-YYYYMMDD-XXX)
     const now = new Date()
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
     
-    // Compter les devis du jour
+    // Compter les devis du jour (compatible colonnes number ET quote_number)
     const count = await c.env.DB.prepare(
-      `SELECT COUNT(*) as cnt FROM quotes WHERE number LIKE 'DEV-${dateStr}%'`
+      `SELECT COUNT(*) as cnt FROM quotes WHERE (number LIKE 'DEV-${dateStr}%' OR quote_number LIKE 'DEV-${dateStr}%')`
     ).first()
     
     const num = String((count?.cnt || 0) + 1).padStart(3, '0')
@@ -1931,25 +1941,28 @@ app.post('/api/quotes', async (c) => {
     let totalHT = 0
     let totalTVA = 0
     
-    data.items.forEach((item: any) => {
-      const lineHT = item.qty * item.unit_price_ht * (1 - (item.discount_percent || 0) / 100)
-      const lineTVA = lineHT * (item.vat_rate / 100)
+    const items = data.items || []
+    items.forEach((item: any) => {
+      const lineHT = (item.qty || 1) * (item.unit_price_ht || 0) * (1 - (item.discount_percent || 0) / 100)
+      const lineTVA = lineHT * ((item.vat_rate || 10) / 100)
       totalHT += lineHT
       totalTVA += lineTVA
     })
     
     const totalTTC = totalHT + totalTVA
-    const depositAmount = totalTTC * (data.deposit_rate / 100)
+    const depositAmount = totalTTC * ((data.deposit_rate || 30) / 100)
 
-    // Insérer le devis
+    // Insérer le devis — user_id inclus (NOT NULL dans schéma production)
     const result = await c.env.DB.prepare(
       `INSERT INTO quotes (
-        number, deal_id, client_id, total_ht, total_tva, total_ttc,
+        user_id, number, quote_number, deal_id, client_id, total_ht, total_tva, total_ttc,
         deposit_rate, deposit_amount, validity_days, valid_until, status, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
+      userId,
       quoteNumber,
-      data.deal_id,
+      quoteNumber,
+      data.deal_id || null,
       data.client_id || null,
       totalHT,
       totalTVA,
@@ -1965,7 +1978,7 @@ app.post('/api/quotes', async (c) => {
     const quoteId = result.meta.last_row_id
 
     // Insérer les lignes
-    for (const item of data.items) {
+    for (const item of items) {
       await c.env.DB.prepare(
         `INSERT INTO quote_items (
           quote_id, position, title, description, qty, unit,
@@ -1973,12 +1986,12 @@ app.post('/api/quotes', async (c) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         quoteId,
-        item.position,
-        item.title,
+        item.position || 0,
+        item.title || 'Article',
         item.description || null,
-        item.qty,
+        item.qty || 1,
         item.unit || 'pce',
-        item.unit_price_ht,
+        item.unit_price_ht || 0,
         item.vat_rate || 10,
         item.discount_percent || 0,
         item.item_type || 'product'
