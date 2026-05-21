@@ -201,18 +201,11 @@
   }
 
   async function loadToday() {
-    const box = document.getElementById('today-content');
-    const summary = document.getElementById('today-summary');
-    if (!box) return;
     const data = await api('/v2/api/today');
-    if (!data || data.error) {
-      box.innerHTML = '<p class="text-sm text-slate-400">Erreur de chargement.</p>';
-      return;
-    }
+    if (!data || data.error) return;
     const total = (data.counts?.rdv || 0) + (data.counts?.to_follow || 0) + (data.counts?.to_quote || 0);
-    summary.textContent = total === 0 ? 'rien d\'urgent' : `${total} action${total > 1 ? 's' : ''}`;
 
-    // Badge cloche + badge card "Aujourd'hui"
+    // Badges cloche + card "Aujourd'hui" (toujours, même si la page n'a pas la section détaillée)
     setDashBadge('today', total);
     const bell = document.getElementById('notif-badge');
     if (bell) {
@@ -223,6 +216,12 @@
         bell.classList.add('hidden');
       }
     }
+
+    // Rendu détaillé seulement si on est sur la page Aujourd'hui (ou ailleurs qui contient #today-content)
+    const box = document.getElementById('today-content');
+    const summary = document.getElementById('today-summary');
+    if (!box) return;
+    if (summary) summary.textContent = total === 0 ? 'rien d\'urgent' : `${total} action${total > 1 ? 's' : ''}`;
 
     if (total === 0) {
       box.innerHTML = '<p class="text-sm text-slate-400 flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i>Rien d\'urgent aujourd\'hui. Profite-en pour prospecter !</p>';
@@ -328,16 +327,23 @@
         red: 'border-red-300 bg-red-50',
         emerald: 'border-emerald-300 bg-emerald-50',
       };
+      // V2.5 : layout vertical sur mobile (w-full), grid 2 cols sur desktop
+      // Colonne repliable avec chevron pour économiser l'espace vertical
+      const collapsedStorageKey = `kanban-col-${stage.id}-collapsed`;
+      const isCollapsed = localStorage.getItem(collapsedStorageKey) === '1';
       return `
-        <div class="flex-shrink-0 w-72 md:w-auto kanban-column" data-stage-id="${stage.id}">
-          <div class="rounded-t-xl px-3 py-2 ${colorMap[stage.color] || 'border-slate-300 bg-slate-50'} border-t border-x">
-            <div class="flex items-center justify-between">
+        <div class="kanban-column w-full" data-stage-id="${stage.id}">
+          <button class="kanban-col-toggle w-full rounded-t-xl px-3 py-2 ${colorMap[stage.color] || 'border-slate-300 bg-slate-50'} border-t border-x flex items-center justify-between text-left" data-col-key="${collapsedStorageKey}">
+            <div class="min-w-0">
               <h3 class="font-semibold text-slate-900 text-sm">${escapeHtml(stage.label)}</h3>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-white border border-slate-200">${deals.length}</span>
+              <p class="text-xs text-slate-500 mt-0.5">${formatAmount(stage.total_amount || 0)}</p>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">${formatAmount(stage.total_amount || 0)}</p>
-          </div>
-          <div class="rounded-b-xl border border-slate-200 bg-white p-2 space-y-2 min-h-[200px] kanban-dropzone" data-stage-id="${stage.id}">
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-white border border-slate-200">${deals.length}</span>
+              <i class="fas fa-chevron-${isCollapsed ? 'right' : 'down'} text-slate-400 text-xs kanban-col-chevron"></i>
+            </div>
+          </button>
+          <div class="kanban-col-body rounded-b-xl border border-slate-200 bg-white p-2 space-y-2 min-h-[80px] kanban-dropzone ${isCollapsed ? 'hidden' : ''}" data-stage-id="${stage.id}">
             ${deals.length === 0
               ? `<p class="text-xs text-slate-400 text-center py-6">—</p>`
               : deals.map(d => `
@@ -367,6 +373,27 @@
     }).filter(Boolean).join('') || '<p class="text-slate-400 py-8 text-center">Aucun dossier ne correspond.</p>';
 
     setupKanbanDragDrop();
+    setupKanbanColumnToggle();
+  }
+
+  // V2.5 : Toggle plier/déplier chaque colonne kanban (utile en vertical)
+  function setupKanbanColumnToggle() {
+    document.querySelectorAll('.kanban-col-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const col = btn.closest('.kanban-column');
+        const body = col?.querySelector('.kanban-col-body');
+        const chevron = btn.querySelector('.kanban-col-chevron');
+        if (!body) return;
+        const wasHidden = body.classList.contains('hidden');
+        body.classList.toggle('hidden');
+        if (chevron) {
+          chevron.classList.toggle('fa-chevron-down', wasHidden);
+          chevron.classList.toggle('fa-chevron-right', !wasHidden);
+        }
+        const key = btn.dataset.colKey;
+        if (key) localStorage.setItem(key, wasHidden ? '0' : '1');
+      });
+    });
   }
 
   // ============================================================
@@ -1627,11 +1654,15 @@
       });
       document.getElementById('briefing-refresh')?.addEventListener('click', loadBriefing);
 
-      // V2.4 : Cloche → scroll vers la section #today
+      // V2.5 : Cloche header → page /v2/today
       document.getElementById('notif-bell')?.addEventListener('click', () => {
-        const t = document.getElementById('today');
-        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.location.href = '/v2/today';
       });
+    }
+    if (document.getElementById('today-page')) {
+      // Page dédiée : on charge les KPIs + listes via /api/dashboard, et le détail via /api/today
+      loadDashboard();
+      loadToday();
     }
     if (document.getElementById('pipeline-page')) {
       setupPipeline();

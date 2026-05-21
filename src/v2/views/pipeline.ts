@@ -25,8 +25,8 @@ export function renderPipeline(): string {
       <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
     </div>
 
-    <!-- Kanban mobile : scroll horizontal, desktop : grid -->
-    <div id="kanban-board" class="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 md:grid md:grid-cols-4 md:gap-3 md:overflow-x-visible md:mx-0 md:px-0">
+    <!-- Kanban : empilement vertical sur mobile (1 colonne = 1 section), grid 2 colonnes sur desktop -->
+    <div id="kanban-board" class="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 pb-4">
       <div class="flex items-center justify-center w-full py-12 text-slate-400">
         <i class="fas fa-circle-notch fa-spin mr-2"></i>Chargement du pipeline...
       </div>

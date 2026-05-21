@@ -17,6 +17,7 @@ import { renderDealDetail } from './views/deal'
 import { renderInbox } from './views/inbox'
 import { renderQuotes } from './views/quotes'
 import { renderMore } from './views/more'
+import { renderToday } from './views/today'
 
 type Bindings = {
   DB: D1Database
@@ -91,6 +92,14 @@ v2.get('/more', (c) =>
   }))
 )
 
+v2.get('/today', (c) =>
+  c.html(renderShell({
+    title: "Aujourd'hui — KARL v2",
+    body: renderToday(),
+    page: 'today',
+  }))
+)
+
 v2.get('/deal/:id', (c) => {
   const id = c.req.param('id')
   return c.html(renderShell({
@@ -108,7 +117,7 @@ v2.get('/api/health', (c) => {
   const ai = getAI(c.env)
   return c.json({
     status: 'ok',
-    version: '2.4.0',
+    version: '2.5.0',
     ai_configured: ai.isConfigured,
     timestamp: new Date().toISOString(),
   })

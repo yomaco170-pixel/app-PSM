@@ -1,9 +1,10 @@
 /**
- * Page Dashboard V2.4 — style "cards colorées" inspiré V1
+ * Page Dashboard V2.5 — style "cards colorées" inspiré V1, SIMPLIFIÉ
  * - Header blanc avec logo KARL + date/heure + cloche
  * - Titre "Tableau de bord" centré sur fond slate
  * - 6 grandes cards en dégradés couleurs (2 colonnes)
- * - Panneau "Aujourd'hui" + Briefing IA dépliable en bas
+ * - Briefing IA dépliable
+ * - PAS de section "Aujourd'hui" en dessous : tout passe par les cards
  */
 
 export function renderDashboard(): string {
@@ -17,12 +18,12 @@ export function renderDashboard(): string {
     </div>
 
     <!-- Section principale fond slate -->
-    <section class="bg-slate-700 px-4 pt-6 pb-8">
+    <section class="bg-slate-700 px-4 pt-6 pb-8 min-h-screen">
       <h1 class="text-3xl font-bold text-white text-center">Tableau de bord</h1>
       <p id="dash-welcome" class="text-slate-300 text-center mt-1.5 text-sm">Bienvenue —</p>
 
       <!-- Bouton briefing IA (dépliable) -->
-      <button id="briefing-toggle" class="mt-4 mx-auto block px-4 py-2 rounded-xl bg-slate-600/60 hover:bg-slate-600 text-slate-200 text-sm flex items-center gap-2 transition">
+      <button id="briefing-toggle" class="mt-4 mx-auto px-4 py-2 rounded-xl bg-slate-600/60 hover:bg-slate-600 text-slate-200 text-sm flex items-center gap-2 transition">
         <i class="fas fa-wand-magic-sparkles text-yellow-300"></i>
         <span>Briefing IA du jour</span>
         <i id="briefing-chevron" class="fas fa-chevron-down text-xs transition-transform"></i>
@@ -71,8 +72,8 @@ export function renderDashboard(): string {
           <span data-dash-badge="devis" class="hidden absolute top-2 right-2 min-w-[1.5rem] h-6 px-1.5 rounded-full bg-white text-slate-900 text-xs font-bold flex items-center justify-center">0</span>
         </a>
 
-        <!-- Tâches / Aujourd'hui : vert menthe → vert turquoise -->
-        <a href="#today" id="card-today" class="dash-card relative overflow-hidden rounded-2xl p-4 h-32 flex flex-col items-center justify-center text-white shadow-lg active:scale-95 transition"
+        <!-- Aujourd'hui : vert menthe → vert turquoise → /v2/today -->
+        <a href="/v2/today" class="dash-card relative overflow-hidden rounded-2xl p-4 h-32 flex flex-col items-center justify-center text-white shadow-lg active:scale-95 transition"
            style="background: linear-gradient(135deg, #80e8b6 0%, #00bfa5 100%);">
           <i class="fas fa-list-check text-3xl mb-1.5"></i>
           <p class="font-bold text-base">Aujourd'hui</p>
@@ -80,7 +81,7 @@ export function renderDashboard(): string {
           <span data-dash-badge="today" class="hidden absolute top-2 right-2 min-w-[1.5rem] h-6 px-1.5 rounded-full bg-white text-slate-900 text-xs font-bold flex items-center justify-center">0</span>
         </a>
 
-        <!-- Mails : bleu pâle → gris doux -->
+        <!-- Mails : bleu pâle → bleu -->
         <a href="/v2/inbox" class="dash-card relative overflow-hidden rounded-2xl p-4 h-32 flex flex-col items-center justify-center text-white shadow-lg active:scale-95 transition"
            style="background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);">
           <i class="fas fa-envelope text-3xl mb-1.5 text-white drop-shadow"></i>
@@ -98,74 +99,6 @@ export function renderDashboard(): string {
         </a>
 
       </div>
-    </section>
-
-    <!-- Section "Aujourd'hui" (ancre #today) -->
-    <section id="today" class="bg-slate-50 px-4 py-5 space-y-4">
-
-      <!-- KPIs en 4 mini-cards -->
-      <div class="grid grid-cols-4 gap-2">
-        <a href="/v2/pipeline?filter=hot" class="bg-white rounded-xl p-3 border border-slate-200 hover:border-orange-300 transition">
-          <div class="text-2xl font-bold text-orange-600" data-stat="hot_deals">—</div>
-          <div class="text-[10px] text-slate-500 uppercase mt-0.5">Chauds</div>
-        </a>
-        <a href="/v2/pipeline?filter=stuck" class="bg-white rounded-xl p-3 border border-slate-200 hover:border-amber-300 transition">
-          <div class="text-2xl font-bold text-amber-600" data-stat="stuck_deals">—</div>
-          <div class="text-[10px] text-slate-500 uppercase mt-0.5">Bloqués</div>
-        </a>
-        <a href="/v2/quotes?status=brouillon" class="bg-white rounded-xl p-3 border border-slate-200 hover:border-karl-300 transition">
-          <div class="text-2xl font-bold text-karl-600" data-stat="draft_quotes">—</div>
-          <div class="text-[10px] text-slate-500 uppercase mt-0.5">Brouillons</div>
-        </a>
-        <a href="/v2/quotes?status=envoye" class="bg-white rounded-xl p-3 border border-slate-200 hover:border-emerald-300 transition">
-          <div class="text-2xl font-bold text-emerald-600" data-stat="pending_amount_short">—</div>
-          <div class="text-[10px] text-slate-500 uppercase mt-0.5">À signer</div>
-        </a>
-      </div>
-
-      <!-- Box Aujourd'hui dynamique -->
-      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-slate-900 flex items-center gap-2">
-            <i class="fas fa-calendar-day text-karl-600"></i>
-            Aujourd'hui
-          </h3>
-          <span class="text-xs text-slate-400" id="today-summary">—</span>
-        </div>
-        <div id="today-content" class="space-y-3">
-          <div class="text-sm text-slate-400">Chargement...</div>
-        </div>
-      </div>
-
-      <!-- Dossiers chauds (compact) -->
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold text-slate-900 flex items-center gap-2 text-sm">
-            <i class="fas fa-fire text-orange-500"></i>
-            Dossiers chauds
-          </h3>
-          <a href="/v2/pipeline" class="text-xs text-karl-600 hover:underline">Voir tout →</a>
-        </div>
-        <div id="hot-deals-list" class="space-y-2">
-          <div class="bg-white rounded-xl p-3 border border-slate-200 text-sm text-slate-400">
-            Chargement...
-          </div>
-        </div>
-      </div>
-
-      <!-- Dossiers bloqués (compact) -->
-      <div>
-        <h3 class="font-semibold text-slate-900 flex items-center gap-2 text-sm mb-2">
-          <i class="fas fa-triangle-exclamation text-amber-500"></i>
-          Dossiers bloqués
-        </h3>
-        <div id="stuck-deals-list" class="space-y-2">
-          <div class="bg-white rounded-xl p-3 border border-slate-200 text-sm text-slate-400">
-            Chargement...
-          </div>
-        </div>
-      </div>
-
     </section>
 
     <!-- Bouton flottant IA (FAB) -->
