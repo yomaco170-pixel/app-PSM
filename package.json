@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "dev:sandbox": "wrangler pages dev dist --d1=DB --local --ip 0.0.0.0 --port 3000 --compatibility-flags=nodejs_compat",
-    "build": "vite build && cp -r functions dist/",
+    "build": "vite build && cp -r functions dist/ && node scripts/patch-routes.mjs",
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist --project-name=karl-crm",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",

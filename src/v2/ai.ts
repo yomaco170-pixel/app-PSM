@@ -49,12 +49,20 @@ export class AIClient {
       throw new Error('AI_NOT_CONFIGURED: OPENAI_API_KEY manquante')
     }
 
+    const model = options.model || DEFAULT_MODEL
     const body: any = {
-      model: options.model || DEFAULT_MODEL,
+      model,
       messages,
     }
-    if (options.temperature !== undefined) body.temperature = options.temperature
-    if (options.max_tokens) body.max_tokens = options.max_tokens
+    // gpt-5* exige max_completion_tokens et temperature=1 uniquement
+    const isGpt5 = model.startsWith('gpt-5')
+    if (options.max_tokens) {
+      if (isGpt5) body.max_completion_tokens = options.max_tokens
+      else body.max_tokens = options.max_tokens
+    }
+    if (options.temperature !== undefined && !isGpt5) {
+      body.temperature = options.temperature
+    }
     if (options.json) body.response_format = { type: 'json_object' }
 
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
