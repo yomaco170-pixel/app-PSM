@@ -108,7 +108,7 @@ v2.get('/api/health', (c) => {
   const ai = getAI(c.env)
   return c.json({
     status: 'ok',
-    version: '2.3.0',
+    version: '2.4.0',
     ai_configured: ai.isConfigured,
     timestamp: new Date().toISOString(),
   })

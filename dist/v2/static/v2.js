@@ -88,6 +88,38 @@
     setStat('pending_amount_short', formatShortAmount(dash.stats.pending_amount));
     renderDealsList('hot-deals-list', dash.hot_deals, 'orange');
     renderDealsList('stuck-deals-list', dash.stuck_deals, 'amber');
+
+    // Welcome message + badges sur les cards colorées
+    const user = getUser();
+    const welc = document.getElementById('dash-welcome');
+    if (welc && user) welc.textContent = `Bienvenue ${user.name || ''}`;
+
+    // Badges contextuels sur les cards
+    setDashBadge('pipeline', dash.stats.hot_deals + dash.stats.stuck_deals);
+    setDashBadge('clients', dash.stats.clients_count);
+    setDashBadge('devis', dash.stats.draft_quotes + dash.stats.sent_quotes);
+  }
+
+  function setDashBadge(key, value) {
+    const el = document.querySelector(`[data-dash-badge="${key}"]`);
+    if (!el) return;
+    if (!value || value === 0) {
+      el.classList.add('hidden');
+    } else {
+      el.classList.remove('hidden');
+      el.textContent = value > 99 ? '99+' : String(value);
+    }
+  }
+
+  // Date/heure live dans le bandeau dashboard
+  function tickDashClock() {
+    const dateEl = document.getElementById('dash-date');
+    const timeEl = document.getElementById('dash-time');
+    if (!dateEl || !timeEl) return;
+    const now = new Date();
+    const dStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    dateEl.textContent = dStr.charAt(0).toUpperCase() + dStr.slice(1);
+    timeEl.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
   function setStat(name, value) {
@@ -179,6 +211,18 @@
     }
     const total = (data.counts?.rdv || 0) + (data.counts?.to_follow || 0) + (data.counts?.to_quote || 0);
     summary.textContent = total === 0 ? 'rien d\'urgent' : `${total} action${total > 1 ? 's' : ''}`;
+
+    // Badge cloche + badge card "Aujourd'hui"
+    setDashBadge('today', total);
+    const bell = document.getElementById('notif-badge');
+    if (bell) {
+      if (total > 0) {
+        bell.classList.remove('hidden');
+        bell.textContent = total > 99 ? '99+' : String(total);
+      } else {
+        bell.classList.add('hidden');
+      }
+    }
 
     if (total === 0) {
       box.innerHTML = '<p class="text-sm text-slate-400 flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i>Rien d\'urgent aujourd\'hui. Profite-en pour prospecter !</p>';
@@ -1437,18 +1481,22 @@
 
   function setupAIBar() {
     const trigger = document.getElementById('ai-bar-trigger');
+    const triggerIcon = document.getElementById('ai-bar-trigger-icon'); // V2.4 : bouton icône header dashboard
+    const fab = document.getElementById('ai-fab'); // V2.4 : bouton flottant
     const modal = document.getElementById('ai-bar-modal');
     const input = document.getElementById('ai-bar-input');
     const resultBox = document.getElementById('ai-bar-result');
     const resultText = document.getElementById('ai-bar-result-text');
     const micBtn = document.getElementById('ai-bar-mic');
 
-    if (!trigger || !modal) return;
+    if (!modal) return;
 
     const open = () => { modal.classList.remove('hidden'); setTimeout(() => input?.focus(), 50); };
-    const close = () => { modal.classList.add('hidden'); input.value = ''; resultBox.classList.add('hidden'); };
+    const close = () => { modal.classList.add('hidden'); if (input) input.value = ''; resultBox?.classList.add('hidden'); };
 
-    trigger.addEventListener('click', open);
+    trigger?.addEventListener('click', open);
+    triggerIcon?.addEventListener('click', open);
+    fab?.addEventListener('click', open);
 
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); open(); }
@@ -1556,9 +1604,34 @@
 
     if (document.getElementById('dash')) {
       loadDashboard();
-      loadBriefing();
       loadToday();
+
+      // V2.4 : Horloge live dans le bandeau date/heure
+      tickDashClock();
+      setInterval(tickDashClock, 1000);
+
+      // V2.4 : Toggle briefing IA (replié par défaut, chargé à la 1re ouverture)
+      const briefToggle = document.getElementById('briefing-toggle');
+      const briefPanel = document.getElementById('briefing-panel');
+      const briefChevron = document.getElementById('briefing-chevron');
+      let briefLoaded = false;
+      briefToggle?.addEventListener('click', () => {
+        if (!briefPanel) return;
+        const willOpen = briefPanel.classList.contains('hidden');
+        briefPanel.classList.toggle('hidden');
+        if (briefChevron) briefChevron.style.transform = willOpen ? 'rotate(180deg)' : '';
+        if (willOpen && !briefLoaded) {
+          loadBriefing();
+          briefLoaded = true;
+        }
+      });
       document.getElementById('briefing-refresh')?.addEventListener('click', loadBriefing);
+
+      // V2.4 : Cloche → scroll vers la section #today
+      document.getElementById('notif-bell')?.addEventListener('click', () => {
+        const t = document.getElementById('today');
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     }
     if (document.getElementById('pipeline-page')) {
       setupPipeline();

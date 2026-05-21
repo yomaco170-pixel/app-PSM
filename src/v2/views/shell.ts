@@ -41,7 +41,7 @@ export function renderShell({ title, body, page = '', minimal = false }: ShellOp
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
   ${minimal ? '' : renderHeader(page)}
-  <main class="${minimal ? '' : 'pt-16 pb-24 md:pb-8'} max-w-6xl mx-auto px-4">
+  <main class="${minimal ? '' : 'pt-16 pb-24 md:pb-8'} max-w-6xl mx-auto ${page === 'dashboard' ? 'px-0' : 'px-4'}">
     ${body}
   </main>
   ${minimal ? '' : renderBottomNav(page)}
@@ -52,6 +52,28 @@ export function renderShell({ title, body, page = '', minimal = false }: ShellOp
 }
 
 function renderHeader(page: string): string {
+  // Header dashboard : style "KARL / PSM" + cloche (comme la V1)
+  if (page === 'dashboard') {
+    return `
+    <header class="fixed top-0 inset-x-0 z-40 bg-white border-b border-slate-200">
+      <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+        <a href="/v2" class="flex flex-col leading-tight">
+          <span class="font-extrabold text-slate-900 text-lg tracking-tight">KARL</span>
+          <span class="text-[11px] text-slate-500 -mt-0.5">PSM Portails Sur Mesure</span>
+        </a>
+        <div class="flex items-center gap-2">
+          <button id="ai-bar-trigger-icon" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center" title="Assistant IA (⌘K)">
+            <i class="fas fa-wand-magic-sparkles text-karl-600"></i>
+          </button>
+          <button id="notif-bell" class="relative w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center" title="Notifications">
+            <i class="fas fa-bell text-slate-700"></i>
+            <span id="notif-badge" class="hidden absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+          </button>
+        </div>
+      </div>
+    </header>`
+  }
+  // Header générique pour les autres pages (inchangé)
   return `
   <header class="fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
