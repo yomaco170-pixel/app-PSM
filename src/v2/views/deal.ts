@@ -13,6 +13,9 @@ export function renderDealDetail(dealId: string): string {
         <h1 id="deal-title" class="text-xl font-bold text-slate-900 truncate">Chargement…</h1>
         <p id="deal-client" class="text-sm text-slate-500 truncate">—</p>
       </div>
+      <button id="deal-edit-btn" class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50" title="Éditer le dossier">
+        <i class="fas fa-pen-to-square"></i>
+      </button>
     </div>
 
     <!-- Score + flags -->

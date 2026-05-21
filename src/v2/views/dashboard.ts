@@ -26,6 +26,20 @@ export function renderDashboard(): string {
       </div>
     </section>
 
+    <!-- Aujourd'hui : actions concrètes -->
+    <section id="today-section" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+          <i class="fas fa-calendar-day text-karl-600"></i>
+          Aujourd'hui
+        </h3>
+        <span class="text-xs text-slate-400" id="today-summary">—</span>
+      </div>
+      <div id="today-content" class="space-y-3">
+        <div class="text-sm text-slate-400">Chargement...</div>
+      </div>
+    </section>
+
     <!-- Cartes d'actions -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <a href="/v2/pipeline?filter=hot" class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hover:border-orange-300 transition">

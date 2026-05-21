@@ -108,7 +108,7 @@ v2.get('/api/health', (c) => {
   const ai = getAI(c.env)
   return c.json({
     status: 'ok',
-    version: '2.2.0',
+    version: '2.3.0',
     ai_configured: ai.isConfigured,
     timestamp: new Date().toISOString(),
   })
@@ -537,6 +537,230 @@ v2.get('/api/deal/:id', async (c) => {
     return c.json({
       deal: { ...deal, score: scoring.score, score_label: scoring.label, score_color: scoring.color, score_reasons: scoring.reasons, flags },
       quotes: quotes.results || [],
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — PATCH DOSSIER (édition rapide + drag & drop stage)
+// ============================================================
+v2.patch('/api/deal/:id', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    const allowed = ['title', 'stage', 'amount', 'probability', 'notes', 'client_id', 'rdv_date', 'rdv_notes', 'archived']
+    const updates: string[] = []
+    const binds: any[] = []
+    for (const k of allowed) {
+      if (k in body) {
+        updates.push(`${k} = ?`)
+        binds.push(body[k])
+      }
+    }
+    if (updates.length === 0) return c.json({ error: 'Aucun champ à mettre à jour' }, 400)
+
+    updates.push(`updated_at = datetime('now')`)
+    binds.push(id)
+
+    const r = await c.env.DB.prepare(
+      `UPDATE deals SET ${updates.join(', ')} WHERE id = ?`
+    ).bind(...binds).run()
+
+    if (!r.meta.changes) return c.json({ error: 'Dossier introuvable' }, 404)
+
+    // Renvoyer le deal mis à jour avec score recalculé
+    const deal: any = await c.env.DB.prepare(`
+      SELECT d.*, c.name as client_name FROM deals d
+      LEFT JOIN clients c ON c.id = d.client_id WHERE d.id = ?
+    `).bind(id).first()
+    const scoring = computeDealScore(deal)
+    const flags = computeDealFlags(deal)
+    return c.json({
+      ok: true,
+      deal: { ...deal, score: scoring.score, score_label: scoring.label, score_color: scoring.color, flags },
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — PATCH DEVIS (changer statut)
+// ============================================================
+v2.patch('/api/quotes/:id', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    const allowed = ['status', 'notes', 'total_ht', 'total_tva', 'total_ttc', 'deposit_rate', 'deposit_amount', 'validity_days', 'sent_at']
+    const updates: string[] = []
+    const binds: any[] = []
+    for (const k of allowed) {
+      if (k in body) {
+        updates.push(`${k} = ?`)
+        binds.push(body[k])
+      }
+    }
+    if (updates.length === 0) return c.json({ error: 'Aucun champ à mettre à jour' }, 400)
+
+    // Si passage en "envoye" et pas de sent_at, on l'inscrit
+    if (body.status === 'envoye' || body.status === 'envoyé') {
+      if (!('sent_at' in body)) {
+        updates.push(`sent_at = datetime('now')`)
+      }
+    }
+
+    updates.push(`updated_at = datetime('now')`)
+    binds.push(id)
+
+    const r = await c.env.DB.prepare(
+      `UPDATE quotes SET ${updates.join(', ')} WHERE id = ?`
+    ).bind(...binds).run()
+
+    if (!r.meta.changes) return c.json({ error: 'Devis introuvable' }, 404)
+    return c.json({ ok: true })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — DELETE DEVIS
+// ============================================================
+v2.delete('/api/quotes/:id', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const id = c.req.param('id')
+    const r = await c.env.DB.prepare('DELETE FROM quotes WHERE id = ?').bind(id).run()
+    if (!r.meta.changes) return c.json({ error: 'Devis introuvable' }, 404)
+    return c.json({ ok: true })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — SEARCH UNIFIÉ (deals + clients + quotes)
+// ============================================================
+v2.get('/api/search', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const q = (c.req.query('q') || '').trim()
+    if (!q || q.length < 2) return c.json({ deals: [], clients: [], quotes: [] })
+    const s = `%${q.toLowerCase()}%`
+
+    const [deals, clients, quotes] = await Promise.all([
+      c.env.DB.prepare(`
+        SELECT d.id, d.title, d.amount, d.stage, c.name as client_name
+        FROM deals d LEFT JOIN clients c ON c.id = d.client_id
+        WHERE COALESCE(d.archived, 0) = 0
+          AND (LOWER(d.title) LIKE ? OR LOWER(c.name) LIKE ?)
+        ORDER BY d.updated_at DESC LIMIT 10
+      `).bind(s, s).all(),
+      c.env.DB.prepare(`
+        SELECT id, name, phone, email, status
+        FROM clients
+        WHERE COALESCE(archived, 0) = 0
+          AND (LOWER(name) LIKE ? OR phone LIKE ? OR LOWER(email) LIKE ?)
+        ORDER BY updated_at DESC LIMIT 10
+      `).bind(s, `%${q}%`, s).all(),
+      c.env.DB.prepare(`
+        SELECT q.id, COALESCE(q.number, q.quote_number) as number, q.total_ttc, q.status, q.deal_id,
+               c.name as client_name
+        FROM quotes q LEFT JOIN clients c ON c.id = q.client_id
+        WHERE LOWER(COALESCE(q.number, q.quote_number)) LIKE ? OR LOWER(c.name) LIKE ?
+        ORDER BY q.created_at DESC LIMIT 10
+      `).bind(s, s).all(),
+    ])
+
+    return c.json({
+      deals: deals.results || [],
+      clients: clients.results || [],
+      quotes: quotes.results || [],
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message, deals: [], clients: [], quotes: [] })
+  }
+})
+
+// ============================================================
+// API — AUJOURD'HUI (actions du jour pour le dashboard)
+// ============================================================
+v2.get('/api/today', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const [deals, quotes] = await Promise.all([
+      c.env.DB.prepare(`
+        SELECT d.id, d.title, d.stage, d.amount, d.updated_at, d.created_at, d.rdv_date, d.rdv_notes,
+               c.name as client_name, c.phone as client_phone, c.email as client_email
+        FROM deals d LEFT JOIN clients c ON c.id = d.client_id
+        WHERE COALESCE(d.archived, 0) = 0
+        ORDER BY d.updated_at DESC LIMIT 200
+      `).all(),
+      c.env.DB.prepare(`
+        SELECT q.id, COALESCE(q.number, q.quote_number) as number, q.total_ttc, q.status, q.deal_id,
+               q.created_at, q.sent_at, c.name as client_name
+        FROM quotes q LEFT JOIN clients c ON c.id = q.client_id
+        ORDER BY q.created_at DESC LIMIT 100
+      `).all(),
+    ])
+
+    const now = Date.now()
+    const DAY = 1000 * 60 * 60 * 24
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    const tomorrowEnd = new Date(todayStart); tomorrowEnd.setDate(tomorrowEnd.getDate() + 2)
+
+    const dealsList = (deals.results || []) as any[]
+    const quotesList = (quotes.results || []) as any[]
+
+    // RDV aujourd'hui / demain
+    const rdv = dealsList
+      .filter(d => d.rdv_date)
+      .map(d => ({ ...d, rdv_time: new Date(d.rdv_date).getTime() }))
+      .filter(d => d.rdv_time >= todayStart.getTime() && d.rdv_time < tomorrowEnd.getTime())
+      .sort((a, b) => a.rdv_time - b.rdv_time)
+
+    // Devis à relancer (envoyés > 7j et pas signés)
+    // sent_at peut être null sur devis legacy → fallback sur created_at
+    const toFollow = quotesList
+      .filter(q => q.status === 'envoye' || q.status === 'envoyé')
+      .map(q => {
+        const refDate = q.sent_at || q.created_at
+        return { ...q, days_since: refDate ? Math.floor((now - new Date(refDate).getTime()) / DAY) : 0 }
+      })
+      .filter(q => q.days_since >= 7)
+      .sort((a, b) => b.days_since - a.days_since)
+      .slice(0, 10)
+
+    // Deals à action (stage devis_a_faire)
+    const toQuote = dealsList
+      .filter(d => d.stage === 'devis_a_faire')
+      .map(d => ({ ...d, days_since: Math.floor((now - new Date(d.updated_at || d.created_at).getTime()) / DAY) }))
+      .sort((a, b) => b.days_since - a.days_since)
+      .slice(0, 10)
+
+    return c.json({
+      rdv,
+      to_follow: toFollow,
+      to_quote: toQuote,
+      counts: {
+        rdv: rdv.length,
+        to_follow: toFollow.length,
+        to_quote: toQuote.length,
+      },
     })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)

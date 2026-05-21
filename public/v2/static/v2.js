@@ -168,6 +168,84 @@
     el.textContent = data.briefing || 'Aucun briefing disponible.';
   }
 
+  async function loadToday() {
+    const box = document.getElementById('today-content');
+    const summary = document.getElementById('today-summary');
+    if (!box) return;
+    const data = await api('/v2/api/today');
+    if (!data || data.error) {
+      box.innerHTML = '<p class="text-sm text-slate-400">Erreur de chargement.</p>';
+      return;
+    }
+    const total = (data.counts?.rdv || 0) + (data.counts?.to_follow || 0) + (data.counts?.to_quote || 0);
+    summary.textContent = total === 0 ? 'rien d\'urgent' : `${total} action${total > 1 ? 's' : ''}`;
+
+    if (total === 0) {
+      box.innerHTML = '<p class="text-sm text-slate-400 flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i>Rien d\'urgent aujourd\'hui. Profite-en pour prospecter !</p>';
+      return;
+    }
+
+    const sections = [];
+
+    if (data.rdv?.length) {
+      sections.push(`
+        <div>
+          <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold mb-2"><i class="fas fa-calendar-check mr-1"></i>RDV ${data.counts.rdv}</p>
+          <div class="space-y-1.5">
+            ${data.rdv.map(r => {
+              const t = new Date(r.rdv_date);
+              const tStr = t.toLocaleString('fr-FR', { weekday: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+              return `<a href="/v2/deal/${r.id}" class="flex items-center justify-between gap-2 p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-sm">
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-slate-900 truncate">${escapeHtml(r.title || 'Sans titre')}</p>
+                  <p class="text-xs text-slate-500 truncate">${escapeHtml(r.client_name || '—')} ${r.rdv_notes ? '· ' + escapeHtml(r.rdv_notes) : ''}</p>
+                </div>
+                <span class="text-xs font-semibold text-blue-700 whitespace-nowrap">${tStr}</span>
+              </a>`;
+            }).join('')}
+          </div>
+        </div>`);
+    }
+
+    if (data.to_follow?.length) {
+      sections.push(`
+        <div>
+          <p class="text-xs uppercase tracking-wide text-red-600 font-semibold mb-2"><i class="fas fa-bell mr-1"></i>À relancer ${data.counts.to_follow}</p>
+          <div class="space-y-1.5">
+            ${data.to_follow.map(q => `
+              <a href="/v2/deal/${q.deal_id || ''}" class="flex items-center justify-between gap-2 p-2 rounded-lg bg-red-50 hover:bg-red-100 text-sm">
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-slate-900 truncate">${escapeHtml(q.number || '—')} · ${escapeHtml(q.client_name || '?')}</p>
+                  <p class="text-xs text-slate-500">Envoyé il y a ${q.days_since}j · ${formatAmount(q.total_ttc || 0)} TTC</p>
+                </div>
+                <i class="fas fa-arrow-right text-red-500"></i>
+              </a>
+            `).join('')}
+          </div>
+        </div>`);
+    }
+
+    if (data.to_quote?.length) {
+      sections.push(`
+        <div>
+          <p class="text-xs uppercase tracking-wide text-amber-600 font-semibold mb-2"><i class="fas fa-file-pen mr-1"></i>Devis à faire ${data.counts.to_quote}</p>
+          <div class="space-y-1.5">
+            ${data.to_quote.map(d => `
+              <a href="/v2/deal/${d.id}" class="flex items-center justify-between gap-2 p-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-sm">
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-slate-900 truncate">${escapeHtml(d.title || 'Sans titre')}</p>
+                  <p class="text-xs text-slate-500 truncate">${escapeHtml(d.client_name || '—')} · ${d.days_since}j de retard</p>
+                </div>
+                <i class="fas fa-arrow-right text-amber-500"></i>
+              </a>
+            `).join('')}
+          </div>
+        </div>`);
+    }
+
+    box.innerHTML = sections.join('');
+  }
+
   // ============================================================
   // Pipeline (Kanban)
   // ============================================================
@@ -207,7 +285,7 @@
         emerald: 'border-emerald-300 bg-emerald-50',
       };
       return `
-        <div class="flex-shrink-0 w-72 md:w-auto">
+        <div class="flex-shrink-0 w-72 md:w-auto kanban-column" data-stage-id="${stage.id}">
           <div class="rounded-t-xl px-3 py-2 ${colorMap[stage.color] || 'border-slate-300 bg-slate-50'} border-t border-x">
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-slate-900 text-sm">${escapeHtml(stage.label)}</h3>
@@ -215,28 +293,148 @@
             </div>
             <p class="text-xs text-slate-500 mt-0.5">${formatAmount(stage.total_amount || 0)}</p>
           </div>
-          <div class="rounded-b-xl border border-slate-200 bg-white p-2 space-y-2 min-h-[200px]">
+          <div class="rounded-b-xl border border-slate-200 bg-white p-2 space-y-2 min-h-[200px] kanban-dropzone" data-stage-id="${stage.id}">
             ${deals.length === 0
               ? `<p class="text-xs text-slate-400 text-center py-6">—</p>`
               : deals.map(d => `
-                <a href="/v2/deal/${d.id}" class="block bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg p-2.5 transition">
-                  <div class="flex items-center justify-between gap-1.5">
-                    <p class="text-sm font-medium text-slate-900 truncate flex-1">${escapeHtml(d.title || 'Sans titre')}</p>
-                    ${scoreBadge(d)}
-                  </div>
-                  <p class="text-xs text-slate-500 truncate">${escapeHtml(d.client_name || '—')}</p>
-                  ${flagsRow(d.flags)}
-                  <div class="flex items-center justify-between mt-1.5">
-                    <span class="text-xs font-semibold text-slate-700">${formatShortAmount(d.amount || 0)}</span>
-                    <span class="text-[10px] text-slate-400">${formatRelative(d.updated_at || d.created_at)}</span>
-                  </div>
-                </a>
+                <div class="kanban-card relative bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg p-2.5 transition cursor-grab active:cursor-grabbing select-none"
+                     data-deal-id="${d.id}" data-deal-stage="${escapeHtml(d.stage || '')}">
+                  <a href="/v2/deal/${d.id}" class="block kanban-card-link">
+                    <div class="flex items-center justify-between gap-1.5">
+                      <p class="text-sm font-medium text-slate-900 truncate flex-1">${escapeHtml(d.title || 'Sans titre')}</p>
+                      ${scoreBadge(d)}
+                    </div>
+                    <p class="text-xs text-slate-500 truncate">${escapeHtml(d.client_name || '—')}</p>
+                    ${flagsRow(d.flags)}
+                    <div class="flex items-center justify-between mt-1.5">
+                      <span class="text-xs font-semibold text-slate-700">${formatShortAmount(d.amount || 0)}</span>
+                      <span class="text-[10px] text-slate-400">${formatRelative(d.updated_at || d.created_at)}</span>
+                    </div>
+                  </a>
+                  <button class="kanban-drag-handle absolute top-1 right-1 w-6 h-6 rounded text-slate-300 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center" title="Déplacer">
+                    <i class="fas fa-grip-vertical text-xs"></i>
+                  </button>
+                </div>
               `).join('')
             }
           </div>
         </div>
       `;
     }).filter(Boolean).join('') || '<p class="text-slate-400 py-8 text-center">Aucun dossier ne correspond.</p>';
+
+    setupKanbanDragDrop();
+  }
+
+  // ============================================================
+  // Drag & drop Kanban (pointer events: mouse + touch)
+  // ============================================================
+  function setupKanbanDragDrop() {
+    const board = document.getElementById('kanban-board');
+    if (!board) return;
+
+    let ghost = null;        // élément flottant suivant le pointeur
+    let sourceCard = null;   // la vraie carte d'origine
+    let pointerOffsetX = 0;
+    let pointerOffsetY = 0;
+    let currentZone = null;  // dropzone survolée
+
+    function getZoneAt(x, y) {
+      const el = document.elementFromPoint(x, y);
+      if (!el) return null;
+      return el.closest('.kanban-dropzone');
+    }
+
+    board.querySelectorAll('.kanban-card').forEach(card => {
+      const handle = card.querySelector('.kanban-drag-handle');
+      if (!handle) return;
+
+      handle.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        sourceCard = card;
+        const rect = card.getBoundingClientRect();
+        pointerOffsetX = e.clientX - rect.left;
+        pointerOffsetY = e.clientY - rect.top;
+
+        // Crée le ghost
+        ghost = card.cloneNode(true);
+        ghost.style.position = 'fixed';
+        ghost.style.zIndex = '70';
+        ghost.style.pointerEvents = 'none';
+        ghost.style.width = rect.width + 'px';
+        ghost.style.left = (e.clientX - pointerOffsetX) + 'px';
+        ghost.style.top = (e.clientY - pointerOffsetY) + 'px';
+        ghost.style.opacity = '0.92';
+        ghost.style.transform = 'rotate(2deg) scale(1.02)';
+        ghost.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)';
+        document.body.appendChild(ghost);
+
+        sourceCard.style.opacity = '0.3';
+        document.body.style.cursor = 'grabbing';
+
+        handle.setPointerCapture(e.pointerId);
+      });
+
+      handle.addEventListener('pointermove', (e) => {
+        if (!ghost) return;
+        e.preventDefault();
+        ghost.style.left = (e.clientX - pointerOffsetX) + 'px';
+        ghost.style.top = (e.clientY - pointerOffsetY) + 'px';
+
+        const zone = getZoneAt(e.clientX, e.clientY);
+        if (zone !== currentZone) {
+          if (currentZone) currentZone.classList.remove('ring-2', 'ring-karl-400', 'bg-karl-50');
+          if (zone) zone.classList.add('ring-2', 'ring-karl-400', 'bg-karl-50');
+          currentZone = zone;
+        }
+      });
+
+      const finishDrag = async (e) => {
+        if (!ghost) return;
+
+        const targetZone = currentZone;
+        const newStage = targetZone?.dataset.stageId;
+        const oldStage = sourceCard.dataset.dealStage;
+        const dealId = sourceCard.dataset.dealId;
+
+        // Cleanup visuel
+        ghost.remove();
+        ghost = null;
+        if (currentZone) currentZone.classList.remove('ring-2', 'ring-karl-400', 'bg-karl-50');
+        currentZone = null;
+        document.body.style.cursor = '';
+        sourceCard.style.opacity = '';
+        try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+
+        if (newStage && newStage !== oldStage && dealId) {
+          // Optimistic UI : déplace immédiatement la carte
+          targetZone.appendChild(sourceCard);
+          sourceCard.dataset.dealStage = newStage;
+
+          // Map UI → DB (gère anciens accents)
+          const stagePayload = newStage;
+          try {
+            const r = await api(`/v2/api/deal/${dealId}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ stage: stagePayload }),
+            });
+            if (r?.error) throw new Error(r.error);
+            showToast(`Déplacé vers "${newStage.replace(/_/g, ' ')}"`, 'success');
+            // Recharge pour avoir les bons totaux + score
+            setTimeout(() => loadPipeline(), 400);
+          } catch (err) {
+            showToast('Erreur: ' + err.message, 'error');
+            loadPipeline(); // rollback
+          }
+        }
+
+        sourceCard = null;
+      };
+
+      handle.addEventListener('pointerup', finishDrag);
+      handle.addEventListener('pointercancel', finishDrag);
+    });
   }
 
   function setupPipeline() {
@@ -705,7 +903,92 @@
       });
     });
 
+    // Bouton éditer le dossier
+    document.getElementById('deal-edit-btn')?.addEventListener('click', () => openEditDealModal(d));
+
     loadTimeline(dealId);
+  }
+
+  function openEditDealModal(deal) {
+    const stages = [
+      { id: 'lead', label: 'Lead' },
+      { id: 'rdv_planifie', label: 'RDV planifié' },
+      { id: 'devis_a_faire', label: 'Devis à faire' },
+      { id: 'devis_envoye', label: 'Devis envoyé' },
+      { id: 'relance', label: 'Relance' },
+      { id: 'signe', label: 'Signé' },
+      { id: 'perdu', label: 'Perdu' },
+    ];
+    const body = `
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Titre</label>
+          <input id="ed-title" type="text" value="${escapeHtml(deal.title || '')}" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Stage</label>
+            <select id="ed-stage" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+              ${stages.map(s => `<option value="${s.id}" ${deal.stage === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Montant (€)</label>
+            <input id="ed-amount" type="number" value="${deal.amount || 0}" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Probabilité (%)</label>
+            <input id="ed-proba" type="number" min="0" max="100" value="${deal.probability || 0}" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">RDV (date)</label>
+            <input id="ed-rdv" type="datetime-local" value="${(deal.rdv_date || '').slice(0, 16)}" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Notes</label>
+          <textarea id="ed-notes" rows="3" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">${escapeHtml(deal.notes || '')}</textarea>
+        </div>
+        <div id="ed-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-2"></div>
+      </div>`;
+    const footer = `
+      <button class="modal-close px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-white">Annuler</button>
+      <button id="ed-save" class="px-3 py-2 rounded-lg bg-karl-600 text-white text-sm font-medium hover:bg-karl-700">
+        <i class="fas fa-check mr-1"></i>Enregistrer
+      </button>`;
+    openModal({
+      title: `Éditer le dossier #${deal.id}`,
+      body, footer,
+      onMount: (overlay, close) => {
+        overlay.querySelector('#ed-save').addEventListener('click', async () => {
+          const data = {
+            title: overlay.querySelector('#ed-title').value.trim(),
+            stage: overlay.querySelector('#ed-stage').value,
+            amount: Number(overlay.querySelector('#ed-amount').value) || 0,
+            probability: Number(overlay.querySelector('#ed-proba').value) || 0,
+            notes: overlay.querySelector('#ed-notes').value.trim() || null,
+          };
+          const rdvVal = overlay.querySelector('#ed-rdv').value;
+          if (rdvVal) data.rdv_date = rdvVal;
+          const btn = overlay.querySelector('#ed-save');
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i>…';
+          try {
+            const r = await api(`/v2/api/deal/${deal.id}`, { method: 'PATCH', body: JSON.stringify(data) });
+            if (r?.error) throw new Error(r.error);
+            close();
+            showToast('Dossier mis à jour', 'success');
+            loadDealDetail();
+          } catch (e) {
+            const err = overlay.querySelector('#ed-error');
+            err.textContent = e.message || 'Erreur';
+            err.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Enregistrer';
+          }
+        });
+      },
+    });
   }
 
   async function loadTimeline(dealId) {
@@ -853,8 +1136,18 @@
       refuse: 'bg-red-100 text-red-700',
       refusé: 'bg-red-100 text-red-700',
     };
-    list.innerHTML = quotes.map(q => `
-      <div class="bg-white rounded-xl p-3 border border-slate-200">
+    list.innerHTML = quotes.map(q => {
+      const nextStatusBtn = {
+        brouillon: { label: 'Marquer envoyé', next: 'envoye', cls: 'bg-amber-600 hover:bg-amber-700 text-white' },
+        envoye: { label: 'Marquer signé', next: 'signe', cls: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+        'envoyé': { label: 'Marquer signé', next: 'signe', cls: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+        signe: null,
+        'signé': null,
+        refuse: null,
+        'refusé': null,
+      }[q.status];
+      return `
+      <div class="bg-white rounded-xl p-3 border border-slate-200" data-quote-id="${q.id}">
         <div class="flex items-center justify-between">
           <div class="min-w-0 flex-1">
             <p class="font-medium text-slate-900">${escapeHtml(q.number || '—')}</p>
@@ -865,9 +1158,101 @@
             <span class="text-[10px] px-2 py-0.5 rounded-full ${statusColor[q.status] || 'bg-slate-100 text-slate-700'}">${escapeHtml(q.status || '?')}</span>
           </div>
         </div>
-        ${q.deal_id ? `<a href="/v2/deal/${q.deal_id}" class="text-xs text-karl-600 hover:underline mt-1 inline-block">Voir le dossier →</a>` : ''}
-      </div>
-    `).join('');
+        <div class="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+          ${q.deal_id ? `<a href="/v2/deal/${q.deal_id}" class="text-xs text-karl-600 hover:underline">Dossier →</a>` : '<span></span>'}
+          <div class="flex gap-1">
+            ${nextStatusBtn ? `<button class="quote-action-btn text-xs px-2 py-1 rounded-lg ${nextStatusBtn.cls}" data-action="status" data-next="${nextStatusBtn.next}" data-id="${q.id}">
+              <i class="fas fa-arrow-right mr-1"></i>${nextStatusBtn.label}
+            </button>` : ''}
+            <button class="quote-action-btn text-xs px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700" data-action="menu" data-id="${q.id}">
+              <i class="fas fa-ellipsis-vertical"></i>
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Attache les handlers
+    list.querySelectorAll('.quote-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        if (action === 'status') {
+          updateQuoteStatus(id, btn.dataset.next);
+        } else if (action === 'menu') {
+          openQuoteMenuModal(id, quotes.find(q => String(q.id) === String(id)));
+        }
+      });
+    });
+  }
+
+  async function updateQuoteStatus(id, newStatus) {
+    try {
+      const r = await api(`/v2/api/quotes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (r?.error) throw new Error(r.error);
+      showToast(`Devis passé en "${newStatus}"`, 'success');
+      loadQuotes();
+    } catch (e) {
+      showToast('Erreur: ' + e.message, 'error');
+    }
+  }
+
+  function openQuoteMenuModal(id, quote) {
+    if (!quote) quote = { id, status: 'brouillon' };
+    const allStatus = [
+      { id: 'brouillon', label: 'Brouillon', icon: 'fa-pen', color: 'slate' },
+      { id: 'envoye', label: 'Envoyé', icon: 'fa-paper-plane', color: 'amber' },
+      { id: 'signe', label: 'Signé', icon: 'fa-circle-check', color: 'emerald' },
+      { id: 'refuse', label: 'Refusé', icon: 'fa-circle-xmark', color: 'red' },
+    ];
+    const body = `
+      <div class="space-y-1">
+        <p class="text-xs uppercase tracking-wide text-slate-400 px-1 mb-2">Changer le statut</p>
+        ${allStatus.map(s => `
+          <button data-status="${s.id}" class="qm-status w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-50 flex items-center gap-3 ${quote.status === s.id ? 'bg-slate-100' : ''}">
+            <i class="fas ${s.icon} w-5 text-${s.color}-600"></i>
+            <span class="flex-1">${s.label}</span>
+            ${quote.status === s.id ? '<i class="fas fa-check text-emerald-600"></i>' : ''}
+          </button>
+        `).join('')}
+        <hr class="my-3 border-slate-100">
+        ${quote.deal_id ? `<a href="/v2/deal/${quote.deal_id}" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-50 flex items-center gap-3 text-karl-700">
+          <i class="fas fa-folder-open w-5"></i>
+          <span>Ouvrir le dossier</span>
+        </a>` : ''}
+        <button id="qm-delete" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 flex items-center gap-3 text-red-600">
+          <i class="fas fa-trash w-5"></i>
+          <span>Supprimer le devis</span>
+        </button>
+      </div>`;
+    openModal({
+      title: 'Actions devis',
+      body,
+      onMount: (overlay, close) => {
+        overlay.querySelectorAll('.qm-status').forEach(b => {
+          b.addEventListener('click', async () => {
+            close();
+            await updateQuoteStatus(id, b.dataset.status);
+          });
+        });
+        overlay.querySelector('#qm-delete').addEventListener('click', async () => {
+          if (!confirm('Supprimer définitivement ce devis ?')) return;
+          try {
+            const r = await api(`/v2/api/quotes/${id}`, { method: 'DELETE' });
+            if (r?.error) throw new Error(r.error);
+            close();
+            showToast('Devis supprimé', 'success');
+            loadQuotes();
+          } catch (e) {
+            showToast('Erreur: ' + e.message, 'error');
+          }
+        });
+      },
+    });
   }
 
   function setupQuotes() {
@@ -1172,6 +1557,7 @@
     if (document.getElementById('dash')) {
       loadDashboard();
       loadBriefing();
+      loadToday();
       document.getElementById('briefing-refresh')?.addEventListener('click', loadBriefing);
     }
     if (document.getElementById('pipeline-page')) {
