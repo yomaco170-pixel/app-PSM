@@ -105,6 +105,9 @@ function renderAIBar(): string {
           <i class="fas fa-wand-magic-sparkles text-karl-600 text-lg"></i>
           <input id="ai-bar-input" type="text" placeholder="Créer devis Dupont, relancer Roy, dossiers chauds..."
                  class="flex-1 outline-none text-lg placeholder-slate-400" autocomplete="off">
+          <button id="ai-bar-mic" title="Dicter une commande" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-karl-100 text-slate-600 hover:text-karl-700 flex items-center justify-center">
+            <i class="fas fa-microphone"></i>
+          </button>
           <button onclick="document.getElementById('ai-bar-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
             <i class="fas fa-xmark"></i>
           </button>

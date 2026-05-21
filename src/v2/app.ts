@@ -108,7 +108,7 @@ v2.get('/api/health', (c) => {
   const ai = getAI(c.env)
   return c.json({
     status: 'ok',
-    version: '2.1.0',
+    version: '2.2.0',
     ai_configured: ai.isConfigured,
     timestamp: new Date().toISOString(),
   })
@@ -135,6 +135,95 @@ function requireAuth(c: any): { user: any; error?: any } {
   const user = getUser(c)
   if (!user) return { user: null, error: c.json({ error: 'Non autorisé' }, 401) }
   return { user }
+}
+
+// ============================================================
+// LEAD SCORING — déterministe (0-100)
+// Règles métier simples, pas d'IA, rapide et explicable.
+// ============================================================
+function computeDealScore(deal: any): { score: number; label: string; color: string; reasons: string[] } {
+  let score = 30 // base
+  const reasons: string[] = []
+
+  const now = Date.now()
+  const DAY = 1000 * 60 * 60 * 24
+  const updated = deal.updated_at ? new Date(deal.updated_at).getTime() : (deal.created_at ? new Date(deal.created_at).getTime() : now)
+  const daysSinceUpdate = (now - updated) / DAY
+
+  // 1. Stage (poids majeur)
+  const stage = (deal.stage || '').toLowerCase()
+  if (stage === 'signe' || stage === 'signé') { score += 50; reasons.push('signé') }
+  else if (stage === 'devis_envoye' || stage === 'devis_envoyé') { score += 35; reasons.push('devis envoyé') }
+  else if (stage === 'relance') { score += 25; reasons.push('en relance') }
+  else if (stage === 'rdv_planifie') { score += 20; reasons.push('RDV planifié') }
+  else if (stage === 'devis_a_faire') { score += 15; reasons.push('devis à faire') }
+  else if (stage === 'perdu') { score = 0; reasons.push('perdu') }
+
+  // 2. Montant (plus c'est gros, plus c'est chaud)
+  const amount = Number(deal.amount) || 0
+  if (amount >= 10000) { score += 20; reasons.push(`gros montant (${Math.round(amount/1000)}k€)`) }
+  else if (amount >= 5000) { score += 12; reasons.push(`montant moyen+ (${Math.round(amount/1000)}k€)`) }
+  else if (amount >= 2000) { score += 6 }
+
+  // 3. Probabilité (si renseignée)
+  const proba = Number(deal.probability) || 0
+  if (proba >= 70) { score += 15; reasons.push(`proba haute ${proba}%`) }
+  else if (proba >= 40) { score += 8 }
+  else if (proba >= 20) { score += 3 }
+
+  // 4. Fraîcheur (pénalité si vieux)
+  if (stage !== 'signe' && stage !== 'signé' && stage !== 'perdu') {
+    if (daysSinceUpdate > 30) { score -= 25; reasons.push(`abandonné (${Math.round(daysSinceUpdate)}j)`) }
+    else if (daysSinceUpdate > 15) { score -= 15; reasons.push(`stagne (${Math.round(daysSinceUpdate)}j)`) }
+    else if (daysSinceUpdate > 7) { score -= 5; reasons.push(`silencieux (${Math.round(daysSinceUpdate)}j)`) }
+    else if (daysSinceUpdate < 2) { score += 5; reasons.push('actif récent') }
+  }
+
+  // Clamp 0-100
+  score = Math.max(0, Math.min(100, Math.round(score)))
+
+  let label = 'froid'
+  let color = 'slate'
+  if (score >= 75) { label = 'chaud'; color = 'red' }
+  else if (score >= 55) { label = 'tiède'; color = 'orange' }
+  else if (score >= 35) { label = 'à suivre'; color = 'amber' }
+  else if (score > 0) { label = 'froid'; color = 'slate' }
+  else { label = 'mort'; color = 'slate' }
+
+  return { score, label, color, reasons }
+}
+
+// ============================================================
+// PIPELINE TRIGGERS — flags automatiques sur les deals
+// (calculé à la volée, pas stocké en DB pour V2.2)
+// ============================================================
+function computeDealFlags(deal: any): Array<{ icon: string; label: string; color: string }> {
+  const flags: Array<{ icon: string; label: string; color: string }> = []
+  const now = Date.now()
+  const DAY = 1000 * 60 * 60 * 24
+  const updated = deal.updated_at ? new Date(deal.updated_at).getTime() : (deal.created_at ? new Date(deal.created_at).getTime() : now)
+  const days = (now - updated) / DAY
+  const stage = (deal.stage || '').toLowerCase()
+
+  if (stage === 'devis_envoye' || stage === 'devis_envoyé' || stage === 'relance') {
+    if (days > 7) flags.push({ icon: 'fa-bell', label: 'à relancer', color: 'red' })
+  }
+  if (stage === 'devis_a_faire' && days > 3) {
+    flags.push({ icon: 'fa-hourglass-half', label: 'devis en retard', color: 'amber' })
+  }
+  if (stage === 'rdv_planifie' && deal.rdv_date) {
+    const rdvTime = new Date(deal.rdv_date).getTime()
+    const daysToRdv = (rdvTime - now) / DAY
+    if (daysToRdv > 0 && daysToRdv < 2) {
+      flags.push({ icon: 'fa-calendar-day', label: 'RDV imminent', color: 'blue' })
+    } else if (daysToRdv < 0) {
+      flags.push({ icon: 'fa-calendar-xmark', label: 'RDV passé', color: 'amber' })
+    }
+  }
+  if (stage === 'lead' && days > 14) {
+    flags.push({ icon: 'fa-snowflake', label: 'lead froid', color: 'slate' })
+  }
+  return flags
 }
 
 // ============================================================
@@ -206,10 +295,19 @@ v2.get('/api/dashboard', async (c) => {
     const now = Date.now()
     const DAY = 1000 * 60 * 60 * 24
 
-    const hotDeals = dealsList.filter((d) =>
-      d.stage === 'devis_envoye' || d.stage === 'relance' || d.stage === 'devis_envoyé'
-    )
-    const stuckDeals = dealsList.filter((d) => {
+    // Enrichir avec score + flags
+    const enrichedDeals = dealsList.map((d) => {
+      const scoring = computeDealScore(d)
+      const flags = computeDealFlags(d)
+      return { ...d, score: scoring.score, score_label: scoring.label, score_color: scoring.color, flags }
+    })
+
+    const hotDeals = enrichedDeals
+      .filter((d) =>
+        d.stage === 'devis_envoye' || d.stage === 'relance' || d.stage === 'devis_envoyé'
+      )
+      .sort((a, b) => b.score - a.score)
+    const stuckDeals = enrichedDeals.filter((d) => {
       const updated = new Date(d.updated_at || d.created_at).getTime()
       const daysSince = (now - updated) / DAY
       return daysSince > 10 && d.stage !== 'signe' && d.stage !== 'signé' && d.stage !== 'perdu'
@@ -391,10 +489,9 @@ Format de sortie OBLIGATOIRE:
       ).bind(cname).first()
       if (!existing) {
         const ins = await c.env.DB.prepare(
-          `INSERT INTO clients (user_id, name, phone, email, status, created_at, updated_at)
-           VALUES (?, ?, ?, ?, 'lead', datetime('now'), datetime('now'))`
+          `INSERT INTO clients (name, phone, email, status, created_at, updated_at)
+           VALUES (?, ?, ?, 'lead', datetime('now'), datetime('now'))`
         ).bind(
-          user.id,
           cname,
           result.params.phone || null,
           result.params.email || null,
@@ -434,7 +531,13 @@ v2.get('/api/deal/:id', async (c) => {
        FROM quotes WHERE deal_id = ? ORDER BY created_at DESC`
     ).bind(id).all()
 
-    return c.json({ deal, quotes: quotes.results || [] })
+    const scoring = computeDealScore(deal)
+    const flags = computeDealFlags(deal)
+
+    return c.json({
+      deal: { ...deal, score: scoring.score, score_label: scoring.label, score_color: scoring.color, score_reasons: scoring.reasons, flags },
+      quotes: quotes.results || [],
+    })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
   }
@@ -712,19 +815,225 @@ v2.get('/api/pipeline', async (c) => {
       { id: 'signe', label: 'Signé', color: 'emerald' },
     ]
 
+    // Enrichir chaque deal avec score + flags
+    const enriched = list.map((d) => {
+      const scoring = computeDealScore(d)
+      const flags = computeDealFlags(d)
+      return { ...d, score: scoring.score, score_label: scoring.label, score_color: scoring.color, flags }
+    })
+
     const grouped = stages.map((s) => ({
       ...s,
-      deals: list.filter((d) =>
+      deals: enriched.filter((d) =>
         d.stage === s.id ||
         (s.id === 'devis_envoye' && d.stage === 'devis_envoyé') ||
         (s.id === 'signe' && d.stage === 'signé')
-      ),
-      total_amount: list
+      ).sort((a, b) => (b.score || 0) - (a.score || 0)),
+      total_amount: enriched
         .filter((d) => d.stage === s.id)
         .reduce((sum, d) => sum + (d.amount || 0), 0),
     }))
 
     return c.json({ stages: grouped, total: list.length })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — CRÉATION DOSSIER
+// ============================================================
+
+v2.post('/api/deals', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const body = await c.req.json()
+    const { title, client_id, client_name, amount, stage, notes, probability } = body
+    if (!title) return c.json({ error: 'Titre requis' }, 400)
+
+    // Résoudre/créer le client si fourni par nom
+    let resolvedClientId = client_id || null
+    let resolvedClientName: string | null = null
+    if (!resolvedClientId && client_name) {
+      const existing: any = await c.env.DB.prepare(
+        'SELECT id, name FROM clients WHERE LOWER(name) = LOWER(?) LIMIT 1'
+      ).bind(String(client_name).trim()).first()
+      if (existing) {
+        resolvedClientId = existing.id
+        resolvedClientName = existing.name
+      } else {
+        const ins = await c.env.DB.prepare(
+          `INSERT INTO clients (name, status, created_at, updated_at)
+           VALUES (?, 'lead', datetime('now'), datetime('now'))`
+        ).bind(String(client_name).trim()).run()
+        resolvedClientId = ins.meta.last_row_id
+        resolvedClientName = String(client_name).trim()
+      }
+    } else if (resolvedClientId) {
+      const c1: any = await c.env.DB.prepare('SELECT name FROM clients WHERE id = ?').bind(resolvedClientId).first()
+      resolvedClientName = c1?.name || null
+    }
+
+    const ins = await c.env.DB.prepare(
+      `INSERT INTO deals (user_id, client_id, title, amount, stage, probability, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      user.id,
+      resolvedClientId,
+      String(title).trim(),
+      Number(amount) || 0,
+      stage || 'lead',
+      Number(probability) || 0,
+      notes || null,
+    ).run()
+
+    return c.json({
+      ok: true,
+      deal: {
+        id: ins.meta.last_row_id,
+        title,
+        client_id: resolvedClientId,
+        client_name: resolvedClientName,
+        amount: Number(amount) || 0,
+        stage: stage || 'lead',
+      },
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — CRÉATION DEVIS (avec lignes)
+// ============================================================
+
+v2.post('/api/quotes', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const body = await c.req.json()
+    const { deal_id, client_id, items, notes, status, validity_days, deposit_rate, tva_rate } = body
+    if (!deal_id && !client_id) return c.json({ error: 'deal_id ou client_id requis' }, 400)
+
+    // Récupérer le client_id depuis le deal si nécessaire
+    let resolvedClientId = client_id || null
+    if (!resolvedClientId && deal_id) {
+      const d: any = await c.env.DB.prepare('SELECT client_id FROM deals WHERE id = ?').bind(deal_id).first()
+      if (d) resolvedClientId = d.client_id
+    }
+
+    // Calcul totaux à partir des lignes
+    const lines = Array.isArray(items) ? items : []
+    const ht = lines.reduce((s, l) => s + (Number(l.quantity || 1) * Number(l.unit_price || 0)), 0)
+    const tvaRate = Number(tva_rate) ?? 20
+    const tva = Math.round(ht * (tvaRate / 100) * 100) / 100
+    const ttc = Math.round((ht + tva) * 100) / 100
+    const depositRate = Number(deposit_rate) || 30
+    const depositAmount = Math.round(ttc * (depositRate / 100) * 100) / 100
+
+    // Numéro de devis : prefix users.initials + YYYYMMDD + seq
+    const userRow: any = await c.env.DB.prepare('SELECT name, email FROM users WHERE id = ?').bind(user.id).first()
+    const initials = (userRow?.name || 'USR').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 3) || 'USR'
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const countRow: any = await c.env.DB.prepare(
+      `SELECT COUNT(*) as n FROM quotes WHERE date(created_at) = date('now')`
+    ).first()
+    const seq = String((Number(countRow?.n) || 0) + 1).padStart(3, '0')
+    const quoteNumber = `${initials}-${dateStr}-${seq}`
+
+    const content = JSON.stringify({ items: lines, tva_rate: tvaRate })
+
+    const ins = await c.env.DB.prepare(
+      `INSERT INTO quotes (
+        user_id, deal_id, client_id, quote_number, number, status,
+        total_ht, total_tva, total_ttc, deposit_rate, deposit_amount,
+        validity_days, content, notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      user.id,
+      deal_id || null,
+      resolvedClientId,
+      quoteNumber,
+      quoteNumber,
+      status || 'brouillon',
+      ht, tva, ttc, depositRate, depositAmount,
+      Number(validity_days) || 30,
+      content,
+      notes || null,
+    ).run()
+
+    return c.json({
+      ok: true,
+      quote: {
+        id: ins.meta.last_row_id,
+        number: quoteNumber,
+        total_ht: ht,
+        total_tva: tva,
+        total_ttc: ttc,
+        deposit_amount: depositAmount,
+        status: status || 'brouillon',
+        deal_id: deal_id || null,
+      },
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// API — IA SUGGÈRE DEVIS (lignes pré-remplies pour un dossier)
+// ============================================================
+
+v2.get('/api/deal/:id/suggest-quote', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  const ai = getAI(c.env)
+  if (!ai.isConfigured) return c.json({ error: 'IA non configurée' }, 503)
+
+  try {
+    const id = c.req.param('id')
+    const deal: any = await c.env.DB.prepare(`
+      SELECT d.*, c.name as client_name FROM deals d
+      LEFT JOIN clients c ON c.id = d.client_id WHERE d.id = ?
+    `).bind(id).first()
+    if (!deal) return c.json({ error: 'Dossier introuvable' }, 404)
+
+    const prompt = `Tu es l'assistant IA d'un artisan portails/clôtures/motorisation.
+À partir du titre et des notes du dossier ci-dessous, suggère une LISTE de lignes de devis réalistes (pose comprise).
+
+DOSSIER:
+- Titre: ${deal.title}
+- Client: ${deal.client_name || 'inconnu'}
+- Montant estimé: ${deal.amount || 0} €
+- Notes: ${deal.notes || 'aucune'}
+
+Règles:
+- Génère entre 2 et 6 lignes maximum
+- Prix unitaires réalistes France 2025 (portail alu 3m ≈ 1800€, motorisation ≈ 700€, pose ≈ 400€)
+- Si le total estimé est connu, calibre les prix pour t'en rapprocher (±20%)
+- Inclus systématiquement une ligne "Pose et installation"
+- Unités: u (unité), ml (mètre linéaire), m² (mètre carré), h (heure)
+
+Format JSON OBLIGATOIRE:
+{
+  "items": [
+    { "description": "...", "quantity": 1, "unit": "u", "unit_price": 1800 },
+    ...
+  ],
+  "rationale": "phrase courte expliquant ton choix",
+  "estimated_total_ht": ...
+}`
+
+    const result: any = await ai.chatJSON([
+      { role: 'system', content: 'Tu es un expert chiffrage devis artisanat portails/clôtures. JSON only.' },
+      { role: 'user', content: prompt },
+    ], { max_tokens: 2000 })
+
+    return c.json({ ...result, deal_id: id, client_id: deal.client_id })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
   }
@@ -761,6 +1070,36 @@ v2.get('/api/clients', async (c) => {
     }
 
     return c.json({ clients: list, stats })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+v2.post('/api/clients', async (c) => {
+  const { user, error } = requireAuth(c)
+  if (error) return error
+
+  try {
+    const { name, phone, email, address, status } = await c.req.json()
+    if (!name) return c.json({ error: 'Nom requis' }, 400)
+    const trimmed = String(name).trim()
+
+    const existing: any = await c.env.DB.prepare(
+      'SELECT id, name FROM clients WHERE LOWER(name) = LOWER(?) LIMIT 1'
+    ).bind(trimmed).first()
+    if (existing) return c.json({ ok: true, client: existing, duplicate: true })
+
+    const ins = await c.env.DB.prepare(
+      `INSERT INTO clients (name, phone, email, address, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      trimmed,
+      phone || null,
+      email || null,
+      address || null,
+      status || 'lead',
+    ).run()
+    return c.json({ ok: true, client: { id: ins.meta.last_row_id, name: trimmed, phone, email, status: status || 'lead' } })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
   }

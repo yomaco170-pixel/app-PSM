@@ -94,6 +94,35 @@
     document.querySelectorAll(`[data-stat="${name}"]`).forEach(el => { el.textContent = value; });
   }
 
+  function scoreBadge(d) {
+    if (typeof d.score !== 'number') return '';
+    const colorMap = {
+      red: 'bg-red-100 text-red-700 border-red-200',
+      orange: 'bg-orange-100 text-orange-700 border-orange-200',
+      amber: 'bg-amber-100 text-amber-700 border-amber-200',
+      slate: 'bg-slate-100 text-slate-600 border-slate-200',
+    };
+    const cls = colorMap[d.score_color] || colorMap.slate;
+    return `<span class="text-[10px] px-1.5 py-0.5 rounded-full ${cls} border font-semibold whitespace-nowrap" title="Score: ${d.score}/100">
+      ${escapeHtml(d.score_label || '')} · ${d.score}
+    </span>`;
+  }
+
+  function flagsRow(flags) {
+    if (!flags || !flags.length) return '';
+    const colorMap = {
+      red: 'bg-red-50 text-red-700',
+      amber: 'bg-amber-50 text-amber-700',
+      blue: 'bg-blue-50 text-blue-700',
+      slate: 'bg-slate-50 text-slate-700',
+    };
+    return `<div class="flex flex-wrap gap-1 mt-1.5">
+      ${flags.map(f => `<span class="text-[10px] px-1.5 py-0.5 rounded-full ${colorMap[f.color] || colorMap.slate}">
+        <i class="fas ${f.icon} mr-0.5"></i>${escapeHtml(f.label)}
+      </span>`).join('')}
+    </div>`;
+  }
+
   function renderDealsList(containerId, deals, color) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -107,8 +136,12 @@
       <a href="/v2/deal/${d.id}" class="block bg-white rounded-xl p-4 border border-slate-200 hover:border-${color}-300 transition">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
-            <h4 class="font-medium text-slate-900 truncate">${escapeHtml(d.title || 'Sans titre')}</h4>
+            <div class="flex items-center gap-2">
+              <h4 class="font-medium text-slate-900 truncate">${escapeHtml(d.title || 'Sans titre')}</h4>
+              ${scoreBadge(d)}
+            </div>
             <p class="text-sm text-slate-500 truncate">${escapeHtml(d.client_name || 'Client inconnu')}</p>
+            ${flagsRow(d.flags)}
           </div>
           <div class="text-right">
             <p class="font-semibold text-slate-900">${formatShortAmount(d.amount || 0)}</p>
@@ -187,8 +220,12 @@
               ? `<p class="text-xs text-slate-400 text-center py-6">—</p>`
               : deals.map(d => `
                 <a href="/v2/deal/${d.id}" class="block bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg p-2.5 transition">
-                  <p class="text-sm font-medium text-slate-900 truncate">${escapeHtml(d.title || 'Sans titre')}</p>
+                  <div class="flex items-center justify-between gap-1.5">
+                    <p class="text-sm font-medium text-slate-900 truncate flex-1">${escapeHtml(d.title || 'Sans titre')}</p>
+                    ${scoreBadge(d)}
+                  </div>
                   <p class="text-xs text-slate-500 truncate">${escapeHtml(d.client_name || '—')}</p>
+                  ${flagsRow(d.flags)}
                   <div class="flex items-center justify-between mt-1.5">
                     <span class="text-xs font-semibold text-slate-700">${formatShortAmount(d.amount || 0)}</span>
                     <span class="text-[10px] text-slate-400">${formatRelative(d.updated_at || d.created_at)}</span>
@@ -206,9 +243,289 @@
     document.getElementById('pipeline-search')?.addEventListener('input', () => {
       loadPipeline();
     });
-    document.getElementById('new-deal-btn')?.addEventListener('click', () => {
-      alert('Création de dossier — à brancher dans la prochaine étape.\nEn attendant, utilise la barre IA (⌘K) ou la v1.');
+    document.getElementById('new-deal-btn')?.addEventListener('click', () => openNewDealModal());
+  }
+
+  // ============================================================
+  // Modale réutilisable
+  // ============================================================
+  function openModal({ title, body, footer, onMount }) {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-start justify-center p-4 pt-10 overflow-y-auto';
+    overlay.innerHTML = `
+      <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden my-4">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <h3 class="font-semibold text-slate-900">${title}</h3>
+          <button class="modal-close text-slate-400 hover:text-slate-600"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="p-4">${body}</div>
+        ${footer ? `<div class="px-4 py-3 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">${footer}</div>` : ''}
+      </div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('.modal-close').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+    if (onMount) onMount(overlay, close);
+    return { overlay, close };
+  }
+
+  function openNewDealModal(prefill) {
+    prefill = prefill || {};
+    const body = `
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Titre du dossier *</label>
+          <input id="nd-title" type="text" placeholder="Ex: Portail coulissant alu 4m gris"
+                 value="${escapeHtml(prefill.title || '')}"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-karl-500 focus:ring-2 focus:ring-karl-100 outline-none">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Client (nom)</label>
+          <input id="nd-client" type="text" placeholder="Nom du client (créé si nouveau)"
+                 value="${escapeHtml(prefill.client_name || '')}"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-karl-500 focus:ring-2 focus:ring-karl-100 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Montant estimé (€)</label>
+            <input id="nd-amount" type="number" placeholder="2500"
+                   class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-karl-500 focus:ring-2 focus:ring-karl-100 outline-none">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Stage</label>
+            <select id="nd-stage" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+              <option value="lead">Lead</option>
+              <option value="rdv_planifie">RDV planifié</option>
+              <option value="devis_a_faire">Devis à faire</option>
+              <option value="devis_envoye">Devis envoyé</option>
+              <option value="relance">Relance</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Notes</label>
+          <textarea id="nd-notes" rows="2" placeholder="Notes libres..."
+                    class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none"></textarea>
+        </div>
+        <div id="nd-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-2"></div>
+      </div>`;
+    const footer = `
+      <button class="modal-close px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-white">Annuler</button>
+      <button id="nd-create" class="px-3 py-2 rounded-lg bg-karl-600 text-white text-sm font-medium hover:bg-karl-700">
+        <i class="fas fa-check mr-1"></i>Créer
+      </button>`;
+    openModal({
+      title: 'Nouveau dossier',
+      body, footer,
+      onMount: (overlay, close) => {
+        overlay.querySelector('#nd-title')?.focus();
+        overlay.querySelector('#nd-create').addEventListener('click', async () => {
+          const title = overlay.querySelector('#nd-title').value.trim();
+          if (!title) {
+            const err = overlay.querySelector('#nd-error');
+            err.textContent = 'Le titre est obligatoire';
+            err.classList.remove('hidden');
+            return;
+          }
+          const data = {
+            title,
+            client_name: overlay.querySelector('#nd-client').value.trim() || null,
+            amount: Number(overlay.querySelector('#nd-amount').value) || 0,
+            stage: overlay.querySelector('#nd-stage').value,
+            notes: overlay.querySelector('#nd-notes').value.trim() || null,
+          };
+          const btn = overlay.querySelector('#nd-create');
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i>Création…';
+          try {
+            const r = await api('/v2/api/deals', { method: 'POST', body: JSON.stringify(data) });
+            if (r?.error) throw new Error(r.error);
+            close();
+            // Si on est sur pipeline, recharge; sinon redirige vers le deal créé
+            if (document.getElementById('pipeline-page')) {
+              loadPipeline();
+            } else {
+              window.location.href = `/v2/deal/${r.deal.id}`;
+            }
+          } catch (e) {
+            const err = overlay.querySelector('#nd-error');
+            err.textContent = e.message || 'Erreur création';
+            err.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Créer';
+          }
+        });
+      },
     });
+  }
+
+  function openNewQuoteModal(prefill) {
+    prefill = prefill || {};
+    const initialItems = Array.isArray(prefill.items) && prefill.items.length
+      ? prefill.items
+      : [{ description: '', quantity: 1, unit: 'u', unit_price: 0 }];
+
+    function renderItemsRows(items) {
+      return items.map((it, i) => `
+        <div class="grid grid-cols-12 gap-2 items-end" data-row="${i}">
+          <div class="col-span-6">
+            <input type="text" class="nq-desc w-full px-2 py-1.5 rounded-lg border border-slate-200 text-sm" placeholder="Description" value="${escapeHtml(it.description || '')}">
+          </div>
+          <div class="col-span-2">
+            <input type="number" step="0.01" class="nq-qty w-full px-2 py-1.5 rounded-lg border border-slate-200 text-sm" placeholder="Qté" value="${it.quantity || 1}">
+          </div>
+          <div class="col-span-1">
+            <select class="nq-unit w-full px-1 py-1.5 rounded-lg border border-slate-200 text-xs">
+              <option value="u" ${it.unit === 'u' ? 'selected' : ''}>u</option>
+              <option value="ml" ${it.unit === 'ml' ? 'selected' : ''}>ml</option>
+              <option value="m²" ${it.unit === 'm²' ? 'selected' : ''}>m²</option>
+              <option value="h" ${it.unit === 'h' ? 'selected' : ''}>h</option>
+              <option value="j" ${it.unit === 'j' ? 'selected' : ''}>j</option>
+              <option value="forfait" ${it.unit === 'forfait' ? 'selected' : ''}>forf</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <input type="number" step="0.01" class="nq-price w-full px-2 py-1.5 rounded-lg border border-slate-200 text-sm" placeholder="PU HT" value="${it.unit_price || 0}">
+          </div>
+          <div class="col-span-1 text-right">
+            <button class="nq-del text-slate-400 hover:text-red-500 px-1"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>`).join('');
+    }
+
+    const body = `
+      <div class="space-y-3">
+        ${prefill.rationale ? `<div class="text-xs bg-karl-50 text-karl-800 rounded-lg p-2"><i class="fas fa-wand-magic-sparkles mr-1"></i>${escapeHtml(prefill.rationale)}</div>` : ''}
+        <div class="space-y-2" id="nq-items">${renderItemsRows(initialItems)}</div>
+        <button id="nq-add" class="text-sm px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">
+          <i class="fas fa-plus mr-1"></i>Ajouter une ligne
+        </button>
+        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100">
+          <div>
+            <label class="text-xs text-slate-500">TVA (%)</label>
+            <input id="nq-tva" type="number" value="20" class="mt-1 w-full px-2 py-1.5 rounded-lg border border-slate-200 text-sm">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Acompte (%)</label>
+            <input id="nq-dep" type="number" value="30" class="mt-1 w-full px-2 py-1.5 rounded-lg border border-slate-200 text-sm">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Validité (j)</label>
+            <input id="nq-val" type="number" value="30" class="mt-1 w-full px-2 py-1.5 rounded-lg border border-slate-200 text-sm">
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-3 text-sm">
+          <div class="flex justify-between"><span class="text-slate-500">Total HT</span><span class="font-medium" id="nq-total-ht">0 €</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">TVA</span><span id="nq-total-tva">0 €</span></div>
+          <div class="flex justify-between border-t border-slate-200 mt-1 pt-1"><span class="font-medium">Total TTC</span><span class="font-bold text-karl-700" id="nq-total-ttc">0 €</span></div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Notes</label>
+          <textarea id="nq-notes" rows="2" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" placeholder="Conditions, délais, etc."></textarea>
+        </div>
+        <div id="nq-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-2"></div>
+      </div>`;
+    const footer = `
+      <button class="modal-close px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-white">Annuler</button>
+      <button id="nq-save" class="px-3 py-2 rounded-lg bg-karl-600 text-white text-sm font-medium hover:bg-karl-700">
+        <i class="fas fa-check mr-1"></i>Créer le devis
+      </button>`;
+
+    openModal({
+      title: prefill.deal_id ? `Nouveau devis (dossier #${prefill.deal_id})` : 'Nouveau devis',
+      body, footer,
+      onMount: (overlay, close) => {
+        const itemsBox = overlay.querySelector('#nq-items');
+
+        function readItems() {
+          return [...itemsBox.querySelectorAll('[data-row]')].map(row => ({
+            description: row.querySelector('.nq-desc').value.trim(),
+            quantity: Number(row.querySelector('.nq-qty').value) || 0,
+            unit: row.querySelector('.nq-unit').value,
+            unit_price: Number(row.querySelector('.nq-price').value) || 0,
+          }));
+        }
+        function recalc() {
+          const items = readItems();
+          const ht = items.reduce((s, l) => s + l.quantity * l.unit_price, 0);
+          const tvaRate = Number(overlay.querySelector('#nq-tva').value) || 0;
+          const tva = Math.round(ht * tvaRate / 100 * 100) / 100;
+          const ttc = Math.round((ht + tva) * 100) / 100;
+          overlay.querySelector('#nq-total-ht').textContent = formatAmount(ht);
+          overlay.querySelector('#nq-total-tva').textContent = formatAmount(tva);
+          overlay.querySelector('#nq-total-ttc').textContent = formatAmount(ttc);
+        }
+        function bindRowEvents() {
+          itemsBox.querySelectorAll('input, select').forEach(inp => inp.addEventListener('input', recalc));
+          itemsBox.querySelectorAll('.nq-del').forEach(btn => btn.addEventListener('click', () => {
+            const all = itemsBox.querySelectorAll('[data-row]');
+            if (all.length <= 1) return;
+            btn.closest('[data-row]').remove();
+            recalc();
+          }));
+        }
+        bindRowEvents();
+        overlay.querySelector('#nq-tva').addEventListener('input', recalc);
+        overlay.querySelector('#nq-add').addEventListener('click', () => {
+          const items = readItems();
+          items.push({ description: '', quantity: 1, unit: 'u', unit_price: 0 });
+          itemsBox.innerHTML = renderItemsRows(items);
+          bindRowEvents();
+          recalc();
+        });
+        recalc();
+
+        overlay.querySelector('#nq-save').addEventListener('click', async () => {
+          const items = readItems().filter(it => it.description && it.unit_price > 0);
+          if (items.length === 0) {
+            const err = overlay.querySelector('#nq-error');
+            err.textContent = 'Ajoute au moins une ligne avec description et prix';
+            err.classList.remove('hidden');
+            return;
+          }
+          const data = {
+            deal_id: prefill.deal_id || null,
+            client_id: prefill.client_id || null,
+            items,
+            tva_rate: Number(overlay.querySelector('#nq-tva').value) || 20,
+            deposit_rate: Number(overlay.querySelector('#nq-dep').value) || 30,
+            validity_days: Number(overlay.querySelector('#nq-val').value) || 30,
+            notes: overlay.querySelector('#nq-notes').value.trim() || null,
+            status: 'brouillon',
+          };
+          const btn = overlay.querySelector('#nq-save');
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i>Création…';
+          try {
+            const r = await api('/v2/api/quotes', { method: 'POST', body: JSON.stringify(data) });
+            if (r?.error) throw new Error(r.error);
+            close();
+            // Notification simple puis recharge
+            showToast(`Devis ${r.quote.number} créé (${formatAmount(r.quote.total_ttc)} TTC)`, 'success');
+            if (document.getElementById('quotes-page')) loadQuotes();
+            else if (document.getElementById('deal-detail-page')) loadDealDetail();
+            else if (document.getElementById('dash')) loadDashboard();
+          } catch (e) {
+            const err = overlay.querySelector('#nq-error');
+            err.textContent = e.message || 'Erreur création devis';
+            err.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Créer le devis';
+          }
+        });
+      },
+    });
+  }
+
+  function showToast(msg, type) {
+    const colors = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-slate-800' };
+    const t = document.createElement('div');
+    t.className = `fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl text-white shadow-lg text-sm ${colors[type] || colors.info}`;
+    t.innerHTML = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2500);
+    setTimeout(() => t.remove(), 3000);
   }
 
   // ============================================================
@@ -262,13 +579,74 @@
       clearTimeout(timer);
       timer = setTimeout(() => loadClients(e.target.value.trim()), 250);
     });
-    document.getElementById('new-client-btn')?.addEventListener('click', () => {
-      const name = prompt('Nom du nouveau client :');
-      if (!name) return;
-      api('/v2/api/command', {
-        method: 'POST',
-        body: JSON.stringify({ input: `Créer client ${name}` }),
-      }).then(() => loadClients());
+    document.getElementById('new-client-btn')?.addEventListener('click', () => openNewClientModal());
+  }
+
+  function openNewClientModal() {
+    const body = `
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Nom *</label>
+          <input id="nc-name" type="text" placeholder="Nom du client"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-karl-500 focus:ring-2 focus:ring-karl-100 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Téléphone</label>
+            <input id="nc-phone" type="tel" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Email</label>
+            <input id="nc-email" type="email" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 font-medium">Adresse</label>
+          <input id="nc-address" type="text" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+        </div>
+        <div id="nc-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-2"></div>
+      </div>`;
+    const footer = `
+      <button class="modal-close px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-white">Annuler</button>
+      <button id="nc-create" class="px-3 py-2 rounded-lg bg-karl-600 text-white text-sm font-medium hover:bg-karl-700">
+        <i class="fas fa-check mr-1"></i>Créer
+      </button>`;
+    openModal({
+      title: 'Nouveau client', body, footer,
+      onMount: (overlay, close) => {
+        overlay.querySelector('#nc-name')?.focus();
+        overlay.querySelector('#nc-create').addEventListener('click', async () => {
+          const name = overlay.querySelector('#nc-name').value.trim();
+          if (!name) {
+            const err = overlay.querySelector('#nc-error');
+            err.textContent = 'Nom obligatoire';
+            err.classList.remove('hidden');
+            return;
+          }
+          const data = {
+            name,
+            phone: overlay.querySelector('#nc-phone').value.trim() || null,
+            email: overlay.querySelector('#nc-email').value.trim() || null,
+            address: overlay.querySelector('#nc-address').value.trim() || null,
+          };
+          const btn = overlay.querySelector('#nc-create');
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i>…';
+          try {
+            const r = await api('/v2/api/clients', { method: 'POST', body: JSON.stringify(data) });
+            if (r?.error) throw new Error(r.error);
+            close();
+            showToast(r.duplicate ? `Client déjà existant : ${escapeHtml(r.client.name)}` : `Client "${escapeHtml(r.client.name)}" créé`, 'success');
+            if (document.getElementById('clients-page')) loadClients();
+          } catch (e) {
+            const err = overlay.querySelector('#nc-error');
+            err.textContent = e.message || 'Erreur création';
+            err.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Créer';
+          }
+        });
+      },
     });
   }
 
@@ -293,6 +671,26 @@
     document.getElementById('deal-amount').textContent = formatAmount(d.amount || 0);
     document.getElementById('deal-proba').textContent = (d.probability || 0) + ' %';
     document.getElementById('deal-updated').textContent = formatRelative(d.updated_at || d.created_at);
+
+    // Score + flags
+    const scoreZone = document.getElementById('deal-score-zone');
+    if (scoreZone && typeof d.score === 'number') {
+      const cmap = { red: 'text-red-700 bg-red-50', orange: 'text-orange-700 bg-orange-50', amber: 'text-amber-700 bg-amber-50', slate: 'text-slate-700 bg-slate-100' };
+      const cls = cmap[d.score_color] || cmap.slate;
+      scoreZone.innerHTML = `
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="px-2 py-1 rounded-lg ${cls} font-semibold text-xs">
+            <i class="fas fa-thermometer-half mr-1"></i>${escapeHtml(d.score_label)} · ${d.score}/100
+          </span>
+          ${(d.flags || []).map(f => {
+            const fmap = { red: 'bg-red-100 text-red-700', amber: 'bg-amber-100 text-amber-700', blue: 'bg-blue-100 text-blue-700', slate: 'bg-slate-100 text-slate-700' };
+            return `<span class="px-2 py-1 rounded-lg ${fmap[f.color] || fmap.slate} text-xs">
+              <i class="fas ${f.icon} mr-1"></i>${escapeHtml(f.label)}
+            </span>`;
+          }).join('')}
+          ${(d.score_reasons || []).length ? `<span class="text-xs text-slate-400">· ${d.score_reasons.slice(0, 3).map(escapeHtml).join(' · ')}</span>` : ''}
+        </div>`;
+    }
 
     const contact = document.getElementById('deal-contact');
     contact.innerHTML = '';
@@ -389,8 +787,37 @@
           `).join('');
         }
       } else if (action === 'quote') {
-        content.innerHTML = `<p>Création de devis IA — bientôt disponible.</p>
-        <p class="text-xs text-slate-500 mt-2">Pour l'instant, va sur la v1 pour créer le devis manuellement, ou utilise la barre IA (⌘K).</p>`;
+        const r = await api(`/v2/api/deal/${dealId}/suggest-quote`);
+        if (r?.items && Array.isArray(r.items)) {
+          const rows = r.items.map(it =>
+            `<div class="flex items-center justify-between gap-2 py-1 border-b border-slate-100 last:border-0 text-sm">
+              <div class="flex-1 min-w-0"><p class="truncate">${escapeHtml(it.description || '')}</p>
+              <p class="text-xs text-slate-500">${it.quantity} ${escapeHtml(it.unit || 'u')} × ${formatAmount(it.unit_price || 0)}</p></div>
+              <p class="font-semibold whitespace-nowrap">${formatAmount((it.quantity || 0) * (it.unit_price || 0))}</p>
+            </div>`
+          ).join('');
+          const totalHt = r.items.reduce((s, it) => s + (it.quantity || 0) * (it.unit_price || 0), 0);
+          content.innerHTML = `
+            ${r.rationale ? `<p class="text-xs italic text-slate-600 mb-2">${escapeHtml(r.rationale)}</p>` : ''}
+            <div class="bg-white rounded-lg p-2 border border-slate-200">${rows}</div>
+            <p class="text-right mt-2 text-sm">Total HT : <span class="font-bold text-karl-700">${formatAmount(totalHt)}</span></p>
+          `;
+          actions.innerHTML = `
+            <button id="ai-quote-edit" class="px-3 py-1.5 rounded-lg bg-karl-600 text-white text-sm font-medium">
+              <i class="fas fa-pen-to-square mr-1"></i>Éditer & créer
+            </button>`;
+          actions.classList.remove('hidden');
+          actions.querySelector('#ai-quote-edit').addEventListener('click', () => {
+            openNewQuoteModal({
+              deal_id: dealId,
+              client_id: r.client_id,
+              items: r.items,
+              rationale: r.rationale,
+            });
+          });
+        } else {
+          content.textContent = r?.error || 'Pas de suggestion générée';
+        }
       }
     } catch (e) {
       content.textContent = e.message;
@@ -455,9 +882,7 @@
         loadQuotes(btn.dataset.status);
       });
     });
-    document.getElementById('new-quote-btn')?.addEventListener('click', () => {
-      alert('Création de devis — utilise la v1 pour l\'instant (création complète) ou la barre IA (⌘K).');
-    });
+    document.getElementById('new-quote-btn')?.addEventListener('click', () => openNewQuoteModal());
   }
 
   // ============================================================
@@ -573,12 +998,65 @@
   // ============================================================
   // AI bar globale
   // ============================================================
+  // ============================================================
+  // Web Speech API helper (mode vocal natif)
+  // ============================================================
+  function getSpeechRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const rec = new SR();
+    rec.lang = 'fr-FR';
+    rec.interimResults = true;
+    rec.continuous = false;
+    return rec;
+  }
+
+  function attachVoiceButton(buttonEl, inputEl, onFinal) {
+    const rec = getSpeechRecognition();
+    if (!rec) {
+      buttonEl.title = 'Mode vocal non supporté (utilise Chrome/Safari)';
+      buttonEl.classList.add('opacity-40', 'cursor-not-allowed');
+      return;
+    }
+    let listening = false;
+    buttonEl.addEventListener('click', () => {
+      if (listening) { rec.stop(); return; }
+      try {
+        rec.start();
+      } catch (e) { return; }
+    });
+    rec.onstart = () => {
+      listening = true;
+      buttonEl.classList.add('bg-red-500', 'text-white', 'animate-pulse');
+      buttonEl.classList.remove('bg-slate-100', 'text-slate-600');
+    };
+    rec.onend = () => {
+      listening = false;
+      buttonEl.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+      buttonEl.classList.add('bg-slate-100', 'text-slate-600');
+    };
+    rec.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (inputEl) inputEl.value = transcript;
+      if (event.results[event.results.length - 1].isFinal && onFinal) {
+        onFinal(transcript.trim());
+      }
+    };
+    rec.onerror = (e) => {
+      showToast('Erreur micro: ' + (e.error || 'inconnu'), 'error');
+    };
+  }
+
   function setupAIBar() {
     const trigger = document.getElementById('ai-bar-trigger');
     const modal = document.getElementById('ai-bar-modal');
     const input = document.getElementById('ai-bar-input');
     const resultBox = document.getElementById('ai-bar-result');
     const resultText = document.getElementById('ai-bar-result-text');
+    const micBtn = document.getElementById('ai-bar-mic');
 
     if (!trigger || !modal) return;
 
@@ -599,6 +1077,12 @@
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && input.value.trim()) runCommand(input.value.trim());
     });
+
+    if (micBtn) {
+      attachVoiceButton(micBtn, input, (finalText) => {
+        if (finalText) runCommand(finalText);
+      });
+    }
 
     async function runCommand(text) {
       resultBox.classList.remove('hidden');

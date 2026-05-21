@@ -15,6 +15,9 @@ export function renderDealDetail(dealId: string): string {
       </div>
     </div>
 
+    <!-- Score + flags -->
+    <div id="deal-score-zone"></div>
+
     <!-- Actions IA -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
       <button class="ai-action-btn flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-br from-karl-500 to-karl-700 text-white text-sm font-medium hover:opacity-90" data-action="summary">
