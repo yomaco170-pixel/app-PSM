@@ -1,0 +1,32 @@
+/* KARL v2 — custom CSS (mobile-first, IA-first) */
+
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  overscroll-behavior-y: none;
+}
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* Animations subtiles */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(14, 165, 233, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+}
+.ai-pulse { animation: pulse-ring 2s infinite; }
+
+/* Scrollbar fine sur desktop */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+}
+
+/* Mode chantier — gros boutons (à activer plus tard) */
+body[data-mode="chantier"] button,
+body[data-mode="chantier"] a {
+  min-height: 56px;
+  font-size: 18px;
+}

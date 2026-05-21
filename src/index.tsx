@@ -4,6 +4,7 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { sha256 } from 'hono/utils/crypto'
 import OpenAI from 'openai'
 import { parseEmailRobust } from './lib/email-parser'
+import v2App from './v2/app'
 
 type Bindings = {
   DB: D1Database
@@ -20,6 +21,13 @@ app.use('/api/*', cors())
 
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }))
+
+// ============================================================
+// KARL CRM v2 — Sous-application IA-first
+// Toutes les routes /v2/* sont déléguées à src/v2/app.ts
+// ============================================================
+app.use('/v2/static/*', serveStatic({ root: './public' }))
+app.route('/v2', v2App)
 
 // Helper: Hash password with SHA-256
 async function hashPassword(password: string): Promise<string> {
